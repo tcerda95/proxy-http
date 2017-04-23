@@ -4,8 +4,13 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpParser {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(HttpParser.class);
+	
     private static final char CR = (char) 13;
     private static final char LF = (char) 10;
     private static final char SP = (char) 32;
@@ -178,13 +183,13 @@ public class HttpParser {
     // TODO: Hacer bien estas cosas.
     private boolean methodNameIsOk() {
         methodName.flip();
-        System.out.println("METHOD: " + methodName.toString());
+        LOGGER.debug("METHOD: {}", methodName.toString());
         return methodName.toString().equals("GET") || methodName.equals("POST") || methodName.equals("HEAD");
     }
 
     private boolean URIIsOk() {
         httpURI.flip();
-        System.out.println("URI: " + httpURI);
+        LOGGER.debug("URI: {}", httpURI);
         return httpURI.toString().equals("/");
     }
 
