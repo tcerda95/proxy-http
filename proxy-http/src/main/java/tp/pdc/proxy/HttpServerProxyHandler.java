@@ -45,8 +45,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			socketChannel.write(inputBuffer);
 			key.interestOps(SelectionKey.OP_READ);
 		} catch (IOException e) {
-			// Avisar al cliente que no se pudo escribir al servidor
-			e.printStackTrace();
+			
 		}
 	}
 

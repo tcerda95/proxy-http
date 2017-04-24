@@ -6,13 +6,16 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Pruebita {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
+	
 	public void run(int port) {
-		Logger logger = LoggerFactory.getLogger("tp.pdc.proxy");
 		ServerSocketChannel serverChannel;
 		Selector selector;
 		
@@ -39,28 +42,29 @@ public class Pruebita {
 				break;
 			}
 			
-			Iterator<SelectionKey> keyIter = selector.selectedKeys().iterator();
+			Set<SelectionKey> keySet = selector.selectedKeys();			
+			Iterator<SelectionKey> keyIter = keySet.iterator();
 			while (keyIter.hasNext()) {
 				SelectionKey key = keyIter.next();
 				keyIter.remove();
 				
 				if (key.isAcceptable()) {
-					logger.debug("Key acceptable");
+					LOGGER.debug("Key acceptable");
 					protocol.handleAccept(key);
 				}
 								
 				if (key.isConnectable()) {
-					logger.debug("Key connectable");
+					LOGGER.debug("Key connectable");
 					protocol.handleConnect(key);
 				}
 				
 				if (key.isValid() && key.isReadable()) {
-					logger.debug("Key readable");
+					LOGGER.debug("Key readable");
 					protocol.handleRead(key);
 				}
 				
 				if (key.isValid() && key.isWritable()) {  // OJO: tratar casos en los que el servidor pudo haber cerrado la conexión
-					logger.debug("Key writable");
+					LOGGER.debug("Key writable");
 					protocol.handleWrite(key);
 				}
 			}

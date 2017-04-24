@@ -5,9 +5,12 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.UnresolvedAddressException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpClientProxyHandler extends HttpHandler {
+	private final static Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
 	private static final int NGINX_PORT = 8081;
 
 	public HttpClientProxyHandler(int bufSize) {
@@ -43,21 +46,19 @@ public class HttpClientProxyHandler extends HttpHandler {
 			HttpHandler serverHandler = new HttpServerProxyHandler(processedBuffer.array().length, processedBuffer, this.getWriteBuffer());
 			serverHandler.setConnectedPeerKey(key);
 			SelectionKey serverKey;
-			
+						
 			if (socket.connect(new InetSocketAddress("localhost", NGINX_PORT)))
 				serverKey = socket.register(key.selector(), SelectionKey.OP_WRITE, serverHandler);
 			else
 				serverKey = socket.register(key.selector(), SelectionKey.OP_CONNECT, serverHandler);  // OJO: se crean atributos aunq no se logró la conexión
 			
 			this.setConnectedPeerKey(serverKey);
+			key.interestOps(0);  // Desregistrando cliente
 		} catch (IOException e) {
-			e.printStackTrace();
-			// mandar response de error al cliente de no se pudo conectar
-		} catch (UnresolvedAddressException e) {
-			e.printStackTrace();
-			// host falopa	
+			LOGGER.warn("Failed to connect to server");
+			key.interestOps(SelectionKey.OP_WRITE);
+			this.getWriteBuffer().put(HttpResponse.BAD_GATEWAY_502.getBytes());
 		}
-
 	}
 
 	@Override
@@ -65,10 +66,16 @@ public class HttpClientProxyHandler extends HttpHandler {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		try {
 			socketChannel.write(inputBuffer);
-			socketChannel.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 			// No se le pudo responder al cliente
+		} finally {
+			try {
+				socketChannel.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
