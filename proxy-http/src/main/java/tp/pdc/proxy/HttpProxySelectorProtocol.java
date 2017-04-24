@@ -5,7 +5,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpProxySelectorProtocol {
+	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
 	private int bufSize;
 	
 	public HttpProxySelectorProtocol(int bufSize) {
@@ -30,11 +34,15 @@ public class HttpProxySelectorProtocol {
 	public void handleConnect(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		try {
-			if (socketChannel.finishConnect())
+			if (socketChannel.finishConnect()) {
 				key.interestOps(SelectionKey.OP_WRITE);
+			}
 		} catch (IOException e) {
-			e.printStackTrace();
-			// TODO: response de error al cliente de que no se pudo conectar al servidor
+			LOGGER.warn("Failed to connect to server {}", e.getMessage());
+			HttpHandler serverHandler = (HttpHandler) key.attachment();
+			SelectionKey clientKey = serverHandler.getConnectedPeerKey();
+			serverHandler.getProcessedBuffer().put(HttpResponse.BAD_GATEWAY_502.getBytes());
+			clientKey.interestOps(SelectionKey.OP_WRITE);
 		}
 	}
 

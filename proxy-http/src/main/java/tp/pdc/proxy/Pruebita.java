@@ -42,10 +42,7 @@ public class Pruebita {
 				break;
 			}
 			
-			Set<SelectionKey> keySet = selector.selectedKeys();
-			
-			LOGGER.debug("Selectable keys: {}", keySet.size());
-			
+			Set<SelectionKey> keySet = selector.selectedKeys();			
 			Iterator<SelectionKey> keyIter = keySet.iterator();
 			while (keyIter.hasNext()) {
 				SelectionKey key = keyIter.next();
