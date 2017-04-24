@@ -2,15 +2,14 @@ package tp.pdc.proxy;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HttpParser {
+public class HeadersParserImpl {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(HttpParser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(HeadersParserImpl.class);
 	
     private static final char CR = (char) 13;
     private static final char LF = (char) 10;
@@ -49,7 +48,7 @@ public class HttpParser {
     private final ByteBuffer hostname;
     private boolean hostRead;
 
-    public HttpParser () {
+    public HeadersParserImpl () {
         httpParse = ParserState.REQUEST_START;
         versionParse = HttpVersionState.NOT_READ_YET;
         headersParse = HttpHeaderState.START;
@@ -309,7 +308,7 @@ public class HttpParser {
 
     //test
     @Override public String toString () {
-        return "HttpParser{" +
+        return "HeadersParser{" +
             "httpParse=" + httpParse +
             ", versionParse=" + versionParse +
             ", headersParse=" + headersParse +
@@ -330,7 +329,7 @@ public class HttpParser {
             String s1 = s.substring(0, i);
             String s2 = s.substring(i);
 
-            HttpParser parser = new HttpParser();
+            HeadersParserImpl parser = new HeadersParserImpl();
             ByteBuffer buf1 = ByteBuffer.wrap(s1.getBytes(StandardCharsets.US_ASCII));
             ByteBuffer buf2 = ByteBuffer.wrap(s2.getBytes(StandardCharsets.US_ASCII));
 
