@@ -53,7 +53,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 				serverKey = socket.register(key.selector(), SelectionKey.OP_CONNECT, serverHandler);  // OJO: se crean atributos aunq no se logró la conexión
 			
 			this.setConnectedPeerKey(serverKey);
-			key.interestOps(0);  // Desregistrando cliente
 		} catch (IOException e) {
 			LOGGER.warn("Failed to connect to server");
 			key.interestOps(SelectionKey.OP_WRITE);
