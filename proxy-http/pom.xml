@@ -18,18 +18,58 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <ch.qos.logback.version>1.2.3</ch.qos.logback.version>
+    <org.apache.commons.version>3.5</org.apache.commons.version>
+    <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
+    <maven-dependency-plugin.version>3.0.0</maven-dependency-plugin.version>
   </properties>
 
   <build>
     <plugins>
         <plugin>
-           <groupId>org.apache.maven.plugins</groupId>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-eclipse-plugin</artifactId>
             <version>${maven-eclipse-plugin.version}</version>
             <configuration>
-           	<downloadSources>true</downloadSources>
-           	<downloadJavadocs>true</downloadJavadocs>
+                <downloadSources>true</downloadSources>
+                <downloadJavadocs>true</downloadJavadocs>
             </configuration>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>${maven-jar-plugin.version}</version>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <addClasspath>true</addClasspath>
+                        <classpathPrefix>lib</classpathPrefix>
+                        <mainClass>tp.pdc.proxy.Pruebita</mainClass>
+                    </manifest>
+                </archive>
+                <excludes>
+                	<exclude>**/logback-test.xml</exclude>
+                </excludes>
+            </configuration>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>${maven-dependency-plugin.version}</version>
+            <executions>
+                <execution>
+                    <id>copy-dependencies</id>
+                    <phase>prepare-package</phase>
+                    <goals>
+                        <goal>copy-dependencies</goal>
+                    </goals>
+                    <configuration>
+                        <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        <overWriteReleases>false</overWriteReleases>
+                        <overWriteSnapshots>false</overWriteSnapshots>
+                        <overWriteIfNewer>true</overWriteIfNewer>
+                    </configuration>
+                </execution>
+            </executions>
         </plugin>
     </plugins>
   </build>
@@ -52,5 +92,10 @@
       <artifactId>logback-classic</artifactId>
       <version>${ch.qos.logback.version}</version>
     </dependency>
+    <dependency>
+	  <groupId>org.apache.commons</groupId>
+	  <artifactId>commons-lang3</artifactId>
+	  <version>${org.apache.commons.version}</version>
+	</dependency>
   </dependencies>
 </project>

@@ -27,8 +27,8 @@ public class HttpProxySelectorProtocol {
 	}
 
 	public void handleRead(SelectionKey key) {
-		HttpHandler attributes = (HttpHandler) key.attachment();
-		attributes.handleRead(key);
+		HttpHandler handler = (HttpHandler) key.attachment();
+		handler.handleRead(key);
 	}
 
 	public void handleConnect(SelectionKey key) {
@@ -39,16 +39,18 @@ public class HttpProxySelectorProtocol {
 			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to connect to server {}", e.getMessage());
+			
 			HttpHandler serverHandler = (HttpHandler) key.attachment();
 			SelectionKey clientKey = serverHandler.getConnectedPeerKey();
+			
 			serverHandler.getProcessedBuffer().put(HttpResponse.BAD_GATEWAY_502.getBytes());
 			clientKey.interestOps(SelectionKey.OP_WRITE);
 		}
 	}
 
 	public void handleWrite(SelectionKey key) {
-		HttpHandler attributes = (HttpHandler) key.attachment();
-		attributes.handleWrite(key);
+		HttpHandler handler = (HttpHandler) key.attachment();
+		handler.handleWrite(key);
 	}
 
 }

@@ -14,12 +14,15 @@ import org.slf4j.LoggerFactory;
 public class Pruebita {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
+	private static final int BUF_SIZE = 4096;
 	
 	public void run(int port) {
 		ServerSocketChannel serverChannel;
 		Selector selector;
 		
-		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol(4096);
+		LOGGER.info("Setting up proxy...");
+		
+		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol(BUF_SIZE);
 		
 		try {
 			serverChannel = ServerSocketChannel.open();
@@ -33,6 +36,7 @@ public class Pruebita {
 			return;
 		}
 		
+		LOGGER.info("Setup done. Accepting connections from port: {}", port);
 		while (true) {
 			try {
 				selector.select();
@@ -47,7 +51,7 @@ public class Pruebita {
 			while (keyIter.hasNext()) {
 				SelectionKey key = keyIter.next();
 				keyIter.remove();
-				
+								
 				if (key.isAcceptable()) {
 					LOGGER.debug("Key acceptable");
 					protocol.handleAccept(key);
