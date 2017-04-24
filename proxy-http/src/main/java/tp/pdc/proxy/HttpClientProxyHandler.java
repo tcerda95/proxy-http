@@ -54,7 +54,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			
 			this.setConnectedPeerKey(serverKey);
 		} catch (IOException e) {
-			LOGGER.warn("Failed to connect to server");
+			LOGGER.warn("Failed to connect to server: {}", e.getMessage());
 			key.interestOps(SelectionKey.OP_WRITE);
 			this.getWriteBuffer().put(HttpResponse.BAD_GATEWAY_502.getBytes());
 		}
