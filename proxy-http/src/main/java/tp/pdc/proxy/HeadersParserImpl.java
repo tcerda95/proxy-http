@@ -3,17 +3,32 @@ package tp.pdc.proxy;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tp.pdc.proxy.header.Header;
 
-public class HeadersParserImpl {
+public class HeadersParserImpl implements HeadersParser {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(HeadersParserImpl.class);
 	
     private static final char CR = (char) 13;
     private static final char LF = (char) 10;
     private static final char SP = (char) 32;
+
+    @Override public boolean hasHeaderValue (Header header) {
+        return relevantHeaders.containsKey(header);
+    }
+
+    @Override public byte[] getHeaderValue (Header header) {
+        return relevantHeaders.get(header);
+    }
+
+    @Override public boolean hasFinished () {
+        return httpParse == ParserState.READ_HEADERS && headersParse == HttpHeaderState.END_OK;
+    }
 
     private enum ParserState {
         /* First Line */
@@ -30,10 +45,14 @@ public class HeadersParserImpl {
     }
 
     private enum HttpHeaderState {
-        START, OTHER_HEADER, OTHER_SPACE, OTHER_CONTENT, COLON, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
+        START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
 
-        /* Host Header */
-        H, O, S, T, HOST_COLON, HOST_SPACE, HOST_CONTENT,
+        NAME,
+        /* Relevant headers */
+        RELEVANT_COLON, RELEVANT_SPACE, RELEVANT_CONTENT,
+
+        /* Other headers */
+        COLON, SPACE, CONTENT,
     }
 
     private ParserState httpParse;
@@ -42,34 +61,39 @@ public class HeadersParserImpl {
     private int httpMajorVersion;
     private int httpMinorVersion;
 
-    private final CharBuffer methodName;
-    private final CharBuffer httpURI;
+    private final ByteBuffer methodName;
+    private final ByteBuffer httpURI;
 
-    private final ByteBuffer hostname;
-    private boolean hostRead;
+    private ByteBuffer headerName;
+    private ByteBuffer headerValue;
+    public Header currentRelevantHeader; // !!!!
+
+    private final Map<Header, byte[]> relevantHeaders;
 
     public HeadersParserImpl () {
         httpParse = ParserState.REQUEST_START;
         versionParse = HttpVersionState.NOT_READ_YET;
         headersParse = HttpHeaderState.START;
-        hostRead = false;
+        relevantHeaders = new HashMap<>();
 
-        hostname = ByteBuffer.allocate(128);
-        methodName = CharBuffer.allocate(16);
-        httpURI = CharBuffer.allocate(256);
+        methodName = ByteBuffer.allocate(16);
+        httpURI = ByteBuffer.allocate(256);
+
+        headerName = ByteBuffer.allocate(128); //TODO: capacity
+        headerValue = ByteBuffer.allocate(128);
     }
 
     // Receives buffer in read state
-    public void parse(final ByteBuffer readBuffer) {
+    public void parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) {
 
-        while (readBuffer.hasRemaining()) {
-            char c = (char) readBuffer.get();
+        while (inputBuffer.hasRemaining()) {
+            char c = (char) inputBuffer.get();
 
             switch (httpParse) {
                 case REQUEST_START:
                     if (isALPHA(c)) {
                         httpParse = ParserState.METHOD_READ;
-                        methodName.append(c);
+                        methodName.put((byte) c);
                     } else {
                         httpParse = ParserState.BAD_REQUEST_ERROR;
                     }
@@ -78,7 +102,7 @@ public class HeadersParserImpl {
                 case METHOD_READ:
                     //parseMethod();
                     if (isALPHA(c)) {
-                        methodName.put(c);
+                        methodName.put((byte) c);
                     } else if (c == SP) {
                         httpParse = methodNameIsOk() ? ParserState.URI_READ : ParserState.BAD_REQUEST_ERROR;
                     } else {
@@ -90,9 +114,9 @@ public class HeadersParserImpl {
                     //parseURI();
                     if (c == SP) {
                         httpParse = URIIsOk() ? ParserState.HTTP_VERSION : ParserState.BAD_REQUEST_ERROR;
-                        httpURI.put(c);
+                        httpURI.put((byte) c);
                     } else if (isURIComponent(c)) {
-                        httpURI.put(c);
+                        httpURI.put((byte) c);
                     } else {
                         httpParse = ParserState.BAD_REQUEST_ERROR;
                     }
@@ -175,70 +199,68 @@ public class HeadersParserImpl {
             case START:
                 if (c == CR)
                     headersParse = HttpHeaderState.SECTION_END_CR;
+                else if (isALPHA(c) || c == '-') {
+                    headerName.put((byte) c);
+                    headersParse = HttpHeaderState.NAME;
+                }
                 else
-                    headerNameExpect(c, 'H', HttpHeaderState.H);
+                    headersParse = HttpHeaderState.ERROR;
                 break;
 
-            case H:
-                headerNameExpect(c, 'o', HttpHeaderState.O);
-                break;
-
-            case O:
-                headerNameExpect(c, 's', HttpHeaderState.S);
-                break;
-
-            case S:
-                headerNameExpect(c, 't', HttpHeaderState.T);
-                break;
-
-            case T:
-                headerNameExpect(c, ':', HttpHeaderState.HOST_COLON);
-                break;
-
-            case HOST_COLON:
-                headersParse = c == ' ' ? HttpHeaderState.HOST_SPACE : HttpHeaderState.ERROR;
-                break;
-
-            case HOST_SPACE:
-                if (isALPHA(c)) {
-                    headersParse = HttpHeaderState.HOST_CONTENT;
-                    hostname.put((byte) c);
+            case NAME:
+                if (c == ':') {
+                    currentRelevantHeader = Header.getHeaderFromBytes(headerName.array());
+                    if (currentRelevantHeader != null) {
+                        relevantHeaders.put(currentRelevantHeader, new byte[0]); // TODO: *cara sospechosa*
+                        headersParse = HttpHeaderState.RELEVANT_COLON;
+                    } else {
+                        headersParse = HttpHeaderState.COLON;
+                    }
+                } else if (isALPHA(c) || c == '-') { // TODO: is not header name content
+                    headerName.put((byte) Character.toLowerCase(c));
                 } else {
                     headersParse = HttpHeaderState.ERROR;
                 }
                 break;
 
-            case OTHER_HEADER:
-                if (c == ':')
-                    headersParse = HttpHeaderState.COLON;
-                else if (!isALPHA(c) && c != '-') // TODO: is not header name content
+            case RELEVANT_COLON:
+                headersParse = c == ' ' ? HttpHeaderState.RELEVANT_SPACE : HttpHeaderState.ERROR;
+                break;
+
+            case RELEVANT_SPACE:
+                if (isALPHA(c)) { //TODO: ver que puede ser
+                    headerValue.put((byte) Character.toLowerCase(c));
+                    headersParse = HttpHeaderState.RELEVANT_CONTENT;
+                } else {
                     headersParse = HttpHeaderState.ERROR;
+                }
+                break;
+
+            case RELEVANT_CONTENT:
+                if (isALPHA(c)) { //TODO
+                    headerValue.put((byte) Character.toLowerCase(c));
+                } else if (c == CR) {
+                    headersParse = HttpHeaderState.END_LINE_CR;
+                    relevantHeaders.put(currentRelevantHeader, headerValue.array());
+                    headerName.clear();
+                    headerValue.clear();
+                    currentRelevantHeader = null;
+                }
                 break;
 
             case COLON:
-                headersParse = c == ' ' ? HttpHeaderState.OTHER_SPACE : HttpHeaderState.ERROR;
+                headersParse = c == ' ' ? HttpHeaderState.SPACE : HttpHeaderState.ERROR;
                 break;
 
-            case OTHER_SPACE:
-                headersParse = isALPHA(c) ? HttpHeaderState.OTHER_CONTENT : HttpHeaderState.ERROR;
+            case SPACE:
+                headersParse = isALPHA(c) ? HttpHeaderState.CONTENT : HttpHeaderState.ERROR;
                 break;
 
-            case OTHER_CONTENT:
+            case CONTENT:
                 if (c == CR)
                     headersParse = HttpHeaderState.END_LINE_CR;
                 else if (false)// TODO: if not header content
                     headersParse = HttpHeaderState.ERROR;
-                break;
-
-            case HOST_CONTENT:
-                if (c != CR) { // isALPHA(c)) { TODO: is host content
-                    hostname.put((byte) c);
-                } else if (c == CR) {
-                    hostRead = true;
-                    headersParse = HttpHeaderState.END_LINE_CR;
-                } else {
-                    headersParse = HttpHeaderState.ERROR;
-                }
                 break;
 
             case END_LINE_CR:
@@ -255,43 +277,20 @@ public class HeadersParserImpl {
         }
     }
 
-    private void headerNameExpect (char toProcess, char expected, HttpHeaderState nextState) {
-        if (toProcess == expected)
-            headersParse = nextState;
-        else if (isALPHA(toProcess) || toProcess == '-') // TODO: is headerName char
-            headersParse = HttpHeaderState.OTHER_HEADER;
-        else
-            headersParse = HttpHeaderState.ERROR;
-    }
-
-    public boolean readHost() {
-        return hostRead;
-    }
-
-    //TODO test
-    public String getHostName() {
-        if (!readHost()) {
-            throw new IllegalStateException(); // TODO: NoHostnameReadException
-        }
-        hostname.flip();
-        return ProxyProperties.getInstance().getCharset().decode(hostname).toString();
-    }
-
-    public boolean hasError() {
-        return httpParse == ParserState.BAD_REQUEST_ERROR;
-    }
-
     // TODO: Hacer bien estas cosas.
     private boolean methodNameIsOk() {
+        int strLen = methodName.position(); //TODO: hacer con bytes
+        String str = new String(methodName.array(), 0, strLen, ProxyProperties.getInstance().getCharset());
         methodName.flip();
-        LOGGER.debug("METHOD: {}", methodName.toString());
-        return methodName.toString().equals("GET") || methodName.equals("POST") || methodName.equals("HEAD");
+        LOGGER.debug("METHOD: {}", str);
+        return str.equals("GET") || str.equals("POST") || str.equals("HEAD");
     }
 
     private boolean URIIsOk() {
-        httpURI.flip();
-        LOGGER.debug("URI: {}", httpURI);
-        return httpURI.toString().equals("/");
+        return true;
+//        httpURI.flip();
+//        LOGGER.debug("URI: {}", httpURI);
+//        return httpURI.toString().equals("/");
     }
 
     private boolean isURIComponent(final char c) {
@@ -314,7 +313,6 @@ public class HeadersParserImpl {
             ", headersParse=" + headersParse +
             ", httpMajorVersion=" + httpMajorVersion +
             ", httpMinorVersion=" + httpMinorVersion +
-            ", hostRead=" + hostRead +
             '}';
     }
 
@@ -333,14 +331,11 @@ public class HeadersParserImpl {
             ByteBuffer buf1 = ByteBuffer.wrap(s1.getBytes(StandardCharsets.US_ASCII));
             ByteBuffer buf2 = ByteBuffer.wrap(s2.getBytes(StandardCharsets.US_ASCII));
 
-            parser.parse(buf1);
-            parser.parse(buf2);
+            parser.parse(buf1, null);
+            parser.parse(buf2, null);
 
             System.out.println(parser.toString());
-
-            if (parser.readHost()) {
-                System.out.println("HOST READ: " + parser.getHostName());
-            }
+            System.out.println(parser.relevantHeaders.toString());
         }
 
     }
