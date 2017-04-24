@@ -37,17 +37,17 @@ public class HttpParser {
         H, O, S, T, HOST_COLON, HOST_SPACE, HOST_CONTENT,
     }
 
-    ParserState httpParse;
-    HttpVersionState versionParse;
-    HttpHeaderState headersParse;
-    int httpMajorVersion;
-    int httpMinorVersion;
+    private ParserState httpParse;
+    private HttpVersionState versionParse;
+    private HttpHeaderState headersParse;
+    private int httpMajorVersion;
+    private int httpMinorVersion;
 
     private final CharBuffer methodName;
     private final CharBuffer httpURI;
 
     private final ByteBuffer hostname;
-    boolean hostRead;
+    private boolean hostRead;
 
     public HttpParser () {
         httpParse = ParserState.REQUEST_START;
@@ -275,7 +275,7 @@ public class HttpParser {
             throw new IllegalStateException(); // TODO: NoHostnameReadException
         }
         hostname.flip();
-        return Charset.forName("US-ASCII").decode(hostname).toString();
+        return ProxyProperties.getInstance().getCharset().decode(hostname).toString();
     }
 
     public boolean hasError() {
@@ -320,28 +320,9 @@ public class HttpParser {
     }
 
     public static void main (String[] args) throws Exception {
-        char cr = 13, lf = 10;
-        String s = "GET / HTTP/1.1" + cr + lf + "Host: google.com" + cr + lf + "User-Agent: Internet Explorer 2" + cr + lf + cr + lf; //CRLF
-
-//        FileInputStream fis = new FileInputStream("./request");
-//
-//        byte[] b = new byte[1024];
-//        int r = fis.read(b);
-//
-//
-//        for (int i = 0; i < r; i++) {
-//            ByteBuffer buf1 = ByteBuffer.wrap(b, 0, i);
-//            ByteBuffer buf2 = ByteBuffer.wrap(b, i, r);
-//
-//            HttpParser parser = new HttpParser();
-//            parser.parse(buf1);
-//            parser.parse(buf2);
-//
-//            if (parser.readHost()) {
-//                System.out.println("HOST READ: " + parser.getHostName());
-//            }
-//        }
-
+        String s = "GET / HTTP/1.1" + CR + LF + "Host: google.com" + CR + LF
+                    + "User-Agent: Internet Explorer 2" + CR + LF
+                    + CR + LF;
 
         for (int i = 0; i < s.length(); i++) {
             System.out.println("ITERACION: " + i);
