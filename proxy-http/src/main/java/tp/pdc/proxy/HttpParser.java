@@ -2,6 +2,7 @@ package tp.pdc.proxy;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 public class HttpParser {
@@ -12,9 +13,10 @@ public class HttpParser {
 
     private enum ParserState {
         /* First Line */
-        REQUEST_START, METHOD_READ, URI_READ, HTTP_VERSION, CR_END_LINE, LF_END_LINE,
+        REQUEST_START, METHOD_READ, URI_READ, HTTP_VERSION, CR_END_LINE, CR_FIRST_LINE,
 
         READ_HEADERS,
+
         /* Error states */
         BAD_REQUEST_ERROR,
     }
@@ -23,22 +25,32 @@ public class HttpParser {
         NOT_READ_YET, H, T_1, T_2, P, MAJOR_VERSION, MINOR_VERSION, READ_OK, ERROR,
     }
 
-    private static class States {
-        ParserState parser;
-        HttpVersionState versionParser;
-        int httpMajorVersion;
-        int httpMinorVersion;
+    private enum HttpHeaderState {
+        START, OTHER_HEADER, OTHER_SPACE, OTHER_CONTENT, COLON, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
+
+        /* Host Header */
+        H, O, S, T, HOST_COLON, HOST_SPACE, HOST_CONTENT,
     }
 
-    private States states;
+    ParserState httpParse;
+    HttpVersionState versionParse;
+    HttpHeaderState headersParse;
+    int httpMajorVersion;
+    int httpMinorVersion;
 
     private final CharBuffer methodName;
     private final CharBuffer httpURI;
 
+    private final ByteBuffer hostname;
+    boolean hostRead;
+
     public HttpParser () {
-        states = new States();
-        states.parser = ParserState.REQUEST_START;
-        states.versionParser = HttpVersionState.NOT_READ_YET;
+        httpParse = ParserState.REQUEST_START;
+        versionParse = HttpVersionState.NOT_READ_YET;
+        headersParse = HttpHeaderState.START;
+        hostRead = false;
+
+        hostname = ByteBuffer.allocate(128);
         methodName = CharBuffer.allocate(16);
         httpURI = CharBuffer.allocate(256);
     }
@@ -49,34 +61,36 @@ public class HttpParser {
         while (readBuffer.hasRemaining()) {
             char c = (char) readBuffer.get();
 
-            switch (states.parser) {
+            switch (httpParse) {
                 case REQUEST_START:
                     if (isALPHA(c)) {
-                        states.parser = ParserState.METHOD_READ;
+                        httpParse = ParserState.METHOD_READ;
                         methodName.append(c);
                     } else {
-                        states.parser = ParserState.BAD_REQUEST_ERROR;
+                        httpParse = ParserState.BAD_REQUEST_ERROR;
                     }
                     break;
 
                 case METHOD_READ:
+                    //parseMethod();
                     if (isALPHA(c)) {
                         methodName.put(c);
                     } else if (c == SP) {
-                        states.parser = methodNameIsOk() ? ParserState.URI_READ : ParserState.BAD_REQUEST_ERROR;
+                        httpParse = methodNameIsOk() ? ParserState.URI_READ : ParserState.BAD_REQUEST_ERROR;
                     } else {
-                        states.parser = ParserState.BAD_REQUEST_ERROR;
+                        httpParse = ParserState.BAD_REQUEST_ERROR;
                     }
                     break;
 
                 case URI_READ:
+                    //parseURI();
                     if (c == SP) {
-                        states.parser = URIIsOk() ? ParserState.HTTP_VERSION : ParserState.BAD_REQUEST_ERROR;
+                        httpParse = URIIsOk() ? ParserState.HTTP_VERSION : ParserState.BAD_REQUEST_ERROR;
                         httpURI.put(c);
                     } else if (isURIComponent(c)) {
                         httpURI.put(c);
                     } else {
-                        states.parser = ParserState.BAD_REQUEST_ERROR;
+                        httpParse = ParserState.BAD_REQUEST_ERROR;
                     }
                     break;
 
@@ -84,95 +98,183 @@ public class HttpParser {
                     parseHttpVersion(c);
                     break;
 
-//                case CR_END_LINE:
-//                    states.parser = ( c == CR ? ParserState.LF_END_LINE : ParserState.BAD_REQUEST_ERROR);
-//                    break;
-
-                case LF_END_LINE:
-                    states.parser = ( c == LF ? ParserState.READ_HEADERS : ParserState.BAD_REQUEST_ERROR);
+                case CR_FIRST_LINE:
+                    httpParse = c == LF ? ParserState.READ_HEADERS : ParserState.BAD_REQUEST_ERROR;
                     break;
 
                 case READ_HEADERS:
-                    System.out.println("READ JUST FINE!");
+                    parseHeaders(c);
                     break;
 
                 default:
-                    states.parser = ParserState.BAD_REQUEST_ERROR;
+                    httpParse = ParserState.BAD_REQUEST_ERROR;
                     return;
-                    // TODO: k c yo
+                // TODO: k c yo
             }
         }
     }
 
     private void parseHttpVersion(char c) {
-        HttpVersionState s = states.versionParser;
-        switch (s) {
+        switch (versionParse) {
             case NOT_READ_YET:
-                if (c == 'H')
-                    states.versionParser = HttpVersionState.H;
-                else
-                    states.versionParser = HttpVersionState.ERROR;
+                versionParse = c == 'H' ? HttpVersionState.H : HttpVersionState.ERROR;
                 break;
 
             case H:
-                if (c == 'T')
-                    states.versionParser = HttpVersionState.T_1;
-                else
-                    states.versionParser = HttpVersionState.ERROR;
+                versionParse = c == 'T' ? HttpVersionState.T_1 : HttpVersionState.ERROR;
                 break;
 
             case T_1:
-                if (c == 'T')
-                    states.versionParser = HttpVersionState.T_2;
-                else
-                    states.versionParser = HttpVersionState.ERROR;
+                versionParse = c == 'T' ? HttpVersionState.T_2 : HttpVersionState.ERROR;
                 break;
 
             case T_2:
-                if (c == 'P')
-                    states.versionParser = HttpVersionState.P;
-                else
-                    states.versionParser = HttpVersionState.ERROR;
+                versionParse = c == 'P' ? HttpVersionState.P : HttpVersionState.ERROR;
                 break;
 
             case P:
-                if (c == '/')
-                    states.versionParser = HttpVersionState.MAJOR_VERSION;
-                else
-                    states.versionParser = HttpVersionState.ERROR;
+                versionParse = c == '/' ? HttpVersionState.MAJOR_VERSION : HttpVersionState.ERROR;
                 break;
 
             case MAJOR_VERSION:
                 if (isNum(c) && c != '0') {
-                    states.httpMajorVersion *= 10;
-                    states.httpMajorVersion += c - '0';
-                } else if (c == '.' && states.httpMajorVersion != 0) {
-                    states.versionParser = HttpVersionState.MINOR_VERSION;
+                    httpMajorVersion *= 10;
+                    httpMajorVersion += c - '0';
+                } else if (c == '.' && httpMajorVersion != 0) {
+                    versionParse = HttpVersionState.MINOR_VERSION;
                 } else {
-                    states.versionParser = HttpVersionState.ERROR;
+                    versionParse = HttpVersionState.ERROR;
                 }
                 break;
 
             case MINOR_VERSION:
                 if (isNum(c)) {
-                    states.httpMinorVersion *= 10;
-                    states.httpMinorVersion += c - '0';
+                    httpMinorVersion *= 10;
+                    httpMinorVersion += c - '0';
                 } else if (c == CR) {
-                    states.versionParser = HttpVersionState.READ_OK;
-                    states.parser = ParserState.LF_END_LINE;
+                    versionParse = HttpVersionState.READ_OK;
+                    httpParse = ParserState.CR_FIRST_LINE;
                 } else {
-                    states.versionParser = HttpVersionState.ERROR;
+                    versionParse = HttpVersionState.ERROR;
                 }
                 break;
 
             case READ_OK:
-                states.versionParser = HttpVersionState.ERROR;
+                // No debería recibir nada más
+                versionParse = HttpVersionState.ERROR;
                 break;
         }
     }
 
+    private void parseHeaders(char c) {
+        switch (headersParse) {
+            case START:
+                if (c == CR)
+                    headersParse = HttpHeaderState.SECTION_END_CR;
+                else
+                    headerNameExpect(c, 'H', HttpHeaderState.H);
+                break;
+
+            case H:
+                headerNameExpect(c, 'o', HttpHeaderState.O);
+                break;
+
+            case O:
+                headerNameExpect(c, 's', HttpHeaderState.S);
+                break;
+
+            case S:
+                headerNameExpect(c, 't', HttpHeaderState.T);
+                break;
+
+            case T:
+                headerNameExpect(c, ':', HttpHeaderState.HOST_COLON);
+                break;
+
+            case HOST_COLON:
+                headersParse = c == ' ' ? HttpHeaderState.HOST_SPACE : HttpHeaderState.ERROR;
+                break;
+
+            case HOST_SPACE:
+                if (isALPHA(c)) {
+                    headersParse = HttpHeaderState.HOST_CONTENT;
+                    hostname.put((byte) c);
+                } else {
+                    headersParse = HttpHeaderState.ERROR;
+                }
+                break;
+
+            case OTHER_HEADER:
+                if (c == ':')
+                    headersParse = HttpHeaderState.COLON;
+                else if (!isALPHA(c) && c != '-') // TODO: is not header name content
+                    headersParse = HttpHeaderState.ERROR;
+                break;
+
+            case COLON:
+                headersParse = c == ' ' ? HttpHeaderState.OTHER_SPACE : HttpHeaderState.ERROR;
+                break;
+
+            case OTHER_SPACE:
+                headersParse = isALPHA(c) ? HttpHeaderState.OTHER_CONTENT : HttpHeaderState.ERROR;
+                break;
+
+            case OTHER_CONTENT:
+                if (c == CR)
+                    headersParse = HttpHeaderState.END_LINE_CR;
+                else if (false)// TODO: if not header content
+                    headersParse = HttpHeaderState.ERROR;
+                break;
+
+            case HOST_CONTENT:
+                if (c != CR) { // isALPHA(c)) { TODO: is host content
+                    hostname.put((byte) c);
+                } else if (c == CR) {
+                    hostRead = true;
+                    headersParse = HttpHeaderState.END_LINE_CR;
+                } else {
+                    headersParse = HttpHeaderState.ERROR;
+                }
+                break;
+
+            case END_LINE_CR:
+                headersParse = c == LF ? HttpHeaderState.START : HttpHeaderState.ERROR;
+                break;
+
+            case SECTION_END_CR:
+                headersParse = c == LF ? HttpHeaderState.END_OK : HttpHeaderState.ERROR;
+                break;
+
+            default: // ERROR
+                System.out.println(this.toString());
+                throw new IllegalStateException();
+        }
+    }
+
+    private void headerNameExpect (char toProcess, char expected, HttpHeaderState nextState) {
+        if (toProcess == expected)
+            headersParse = nextState;
+        else if (isALPHA(toProcess) || toProcess == '-') // TODO: is headerName char
+            headersParse = HttpHeaderState.OTHER_HEADER;
+        else
+            headersParse = HttpHeaderState.ERROR;
+    }
+
+    public boolean readHost() {
+        return hostRead;
+    }
+
+    //TODO test
+    public String getHostName() {
+        if (!readHost()) {
+            throw new IllegalStateException(); // TODO: NoHostnameReadException
+        }
+        hostname.flip();
+        return Charset.forName("US-ASCII").decode(hostname).toString();
+    }
+
     public boolean hasError() {
-        return states.parser == ParserState.BAD_REQUEST_ERROR;
+        return httpParse == ParserState.BAD_REQUEST_ERROR;
     }
 
     // TODO: Hacer bien estas cosas.
@@ -193,16 +295,48 @@ public class HttpParser {
     }
 
     private boolean isALPHA(final char c) {
-        return c == 'G' || c == 'E' || c == 'T';
+        return Character.isLetter(c);
     }
 
     private boolean isNum(final char c) {
-        return '0' <= c && c <= '9';
+        return Character.isDigit(c);
     }
-    
+
+    //test
+    @Override public String toString () {
+        return "HttpParser{" +
+            "httpParse=" + httpParse +
+            ", versionParse=" + versionParse +
+            ", headersParse=" + headersParse +
+            ", httpMajorVersion=" + httpMajorVersion +
+            ", httpMinorVersion=" + httpMinorVersion +
+            ", hostRead=" + hostRead +
+            '}';
+    }
+
     public static void main (String[] args) throws Exception {
         char cr = 13, lf = 10;
-        String s = "GET / HTTP/1.1" + cr + lf + "ABC"; //CRLF
+        String s = "GET / HTTP/1.1" + cr + lf + "Host: google.com" + cr + lf + "User-Agent: Internet Explorer 2" + cr + lf + cr + lf; //CRLF
+
+//        FileInputStream fis = new FileInputStream("./request");
+//
+//        byte[] b = new byte[1024];
+//        int r = fis.read(b);
+//
+//
+//        for (int i = 0; i < r; i++) {
+//            ByteBuffer buf1 = ByteBuffer.wrap(b, 0, i);
+//            ByteBuffer buf2 = ByteBuffer.wrap(b, i, r);
+//
+//            HttpParser parser = new HttpParser();
+//            parser.parse(buf1);
+//            parser.parse(buf2);
+//
+//            if (parser.readHost()) {
+//                System.out.println("HOST READ: " + parser.getHostName());
+//            }
+//        }
+
 
         for (int i = 0; i < s.length(); i++) {
             System.out.println("ITERACION: " + i);
@@ -216,6 +350,12 @@ public class HttpParser {
 
             parser.parse(buf1);
             parser.parse(buf2);
+
+            System.out.println(parser.toString());
+
+            if (parser.readHost()) {
+                System.out.println("HOST READ: " + parser.getHostName());
+            }
         }
 
     }
