@@ -1,13 +1,14 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpHeadersParser {
+public class HttpHeadersParserImpl {
 
     //TODO:Meter en algun lugar como constantes
     private static final char CR = 13;
@@ -33,7 +34,7 @@ public class HttpHeadersParser {
     private Header currentRelevantHeader;
 
 
-    public HttpHeadersParser() {
+    public HttpHeadersParserImpl () {
         headerState = HttpHeaderState.START;
         headerName = ByteBuffer.allocate(128); //TODO: capacity
         headerValue = ByteBuffer.allocate(128);

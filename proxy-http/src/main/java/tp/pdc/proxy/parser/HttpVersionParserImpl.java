@@ -1,6 +1,8 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
+import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
 

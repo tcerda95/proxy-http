@@ -1,19 +1,22 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tp.pdc.proxy.parser.utils.AsciiConstants;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
+import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
+import tp.pdc.proxy.parser.utils.ParseUtils;
 
-public class HeadersParserImpl implements HeadersParser, AsciiConstants {
+public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HeadersParserImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
 
 
     @Override public boolean hasHeaderValue (Header header) {
@@ -25,10 +28,10 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
     }
 
     @Override public boolean hasFinished () {
-        return httpParse == ParserState.READ_HEADERS && headersParser.hasFinished();
+        return requestState == RequestParserState.READ_HEADERS && headersParser.hasFinished();
     }
 
-    private enum ParserState {
+    private enum RequestParserState {
         /* First Line */
         REQUEST_START, METHOD_READ, URI_READ, HTTP_VERSION, CR_END_LINE, CR_FIRST_LINE,
 
@@ -38,7 +41,7 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
         ERROR,
     }
 
-    private ParserState httpParse;
+    private RequestParserState requestState;
     private Method method;
 
     private final ByteBuffer methodName;
@@ -46,14 +49,14 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
 
     private ByteBuffer output;
 
-    private HttpHeadersParser headersParser;
+    private HttpHeadersParserImpl headersParser;
     private HttpVersionParser versionParser;
 
-    public HeadersParserImpl () {
-        httpParse = ParserState.REQUEST_START;
+    public HttpRequestParserImpl () {
+        requestState = RequestParserState.REQUEST_START;
         methodName = ByteBuffer.allocate(16);
         httpURI = ByteBuffer.allocate(256);
-        headersParser = new HttpHeadersParser();
+        headersParser = new HttpHeadersParserImpl();
         versionParser = new HttpVersionParserImpl((byte) CR);
     }
 
@@ -64,13 +67,13 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
 //            inputBuffer.mark();
             byte c = inputBuffer.get();
 
-            switch (httpParse) {
+            switch (requestState) {
                 case REQUEST_START:
                     if (ParseUtils.isAlphabetic(c)) {
-                        httpParse = ParserState.METHOD_READ;
+                        requestState = RequestParserState.METHOD_READ;
                         methodName.put(c);
                     } else {
-                        handleError(httpParse);
+                        handleError(requestState);
                     }
                     break;
 
@@ -78,38 +81,38 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
                     if (ParseUtils.isAlphabetic(c)) {
                         methodName.put(c);
                     } else if (c == SP && processMethod()) {
-                        httpParse = ParserState.URI_READ;
+                        requestState = RequestParserState.URI_READ;
                         output.put(methodName).put(c);
                     } else {
-                        handleError(httpParse);
+                        handleError(requestState);
                     }
                     break;
 
                 case URI_READ:
                     //parseURI();
                     if (c == SP) {
-                        httpParse = URIIsOk() ? ParserState.HTTP_VERSION : ParserState.ERROR;
+                        requestState = URIIsOk() ? RequestParserState.HTTP_VERSION : RequestParserState.ERROR;
                         httpURI.flip();
                         output.put(httpURI).put(c);
                     } else if (isURIComponent(c)) {
                         httpURI.put(c);
                     } else {
-                        handleError(httpParse);
+                        handleError(requestState);
                     }
                     break;
 
                 case HTTP_VERSION:
                     if (versionParser.parse(c, outputBuffer)) {
-                        httpParse = ParserState.CR_FIRST_LINE;
+                        requestState = RequestParserState.CR_FIRST_LINE;
                     }
                     break;
 
                 case CR_FIRST_LINE:
                     if (c == LF) {
-                        httpParse = ParserState.READ_HEADERS;
+                        requestState = RequestParserState.READ_HEADERS;
                         output.put(c);
                     } else {
-                        handleError(httpParse);
+                        handleError(requestState);
                     }
                     break;
 
@@ -119,7 +122,7 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
                     break;
 
                 default:
-                    handleError(httpParse);
+                    handleError(requestState);
                     return;
             }
 
@@ -148,20 +151,20 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
     }
 
     private boolean hasParseErrors() {
-        return httpParse == ParserState.ERROR || versionParser.hasError()
+        return requestState == RequestParserState.ERROR || versionParser.hasError()
             || headersParser.hasError();
 
     }
 
-    private void handleError(ParserState parserState) throws ParserFormatException {
-        parserState = ParserState.ERROR;
+    private void handleError(RequestParserState parserState) throws ParserFormatException {
+        parserState = RequestParserState.ERROR;
         throw new ParserFormatException("Error while parsing");
     }
 
     //test
 /*    @Override public String toString () {
-        return "HeadersParserImpl{" +
-            "httpParse=" + httpParse +
+        return "HttpRequestParserImpl{" +
+            "requestState=" + requestState +
             ", versionParse=" + versionParse +
             ", headersParse=" + headersParse +
             ", httpMajorVersion=" + httpMajorVersion +
@@ -191,7 +194,7 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
             String s1 = s.substring(0, i);
             String s2 = s.substring(i);
 
-            HeadersParserImpl parser = new HeadersParserImpl();
+            HttpRequestParserImpl parser = new HttpRequestParserImpl();
             ByteBuffer buf1 = ByteBuffer.wrap(s1.getBytes(StandardCharsets.US_ASCII));
             ByteBuffer buf2 = ByteBuffer.wrap(s2.getBytes(StandardCharsets.US_ASCII));
 
@@ -208,7 +211,7 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
 
         ByteBuffer input = ByteBuffer.wrap(s.getBytes(StandardCharsets.US_ASCII));
         ByteBuffer output = ByteBuffer.allocate(input.capacity());
-        new HeadersParserImpl().parse(input, output);
+        new HttpRequestParserImpl().parse(input, output);
 
         System.out.println(input);
         System.out.println(output);

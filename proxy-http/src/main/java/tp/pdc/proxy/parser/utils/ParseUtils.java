@@ -1,6 +1,6 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser.utils;
 
-import java.nio.ByteBuffer;
+import tp.pdc.proxy.parser.utils.AsciiConstants;
 
 //TODO: tests
 public class ParseUtils implements AsciiConstants {

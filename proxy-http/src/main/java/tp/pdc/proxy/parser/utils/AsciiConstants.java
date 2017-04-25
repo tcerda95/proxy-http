@@ -1,4 +1,4 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser.utils;
 
 
 public interface AsciiConstants {

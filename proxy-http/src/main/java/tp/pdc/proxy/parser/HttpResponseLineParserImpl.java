@@ -1,10 +1,13 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
+import tp.pdc.proxy.parser.utils.AsciiConstants;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
+import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
 
-public class ResponseLineParser implements AsciiConstants {
+public class HttpResponseLineParserImpl implements AsciiConstants {
 
     private HttpVersionParser versionParser;
     private int statusCode;
@@ -14,7 +17,7 @@ public class ResponseLineParser implements AsciiConstants {
         HTTP_VERSION, VERSION_END, SP_1, STATUS_CODE, SP_2, REASON_PHRASE, CR_END, READ_OK, ERROR,
     }
 
-    public ResponseLineParser () {
+    public HttpResponseLineParserImpl () {
         versionParser = new HttpVersionParserImpl((byte) SP); // TODO: interfaz de constantes
         statusCode = 0;
         state = ResponseLineState.HTTP_VERSION;
