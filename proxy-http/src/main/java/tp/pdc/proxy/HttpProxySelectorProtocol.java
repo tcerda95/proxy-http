@@ -8,6 +8,8 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tp.pdc.proxy.client.HttpClientProxyHandler;
+
 public class HttpProxySelectorProtocol {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
 	private int bufSize;
@@ -33,9 +35,12 @@ public class HttpProxySelectorProtocol {
 
 	public void handleConnect(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
+		HttpClientProxyHandler clientHandler = clientHandlerFromServerKey(key);
+		
 		try {
 			if (socketChannel.finishConnect()) {
 				key.interestOps(SelectionKey.OP_WRITE);
+				clientHandler.setConnectedState();
 			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to connect to server {}", e.getMessage());
@@ -43,8 +48,7 @@ public class HttpProxySelectorProtocol {
 			HttpHandler serverHandler = (HttpHandler) key.attachment();
 			SelectionKey clientKey = serverHandler.getConnectedPeerKey();
 			
-			serverHandler.getProcessedBuffer().put(HttpResponse.BAD_GATEWAY_502.getBytes());
-			clientKey.interestOps(SelectionKey.OP_WRITE);
+			clientHandler.setErrorState(HttpResponse.BAD_GATEWAY_502, clientKey);			
 		}
 	}
 
@@ -53,4 +57,9 @@ public class HttpProxySelectorProtocol {
 		handler.handleWrite(key);
 	}
 
+	private HttpClientProxyHandler clientHandlerFromServerKey(SelectionKey key) {
+		HttpHandler serverHandler = (HttpHandler) key.attachment();
+		SelectionKey clientKey = serverHandler.getConnectedPeerKey();
+		return (HttpClientProxyHandler) clientKey.attachment();
+	}
 }
