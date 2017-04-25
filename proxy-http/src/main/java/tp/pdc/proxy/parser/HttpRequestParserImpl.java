@@ -20,11 +20,11 @@ public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants 
 
 
     @Override public boolean hasHeaderValue (Header header) {
-        return headersParser.hasHeaderValue(header);
+        return headersParser.hasRelevantHeaderValue(header);
     }
 
     @Override public byte[] getHeaderValue (Header header) {
-        return headersParser.getRelevantHeader(header);
+        return headersParser.getRelevantHeaderValue(header);
     }
 
     @Override public boolean hasFinished () {
@@ -118,7 +118,7 @@ public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants 
 
                 case READ_HEADERS:
 //                    inputBuffer.reset();
-                    headersParser.parseHeaders(c,output);
+                    headersParser.parse(c,output);
                     break;
 
                 default:

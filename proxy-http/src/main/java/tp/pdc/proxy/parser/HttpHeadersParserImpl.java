@@ -2,6 +2,7 @@ package tp.pdc.proxy.parser;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import tp.pdc.proxy.parser.utils.AsciiConstants;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
@@ -9,7 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpHeadersParserImpl implements AsciiConstants {
+public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
 
     private enum HttpHeaderState {
         START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
@@ -52,14 +53,14 @@ public class HttpHeadersParserImpl implements AsciiConstants {
     }
 
 
-    public boolean parseHeaders(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException {
+    @Override public boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException {
         while(inputBuffer.hasRemaining())
-            if (parseHeaders(inputBuffer.get(), outputBuffer))
+            if (parse(inputBuffer.get(), outputBuffer))
                 return true;
         return false;
     }
 
-    public boolean parseHeaders(byte c, ByteBuffer outputBuffer) throws ParserFormatException {
+    @Override public boolean parse(byte c, ByteBuffer outputBuffer) throws ParserFormatException {
             switch (headerState) {
                 case START:
                     if (c == CR) {
@@ -169,23 +170,23 @@ public class HttpHeadersParserImpl implements AsciiConstants {
         return this.headerState;
     }
 
-    public boolean hasFinished(){
+    @Override public boolean hasFinished(){
         return this.headerState  == HttpHeaderState.END_OK;
     }
 
-    public byte[] getRelevantHeader(Header header){
+    @Override public byte[] getRelevantHeaderValue(Header header){
         return this.relevantHeaders.get(header);
     }
 
-    public boolean hasHeaderValue(Header header){
+    @Override public boolean hasRelevantHeaderValue(Header header){
         return this.relevantHeaders.containsKey(header);
     }
 
-    public boolean hasError(){
+    @Override public boolean hasError(){
         return headerState == HttpHeaderState.ERROR;
     }
 
-    public Map<Header, byte[]> getRelevantHeaders() {
+    @Override public Map<Header, byte[]> getRelevantHeaders() {
         return relevantHeaders;
     }
 }
