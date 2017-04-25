@@ -8,9 +8,9 @@ public class ParseUtils {
 
     private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit;
 
-    private static final char CR = (char) 13, LF = (char) 10, SP = (char) 32, HT = (char) 9;
+    private static final byte CR = (byte) 13, LF = (byte) 10, SP = (byte) 32, HT = (byte) 9;
 
-    private static final char[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
+    private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
         '"', '/', '[', ']', '?', '=', '{', '}', SP, HT};
 
 //    private static final String[] supportedMethods = {"GET", "POST", "HEAD"};
@@ -21,7 +21,7 @@ public class ParseUtils {
         isLWS = new boolean[US_ASCII_LENGTH]; isDigit = new boolean[US_ASCII_LENGTH];
         isAlphabetic = new boolean[US_ASCII_LENGTH];
 
-        for (char c = 0; c < US_ASCII_LENGTH; c++) {
+        for (byte c = 0; c < US_ASCII_LENGTH; c++) {
             isSeparator[c] = contains(separator, c);
             isToken[c] = (31 < c && c < 127 && !isSeparator[c]);
             isLWS[c] = (c == CR || c == LF || c == SP || c == HT);
@@ -30,8 +30,8 @@ public class ParseUtils {
         }
     }
 
-    private static boolean contains(char[] arr, char toFind) {
-        for (char c: arr) {
+    private static boolean contains(byte[] arr, byte toFind) {
+        for (byte c: arr) {
             if (c == toFind)
                 return true;
         }
@@ -47,19 +47,19 @@ public class ParseUtils {
 //        }
 //    }
 
-    public static boolean isHeaderNameChar (char c) {
+    public static boolean isHeaderNameChar (byte c) {
         return isToken[c];
     }
 
-    public static boolean isHeaderContentChar (char c) {
+    public static boolean isHeaderContentChar (byte c) {
         return isToken[c] || isLWS[c] || isSeparator[c];
     }
 
-    public static boolean isDigit (char c) {
+    public static boolean isDigit (byte c) {
         return isDigit[c];
     }
 
-    public static boolean isAlphabetic(char c) {
+    public static boolean isAlphabetic(byte c) {
         return isAlphabetic[c];
     }
 }

@@ -10,14 +10,14 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
 
-public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√≥n si hay error.
+public class HeadersParserImpl implements HeadersParser {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(HeadersParserImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HeadersParserImpl.class);
 
-    private static final char CR = (char) 13;
-    private static final char LF = (char) 10;
-    private static final char SP = (char) 32;
-    private static final char HT = (char) 9;
+    private static final byte CR = (byte) 13;
+    private static final byte LF = (byte) 10;
+    private static final byte SP = (byte) 32;
+    private static final byte HT = (byte) 9;
 
     @Override public boolean hasHeaderValue (Header header) {
         return relevantHeaders.containsKey(header);
@@ -72,6 +72,8 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
 
     private final Map<Header, byte[]> relevantHeaders;
 
+    private ByteBuffer output;
+
     public HeadersParserImpl () {
         httpParse = ParserState.REQUEST_START;
         versionParse = HttpVersionState.NOT_READ_YET;
@@ -87,15 +89,16 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
 
     // Receives buffer in read state
     public void parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) {
-
+        output = outputBuffer;
         while (inputBuffer.hasRemaining()) {
-            char c = (char) inputBuffer.get();
+            byte c = inputBuffer.get();
 
             switch (httpParse) {
                 case REQUEST_START:
                     if (ParseUtils.isAlphabetic(c)) {
                         httpParse = ParserState.METHOD_READ;
-                        methodName.put((byte) c);
+                        methodName.put(c);
+                        outputBuffer.put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -104,9 +107,10 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                 case METHOD_READ:
                     //parseMethod();
                     if (ParseUtils.isAlphabetic(c)) {
-                        methodName.put((byte) c);
-                    } else if (c == SP) {
-                        httpParse = processMethod() ? ParserState.URI_READ : ParserState.ERROR;
+                        methodName.put(c);
+                    } else if (c == SP && processMethod()) {
+                        httpParse = ParserState.URI_READ;
+                        outputBuffer.put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -116,9 +120,9 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                     //parseURI();
                     if (c == SP) {
                         httpParse = URIIsOk() ? ParserState.HTTP_VERSION : ParserState.ERROR;
-                        httpURI.put((byte) c);
+                        httpURI.put(c);
                     } else if (isURIComponent(c)) {
-                        httpURI.put((byte) c);
+                        httpURI.put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -129,7 +133,12 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                     break;
 
                 case CR_FIRST_LINE:
-                    httpParse = c == LF ? ParserState.READ_HEADERS : ParserState.ERROR;
+                    if (c == LF) {
+                        httpParse = ParserState.READ_HEADERS;
+                        outputBuffer.put(c);
+                    } else {
+                        httpParse = ParserState.ERROR;
+                    }
                     break;
 
                 case READ_HEADERS:
@@ -146,34 +155,36 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
         }
     }
 
-    private void parseHttpVersion(char c) {
+    private void parseHttpVersion(byte c) {
         switch (versionParse) {
             case NOT_READ_YET:
-                versionParse = c == 'H' ? HttpVersionState.H : HttpVersionState.ERROR;
+                expectByteAndOutput(c, (byte) 'H', HttpVersionState.H);
                 break;
 
             case H:
-                versionParse = c == 'T' ? HttpVersionState.T_1 : HttpVersionState.ERROR;
+                expectByteAndOutput(c, (byte) 'T', HttpVersionState.T_1);
                 break;
 
             case T_1:
-                versionParse = c == 'T' ? HttpVersionState.T_2 : HttpVersionState.ERROR;
+                expectByteAndOutput(c, (byte) 'T', HttpVersionState.T_2);
                 break;
 
             case T_2:
-                versionParse = c == 'P' ? HttpVersionState.P : HttpVersionState.ERROR;
+                expectByteAndOutput(c, (byte) 'P', HttpVersionState.P);
                 break;
 
             case P:
-                versionParse = c == '/' ? HttpVersionState.MAJOR_VERSION : HttpVersionState.ERROR;
+                expectByteAndOutput(c, (byte) '/', HttpVersionState.MAJOR_VERSION);
                 break;
 
             case MAJOR_VERSION:
                 if (ParseUtils.isDigit(c) && c != '0') {
                     httpMajorVersion *= 10;
                     httpMajorVersion += c - '0';
+                    output.put(c);
                 } else if (c == '.' && httpMajorVersion != 0) {
                     versionParse = HttpVersionState.MINOR_VERSION;
+                    output.put(c);
                 } else {
                     versionParse = HttpVersionState.ERROR;
                 }
@@ -183,9 +194,11 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                 if (ParseUtils.isDigit(c)) {
                     httpMinorVersion *= 10;
                     httpMinorVersion += c - '0';
+                    output.put(c);
                 } else if (c == CR) {
                     versionParse = HttpVersionState.READ_OK;
                     httpParse = ParserState.CR_FIRST_LINE;
+                    output.put(c);
                 } else {
                     versionParse = HttpVersionState.ERROR;
                 }
@@ -198,11 +211,32 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
         }
     }
 
-    private void parseHeaders(char c) {
+    private void expectByteAndOutput(byte read, byte expected, HttpVersionState next) {
+        if (read == expected) {
+            output.put(read);
+            versionParse = next;
+        } else {
+            versionParse = HttpVersionState.ERROR;
+        }
+    }
+
+    // TODO: repite c√≥digo
+    private void expectByteAndOutput(byte read, byte expected, HttpHeaderState next) {
+        if (read == expected) {
+            output.put(read);
+            headersParse = next;
+        } else {
+            headersParse = HttpHeaderState.ERROR;
+        }
+    }
+
+    private void parseHeaders(byte c) {
         switch (headersParse) {
             case START:
-                if (c == CR)
+                if (c == CR){
                     headersParse = HttpHeaderState.SECTION_END_CR;
+                    output.put(c);
+                }
                 else if (ParseUtils.isHeaderNameChar(c)) {
                     // Reset
                     headerName.clear();
@@ -222,6 +256,9 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                     int nameLen = headerName.remaining();
                     currentRelevantHeader = Header.getByBytes(headerName, nameLen);
 
+                    // if !unwantedHeader
+                    output.put(headerName).put(c);
+
                     if (currentRelevantHeader != null) {
                         relevantHeaders.put(currentRelevantHeader, new byte[0]);
                         headersParse = HttpHeaderState.RELEVANT_COLON;
@@ -236,7 +273,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                 break;
 
             case RELEVANT_COLON:
-                headersParse = c == SP ? HttpHeaderState.RELEVANT_SPACE : HttpHeaderState.ERROR;
+                expectByteAndOutput(c, SP, HttpHeaderState.RELEVANT_SPACE);
                 break;
 
             case RELEVANT_SPACE:
@@ -254,6 +291,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                     headerValue.flip();
                     byte[] headerAux = new byte[headerValue.remaining()];
                     headerValue.get(headerAux);
+                    output.put(headerAux).put(CR);
                     relevantHeaders.put(currentRelevantHeader, headerAux);
                 } else if (ParseUtils.isHeaderContentChar(c)) {
                     headerValue.put((byte) Character.toLowerCase(c));
@@ -261,26 +299,33 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                 break;
 
             case COLON:
-                headersParse = c == SP ? HttpHeaderState.SPACE : HttpHeaderState.ERROR;
+                expectByteAndOutput(c, SP, HttpHeaderState.SPACE);
                 break;
 
             case SPACE:
-                headersParse = ParseUtils.isHeaderContentChar(c) ? HttpHeaderState.CONTENT : HttpHeaderState.ERROR;
+                if (ParseUtils.isHeaderContentChar(c)) {
+                    headersParse = HttpHeaderState.CONTENT;
+                    output.put(c);
+                } else {
+                    headersParse = HttpHeaderState.ERROR;
+                }
                 break;
 
             case CONTENT:
-                if (c == CR)
+                if (c == CR) {
                     headersParse = HttpHeaderState.END_LINE_CR;
+                    output.put(c);
+                }
                 else if (!ParseUtils.isHeaderContentChar(c))
                     headersParse = HttpHeaderState.ERROR;
                 break;
 
             case END_LINE_CR:
-                headersParse = c == LF ? HttpHeaderState.START : HttpHeaderState.ERROR;
+                expectByteAndOutput(c, LF, HttpHeaderState.START);
                 break;
 
             case SECTION_END_CR:
-                headersParse = c == LF ? HttpHeaderState.END_OK : HttpHeaderState.ERROR;
+                expectByteAndOutput(c, LF, HttpHeaderState.END_OK);
                 break;
 
             default: // ERROR
@@ -289,10 +334,8 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
         }
     }
 
-    // TODO: Hacer bien estas cosas.
     private boolean processMethod () {
-        int strLen = methodName.position(); //TODO: hacer con bytes
-//        String str = new String(methodName.array(), 0, strLen, ProxyProperties.getInstance().getCharset());
+        int strLen = methodName.position();
         methodName.flip();
         method = Method.getByBytes(methodName, strLen);
         LOGGER.debug("METHOD: {}", method);
@@ -301,12 +344,12 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
 
     private boolean URIIsOk() {
         return true;
-//        httpURI.flip();
-//        LOGGER.debug("URI: {}", httpURI);
-//        return httpURI.toString().equals("/");
+        //        httpURI.flip();
+        //        LOGGER.debug("URI: {}", httpURI);
+        //        return httpURI.toString().equals("/");
     }
 
-    private boolean isURIComponent(final char c) {
+    private boolean isURIComponent(final byte c) {
         return c == '/';
     }
 
@@ -336,13 +379,13 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
 
     public static void main (String[] args) throws Exception {
         String s = "GET / HTTP/1.1" + CR + LF
-                    + "Host: google.com" + CR + LF
-                    + "User-Agent: Internet Explorer 2" + CR + LF
-                    + "Connection: Close" + CR + LF
-                    + "Transfer-encoding: Chunked" + CR + LF
-                    + "Connection-no: Close" + CR + LF
-                    + "Transfer-size: Chunked" + CR + LF
-                    + CR + LF;
+            + "Host: google.com" + CR + LF
+            + "User-Agent: Internet Explorer 2" + CR + LF
+            + "Connection: Close" + CR + LF
+            + "Transfer-encoding: Chunked" + CR + LF
+            + "Connection-no: Close" + CR + LF
+            + "Transfer-size: Chunked" + CR + LF
+            + CR + LF;
 
         for (int i = 0; i < 1/*s.length()*/; i++) {
             System.out.println("ITERACION: " + i);
@@ -360,7 +403,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
             System.out.println(parser.toString());
 
             for (Map.Entry<Header, byte[]> e: parser.relevantHeaders.entrySet()) {
-                System.out.println("KEY: " + new String(e. getKey().name()));
+                System.out.println("KEY: " + e. getKey().name());
                 System.out.println("VALUE: " + new String(e.getValue()));
             }
         }
