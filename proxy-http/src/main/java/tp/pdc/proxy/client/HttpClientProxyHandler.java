@@ -74,10 +74,28 @@ public class HttpClientProxyHandler extends HttpHandler {
 					manageError(HttpResponse.BAD_GATEWAY_502, key);
 				}
 			}
+						
+			if (state == ClientHandlerState.NOT_CONNECTED && headersParser.hasFinished() && !headersParser.hasHeaderValue(Header.HOST)) {
+				LOGGER.warn("Impossible to connect: host not found in request header");
+				manageError(HttpResponse.BAD_REQUEST_400, key);
+				return;
+			}
 			
-			if (headersParser.hasFinished() && headersParser.getMethod() != RequestMethod.POST && state == ClientHandlerState.CONNECTED || state == ClientHandlerState.CONNECTING)
+			if (headersParser.hasFinished() && headersParser.getMethod() == RequestMethod.POST) {
+
+			}
+			
+			if (headersParser.hasFinished() && headersParser.getMethod() != RequestMethod.POST 
+					&& state == ClientHandlerState.CONNECTED || state == ClientHandlerState.CONNECTING)
 				state = ClientHandlerState.REQUEST_PROCESSED;
-		}		
+			
+			
+		}
+		
+		if (state.shouldWrite() && processedBuffer.position() > 0) {
+			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+		}
+			
 	}
 
 
