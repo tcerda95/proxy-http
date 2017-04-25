@@ -1,32 +1,34 @@
 package tp.pdc.proxy.header;
 
-import java.util.HashSet;
-import java.util.Set;
-
+import java.nio.ByteBuffer;
 import tp.pdc.proxy.ProxyProperties;
 
 public enum Header {
-	HOST("Host"),
-	CONNECTION("Connection");
-	
-	private static final Set<byte[]> BYTES_SET = new HashSet<>();
-	
-	static {
-		for (Header header : values())
-			BYTES_SET.add(header.bytes);
+	HOST("host"), CONNECTION("connection"), CONTENT_LENGTH("content-length"),
+	TRANSFER_ENCODING("transfer-encoding");
+
+	private String headerName;
+	private byte[] headerBytes;
+
+	public static boolean isRelevantHeader(ByteBuffer bytes, int length) {
+		return getByBytes(bytes, length) != null;
 	}
-	
-	private final byte[] bytes;
-	
-	public static boolean isRelevantHeader(byte[] bytes) {
-		return BYTES_SET.contains(bytes);
+
+	public static Header getByBytes(ByteBuffer bytes, int length) {
+		for (Header header : values())
+			if (BytesUtils.equalsBytes(header.headerBytes, bytes, length))
+				return header;
+		return null;
 	}
 	
 	private Header(String header) {
-		bytes = header.getBytes(ProxyProperties.getInstance().getCharset());
+		headerName = header;
+		headerBytes = header.getBytes(ProxyProperties.getInstance().getCharset());
+	}
+
+	@Override
+	public String toString() {
+		return headerName;
 	}
 	
-	public byte[] getBytes() {
-		return bytes;
-	}
 }
