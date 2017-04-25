@@ -2,19 +2,14 @@ package tp.pdc.proxy.parser;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.parser.utils.AsciiConstants;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpHeadersParserImpl {
-
-    //TODO:Meter en algun lugar como constantes
-    private static final char CR = 13;
-    private static final char LF = 10;
-    private static final char SP = 32;
-
+public class HttpHeadersParserImpl implements AsciiConstants {
 
     private enum HttpHeaderState {
         START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
