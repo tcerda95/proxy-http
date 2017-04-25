@@ -8,32 +8,37 @@ import java.util.Set;
 import tp.pdc.proxy.ProxyProperties;
 
 public enum Header {
-	HOST("host"),
-	CONNECTION("connection");
+	HOST("host"), CONNECTION("connection"), CONTENT_LENGTH("content-length"),
+	TRANSFER_ENCODING("transfer-encoding");
 	
-	private static final Map<byte[], Header> BYTES_MAP = new HashMap<>();
+	private static final Set<String> RELEVANT_HEADERS = new HashSet<>();
 
 	static {
 		for (Header header : values())
-			BYTES_MAP.put(header.bytes, header);
+			RELEVANT_HEADERS.add(header.getHeaderName());
 
 	}
 	
-	private final byte[] bytes;
-	
-	public static boolean isRelevantHeader(byte[] bytes) {
-		return BYTES_MAP.containsKey(bytes);
+	private String headerName;
+
+	private String getHeaderName() {
+		return this.headerName;
 	}
 
-	public static Header getHeaderFromBytes(byte[] bytes) {
-		return BYTES_MAP.get(bytes);
+
+	public static boolean isRelevantHeader(String h) {
+		return RELEVANT_HEADERS.contains(h);
 	}
-	
+
 	private Header(String header) {
-		bytes = header.getBytes(ProxyProperties.getInstance().getCharset());
+		headerName = header;
 	}
-	
-	public byte[] getBytes() {
-		return bytes;
+
+	public static Header getByName(String name) {
+		for (Header header : values())
+			if (name.equals(header.headerName))
+				return header;
+		return null;
 	}
+
 }
