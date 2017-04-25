@@ -1,32 +1,33 @@
 package tp.pdc.proxy.header;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import tp.pdc.proxy.ProxyProperties;
 
 
 public enum Method {
     GET("GET"), POST("POST"), HEAD("HEAD");
 
-    private static final Map<byte[], Method> SUPPORTED_METHODS = new HashMap<>();
-
-    static {
-        for (Method method : values())
-            SUPPORTED_METHODS.put(method.methodName.getBytes(), method);
-    }
-
     private String methodName;
-
+    private byte[] methodBytes;
 
     public static boolean isRelevantHeader(ByteBuffer bytes, int length) {
         return getByBytes(bytes, length) != null;
     }
 
-    Method(String method) {
+    public static Method getByBytes(ByteBuffer bytes, int length) {
+    	for (Method method : values())
+    		if (BytesUtils.equalsBytes(method.methodBytes, bytes, length))
+    			return method;
+    	return null;
+    }
+    
+    private Method(String method) {
         methodName = method;
+        methodBytes = method.getBytes(ProxyProperties.getInstance().getCharset());
     }
 
-    public static Method getByBytes(ByteBuffer bytes, int length) {
-        return BytesUtils.getByBytes(SUPPORTED_METHODS.entrySet(), bytes, length);
+    @Override
+    public String toString() {
+    	return methodName;
     }
 }

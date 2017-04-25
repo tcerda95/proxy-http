@@ -1,36 +1,34 @@
 package tp.pdc.proxy.header;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import tp.pdc.proxy.ProxyProperties;
 
 public enum Header {
 	HOST("host"), CONNECTION("connection"), CONTENT_LENGTH("content-length"),
 	TRANSFER_ENCODING("transfer-encoding");
 
-	private static final Map<byte[], Header> RELEVANT_HEADERS = new HashMap<>();
-
-	static {
-		for (Header header : values())
-			RELEVANT_HEADERS.put(header.headerName.getBytes(), header);
-	}
-	
 	private String headerName;
+	private byte[] headerBytes;
 
 	public static boolean isRelevantHeader(ByteBuffer bytes, int length) {
 		return getByBytes(bytes, length) != null;
 	}
 
-	Header(String header) {
-		headerName = header;
-	}
-
 	public static Header getByBytes(ByteBuffer bytes, int length) {
-		return BytesUtils.getByBytes(RELEVANT_HEADERS.entrySet(), bytes, length);
+		for (Header header : values())
+			if (BytesUtils.equalsBytes(header.headerBytes, bytes, length))
+				return header;
+		return null;
+	}
+	
+	private Header(String header) {
+		headerName = header;
+		headerBytes = header.getBytes(ProxyProperties.getInstance().getCharset());
 	}
 
+	@Override
+	public String toString() {
+		return headerName;
+	}
+	
 }
