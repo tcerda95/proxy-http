@@ -5,18 +5,18 @@ import java.net.InetSocketAddress;
 import tp.pdc.proxy.ProxyProperties;
 
 public class HostParser {
+	public static final int DEFAULT_PORT = 80;
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
-	private static final int DEFAULT_PORT = 80;
 	
 	public InetSocketAddress parseAddress(byte[] hostBytes) {
 		int colonIndex;
 		int port;
 		String hostname;
-		
-		for (colonIndex = 0; hostBytes[colonIndex] != ':' && colonIndex < hostBytes.length; colonIndex++)
+	
+		for (colonIndex = 0; colonIndex < hostBytes.length && hostBytes[colonIndex] != ':'; colonIndex++)
 			;
 		
-		hostname = new String(hostBytes, 0, colonIndex-1, PROPERTIES.getCharset());
+		hostname = new String(hostBytes, 0, colonIndex, PROPERTIES.getCharset());
 		
 		if (colonIndex == hostBytes.length)
 			port = DEFAULT_PORT;
