@@ -1,5 +1,6 @@
 package tp.pdc.proxy.header;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -10,35 +11,44 @@ import tp.pdc.proxy.ProxyProperties;
 public enum Header {
 	HOST("host"), CONNECTION("connection"), CONTENT_LENGTH("content-length"),
 	TRANSFER_ENCODING("transfer-encoding");
-	
-	private static final Set<String> RELEVANT_HEADERS = new HashSet<>();
+
+	private static final Map<byte[], Header> RELEVANT_HEADERS = new HashMap<>();
 
 	static {
 		for (Header header : values())
-			RELEVANT_HEADERS.add(header.getHeaderName());
-
+			RELEVANT_HEADERS.put(header.headerName.getBytes(), header);
 	}
 	
 	private String headerName;
 
-	private String getHeaderName() {
-		return this.headerName;
+	public static boolean isRelevantHeader(ByteBuffer bytes, int length) {
+		return getByBytes(bytes, length) != null;
 	}
 
-
-	public static boolean isRelevantHeader(String h) {
-		return RELEVANT_HEADERS.contains(h);
-	}
-
-	private Header(String header) {
+	Header(String header) {
 		headerName = header;
 	}
 
-	public static Header getByName(String name) {
-		for (Header header : values())
-			if (name.equals(header.headerName))
-				return header;
+	public static Header getByBytes(ByteBuffer bytes, int length) {
+		boolean equals;
+
+		for (Map.Entry<byte[], Header> e: RELEVANT_HEADERS.entrySet()) {
+			equals = true;
+			if (length == e.getKey().length)
+				continue;
+
+			bytes.mark();
+			for (int i = 0; i < length && equals; i++) {
+				if (bytes.get() != e.getKey()[i]) {
+					equals = false;
+				}
+			}
+			bytes.reset();
+
+			if (equals)
+				return e.getValue();
+		}
+
 		return null;
 	}
-
 }

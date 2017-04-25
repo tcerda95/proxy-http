@@ -1,5 +1,7 @@
 package tp.pdc.proxy;
 
+import java.nio.ByteBuffer;
+
 //TODO: tests
 public class ParseUtils {
     private static final int US_ASCII_LENGTH = 128;
@@ -10,7 +12,9 @@ public class ParseUtils {
 
     private static final char[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
         '"', '/', '[', ']', '?', '=', '{', '}', SP, HT};
-    
+
+//    private static final String[] supportedMethods = {"GET", "POST", "HEAD"};
+
     // Cargo tablas estáticas para hacer los chequeos más rápido.
     static {
         isToken = new boolean[US_ASCII_LENGTH]; isSeparator = new boolean[US_ASCII_LENGTH];
@@ -33,6 +37,15 @@ public class ParseUtils {
         }
         return false;
     }
+
+//    public static boolean isValidMethod(ByteBuffer bytes, int length) {
+//        for (byte[] m: methods) {
+//            for (int i = 0; i < length; i++) {
+//                if (bytes.get() != m[i])
+//                    return false;
+//            }
+//        }
+//    }
 
     public static boolean isHeaderNameChar (char c) {
         return isToken[c];

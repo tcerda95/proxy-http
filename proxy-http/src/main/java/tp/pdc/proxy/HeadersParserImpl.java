@@ -65,7 +65,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
     private final ByteBuffer methodName;
     private final ByteBuffer httpURI;
 
-    private CharBuffer headerName;
+    private ByteBuffer headerName;
     private ByteBuffer headerValue;
     private Header currentRelevantHeader;
 
@@ -80,7 +80,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
         methodName = ByteBuffer.allocate(16);
         httpURI = ByteBuffer.allocate(256);
 
-        headerName = CharBuffer.allocate(128); //TODO: capacity
+        headerName = ByteBuffer.allocate(128); //TODO: capacity
         headerValue = ByteBuffer.allocate(128);
     }
 
@@ -203,7 +203,12 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                 if (c == CR)
                     headersParse = HttpHeaderState.SECTION_END_CR;
                 else if (ParseUtils.isHeaderNameChar(c)) {
-                    headerName.put(Character.toLowerCase(c));
+                    // Reset
+                    headerName.clear();
+                    headerValue.clear();
+                    currentRelevantHeader = null;
+
+                    headerName.put((byte) Character.toLowerCase(c));
                     headersParse = HttpHeaderState.NAME;
                 }
                 else
@@ -212,16 +217,18 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
 
             case NAME:
                 if (c == ':') {
-                    String name = headerName.flip().toString();
-                    if (Header.isRelevantHeader(name)) {
-                        currentRelevantHeader = Header.getByName(name); //TODO FEISIMO
+                    headerName.flip();
+                    int nameLen = headerName.remaining();
+                    currentRelevantHeader = Header.getByBytes(headerName, nameLen);
+
+                    if (currentRelevantHeader != null) {
                         relevantHeaders.put(currentRelevantHeader, new byte[0]);
                         headersParse = HttpHeaderState.RELEVANT_COLON;
                     } else {
                         headersParse = HttpHeaderState.COLON;
                     }
                 } else if (ParseUtils.isHeaderNameChar(c)) {
-                    headerName.put(Character.toLowerCase(c));
+                    headerName.put((byte) Character.toLowerCase(c));
                 } else {
                     headersParse = HttpHeaderState.ERROR;
                 }
@@ -247,11 +254,6 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                     byte[] headerAux = new byte[headerValue.remaining()];
                     headerValue.get(headerAux);
                     relevantHeaders.put(currentRelevantHeader, headerAux);
-
-                    // Reset
-                    headerName.clear();
-                    headerValue.clear();
-                    currentRelevantHeader = null;
                 } else if (ParseUtils.isHeaderContentChar(c)) {
                     headerValue.put((byte) Character.toLowerCase(c));
                 }
@@ -312,18 +314,27 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
     }
 
     //test
+
+
     @Override public String toString () {
-        return "HeadersParser{" +
+        return "HeadersParserImpl{" +
             "httpParse=" + httpParse +
             ", versionParse=" + versionParse +
             ", headersParse=" + headersParse +
             ", httpMajorVersion=" + httpMajorVersion +
             ", httpMinorVersion=" + httpMinorVersion +
+            ", methodName=" + methodName +
+            ", httpURI=" + httpURI +
+            ", headerName=" + headerName +
+            ", headerValue=" + headerValue +
+            ", currentRelevantHeader=" + currentRelevantHeader +
+            ", relevantHeaders=" + relevantHeaders +
             '}';
     }
 
     public static void main (String[] args) throws Exception {
-        String s = "GET / HTTP/1.1" + CR + LF + "Host: google.com" + CR + LF
+        String s = "GET / HTTP/1.1" + CR + LF
+                    + "Host: google.com" + CR + LF
                     + "User-Agent: Internet Explorer 2" + CR + LF
                     + "Connection: Close" + CR + LF
                     + "Transfer-encoding: Chunked" + CR + LF
@@ -331,7 +342,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                     + "Transfer-size: Chunked" + CR + LF
                     + CR + LF;
 
-        for (int i = 0; i < s.length(); i++) {
+        for (int i = 0; i < 1/*s.length()*/; i++) {
             System.out.println("ITERACION: " + i);
 
             String s1 = s.substring(0, i);
