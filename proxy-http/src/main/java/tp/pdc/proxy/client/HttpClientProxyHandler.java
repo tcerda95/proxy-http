@@ -10,8 +10,6 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tp.pdc.proxy.HeadersParser;
-import tp.pdc.proxy.HeadersParserImpl;
 import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.Parser;
@@ -19,6 +17,8 @@ import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.parser.HttpRequestParserImpl;
+import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.server.HttpServerProxyHandler;
 
 public class HttpClientProxyHandler extends HttpHandler {
@@ -27,13 +27,13 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private static final HostParser HOST_PARSER = new HostParser();
 	
 	private ClientHandlerState state;
-	private HeadersParser headersParser;
+	private HttpRequestParser headersParser;
 	private Parser bodyParser;
 	
 	public HttpClientProxyHandler(int bufSize) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
 		state = ClientHandlerState.NOT_CONNECTED;
-		headersParser = new HeadersParserImpl();
+		headersParser = new HttpRequestParserImpl();
 	}
 	
 	public void setConnectedState() {

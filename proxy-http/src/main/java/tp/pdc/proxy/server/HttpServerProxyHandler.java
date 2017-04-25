@@ -8,7 +8,6 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tp.pdc.proxy.HeadersParser;
 import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpProxySelectorProtocol;
 import tp.pdc.proxy.HttpResponse;
@@ -16,11 +15,11 @@ import tp.pdc.proxy.Parser;
 import tp.pdc.proxy.client.ClientHandlerState;
 import tp.pdc.proxy.client.HttpClientProxyHandler;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
 public class HttpServerProxyHandler extends HttpHandler {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
-	private HeadersParser headersParser;
+	private HttpRequestParser headersParser;
 	private Parser bodyParser;
 	
 	public HttpServerProxyHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer) {
