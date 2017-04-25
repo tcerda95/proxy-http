@@ -4,9 +4,6 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by Bianchi on 25/4/17.
- */
 public class BytesUtils {
 
     public static <T> T getByBytes(Set<Map.Entry<byte[],T>> set, ByteBuffer bytes, int length) {

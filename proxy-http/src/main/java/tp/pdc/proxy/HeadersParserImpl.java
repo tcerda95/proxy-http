@@ -98,7 +98,6 @@ public class HeadersParserImpl implements HeadersParser {
                     if (ParseUtils.isAlphabetic(c)) {
                         httpParse = ParserState.METHOD_READ;
                         methodName.put(c);
-                        output.put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -110,7 +109,7 @@ public class HeadersParserImpl implements HeadersParser {
                         methodName.put(c);
                     } else if (c == SP && processMethod()) {
                         httpParse = ParserState.URI_READ;
-                        output.put(c);
+                        output.put(methodName).put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -120,7 +119,8 @@ public class HeadersParserImpl implements HeadersParser {
                     //parseURI();
                     if (c == SP) {
                         httpParse = URIIsOk() ? ParserState.HTTP_VERSION : ParserState.ERROR;
-                        httpURI.put(c);
+                        httpURI.flip();
+                        output.put(httpURI).put(c);
                     } else if (isURIComponent(c)) {
                         httpURI.put(c);
                     } else {
@@ -315,9 +315,11 @@ public class HeadersParserImpl implements HeadersParser {
                 if (c == CR) {
                     headersParse = HttpHeaderState.END_LINE_CR;
                     output.put(c);
-                }
-                else if (!ParseUtils.isHeaderContentChar(c))
+                } else if (ParseUtils.isHeaderContentChar(c)) {
+                    output.put(c);
+                } else {
                     headersParse = HttpHeaderState.ERROR;
+                }
                 break;
 
             case END_LINE_CR:
@@ -406,7 +408,11 @@ public class HeadersParserImpl implements HeadersParser {
             }
         }
 
+        ByteBuffer input = ByteBuffer.wrap(s.getBytes(StandardCharsets.US_ASCII));
+        ByteBuffer output = ByteBuffer.allocate(input.capacity());
+        new HeadersParserImpl().parse(input, output);
 
-
+        System.out.println(input);
+        System.out.println(output);
     }
 }
