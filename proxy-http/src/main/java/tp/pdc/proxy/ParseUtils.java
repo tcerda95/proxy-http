@@ -21,8 +21,8 @@ public class ParseUtils {
         isLWS = new boolean[US_ASCII_LENGTH]; isDigit = new boolean[US_ASCII_LENGTH];
         isAlphabetic = new boolean[US_ASCII_LENGTH];
 
-        for (byte c = 0; c < US_ASCII_LENGTH; c++) {
-            isSeparator[c] = contains(separator, c);
+        for (int c = 0; c < US_ASCII_LENGTH; c++) {
+            isSeparator[c] = contains(separator, (byte) c);
             isToken[c] = (31 < c && c < 127 && !isSeparator[c]);
             isLWS[c] = (c == CR || c == LF || c == SP || c == HT);
             isDigit[c] = ('0' <= c && c <= '9');

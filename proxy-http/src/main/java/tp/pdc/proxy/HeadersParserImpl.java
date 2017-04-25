@@ -14,10 +14,10 @@ public class HeadersParserImpl implements HeadersParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HeadersParserImpl.class);
 
-    private static final byte CR = (byte) 13;
-    private static final byte LF = (byte) 10;
-    private static final byte SP = (byte) 32;
-    private static final byte HT = (byte) 9;
+    private static final char CR = 13;
+    private static final char LF = 10;
+    private static final char SP = 32;
+    private static final char HT = 9;
 
     @Override public boolean hasHeaderValue (Header header) {
         return relevantHeaders.containsKey(header);
@@ -98,7 +98,7 @@ public class HeadersParserImpl implements HeadersParser {
                     if (ParseUtils.isAlphabetic(c)) {
                         httpParse = ParserState.METHOD_READ;
                         methodName.put(c);
-                        outputBuffer.put(c);
+                        output.put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -110,7 +110,7 @@ public class HeadersParserImpl implements HeadersParser {
                         methodName.put(c);
                     } else if (c == SP && processMethod()) {
                         httpParse = ParserState.URI_READ;
-                        outputBuffer.put(c);
+                        output.put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -135,7 +135,7 @@ public class HeadersParserImpl implements HeadersParser {
                 case CR_FIRST_LINE:
                     if (c == LF) {
                         httpParse = ParserState.READ_HEADERS;
-                        outputBuffer.put(c);
+                        output.put(c);
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -178,11 +178,11 @@ public class HeadersParserImpl implements HeadersParser {
                 break;
 
             case MAJOR_VERSION:
-                if (ParseUtils.isDigit(c) && c != '0') {
+                if (ParseUtils.isDigit(c) && c != (byte) '0') {
                     httpMajorVersion *= 10;
-                    httpMajorVersion += c - '0';
+                    httpMajorVersion += c - (byte) '0';
                     output.put(c);
-                } else if (c == '.' && httpMajorVersion != 0) {
+                } else if (c == (byte) '.' && httpMajorVersion != 0) {
                     versionParse = HttpVersionState.MINOR_VERSION;
                     output.put(c);
                 } else {
@@ -193,7 +193,7 @@ public class HeadersParserImpl implements HeadersParser {
             case MINOR_VERSION:
                 if (ParseUtils.isDigit(c)) {
                     httpMinorVersion *= 10;
-                    httpMinorVersion += c - '0';
+                    httpMinorVersion += c - (byte) '0';
                     output.put(c);
                 } else if (c == CR) {
                     versionParse = HttpVersionState.READ_OK;
@@ -273,7 +273,7 @@ public class HeadersParserImpl implements HeadersParser {
                 break;
 
             case RELEVANT_COLON:
-                expectByteAndOutput(c, SP, HttpHeaderState.RELEVANT_SPACE);
+                expectByteAndOutput(c, (byte) SP, HttpHeaderState.RELEVANT_SPACE);
                 break;
 
             case RELEVANT_SPACE:
@@ -291,7 +291,7 @@ public class HeadersParserImpl implements HeadersParser {
                     headerValue.flip();
                     byte[] headerAux = new byte[headerValue.remaining()];
                     headerValue.get(headerAux);
-                    output.put(headerAux).put(CR);
+                    output.put(headerAux).put((byte) CR);
                     relevantHeaders.put(currentRelevantHeader, headerAux);
                 } else if (ParseUtils.isHeaderContentChar(c)) {
                     headerValue.put((byte) Character.toLowerCase(c));
@@ -299,7 +299,7 @@ public class HeadersParserImpl implements HeadersParser {
                 break;
 
             case COLON:
-                expectByteAndOutput(c, SP, HttpHeaderState.SPACE);
+                expectByteAndOutput(c, (byte) SP, HttpHeaderState.SPACE);
                 break;
 
             case SPACE:
@@ -321,11 +321,11 @@ public class HeadersParserImpl implements HeadersParser {
                 break;
 
             case END_LINE_CR:
-                expectByteAndOutput(c, LF, HttpHeaderState.START);
+                expectByteAndOutput(c, (byte) LF, HttpHeaderState.START);
                 break;
 
             case SECTION_END_CR:
-                expectByteAndOutput(c, LF, HttpHeaderState.END_OK);
+                expectByteAndOutput(c, (byte) LF, HttpHeaderState.END_OK);
                 break;
 
             default: // ERROR
@@ -359,8 +359,6 @@ public class HeadersParserImpl implements HeadersParser {
     }
 
     //test
-
-
     @Override public String toString () {
         return "HeadersParserImpl{" +
             "httpParse=" + httpParse +
@@ -397,8 +395,8 @@ public class HeadersParserImpl implements HeadersParser {
             ByteBuffer buf1 = ByteBuffer.wrap(s1.getBytes(StandardCharsets.US_ASCII));
             ByteBuffer buf2 = ByteBuffer.wrap(s2.getBytes(StandardCharsets.US_ASCII));
 
-            parser.parse(buf1, null);
-            parser.parse(buf2, null);
+            parser.parse(buf1, ByteBuffer.allocate(4096));
+            parser.parse(buf2, ByteBuffer.allocate(4096));
 
             System.out.println(parser.toString());
 
@@ -407,6 +405,8 @@ public class HeadersParserImpl implements HeadersParser {
                 System.out.println("VALUE: " + new String(e.getValue()));
             }
         }
+
+
 
     }
 }
