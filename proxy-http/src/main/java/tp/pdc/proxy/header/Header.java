@@ -34,7 +34,7 @@ public enum Header {
 
 		for (Map.Entry<byte[], Header> e: RELEVANT_HEADERS.entrySet()) {
 			equals = true;
-			if (length == e.getKey().length)
+			if (length != e.getKey().length)
 				continue;
 
 			bytes.mark();
