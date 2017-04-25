@@ -38,14 +38,7 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
         ERROR,
     }
 
-    private enum HttpVersionState {
-        NOT_READ_YET, H, T_1, T_2, P, MAJOR_VERSION, MINOR_VERSION, READ_OK, ERROR,
-    }
-
     private ParserState httpParse;
-    private HttpVersionState versionParse;
-    private int httpMajorVersion;
-    private int httpMinorVersion;
     private Method method;
 
     private final ByteBuffer methodName;
@@ -54,20 +47,21 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
     private ByteBuffer output;
 
     private HttpHeadersParser headersParser;
+    private HttpVersionParser versionParser;
 
     public HeadersParserImpl () {
         httpParse = ParserState.REQUEST_START;
-        versionParse = HttpVersionState.NOT_READ_YET;
         methodName = ByteBuffer.allocate(16);
         httpURI = ByteBuffer.allocate(256);
         headersParser = new HttpHeadersParser();
-
+        versionParser = new HttpVersionParserImpl((byte) CR);
     }
 
     // Receives buffer in read state
     public void parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) throws ParserFormatException {
         output = outputBuffer;
         while (inputBuffer.hasRemaining()) {
+//            inputBuffer.mark();
             byte c = inputBuffer.get();
 
             switch (httpParse) {
@@ -81,7 +75,6 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
                     break;
 
                 case METHOD_READ:
-                    //parseMethod();
                     if (ParseUtils.isAlphabetic(c)) {
                         methodName.put(c);
                     } else if (c == SP && processMethod()) {
@@ -106,7 +99,9 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
                     break;
 
                 case HTTP_VERSION:
-                    parseHttpVersion(c);
+                    if (versionParser.parse(c, outputBuffer)) {
+                        httpParse = ParserState.CR_FIRST_LINE;
+                    }
                     break;
 
                 case CR_FIRST_LINE:
@@ -119,6 +114,7 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
                     break;
 
                 case READ_HEADERS:
+//                    inputBuffer.reset();
                     headersParser.parseHeaders(c,output);
                     break;
 
@@ -131,72 +127,6 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
                 throw new IllegalStateException(); // TODO: Custom Exception
         }
     }
-
-    private void parseHttpVersion(byte c) throws ParserFormatException {
-        switch (versionParse) {
-            case NOT_READ_YET:
-                expectByteAndOutput(c, (byte) 'H', HttpVersionState.H);
-                break;
-
-            case H:
-                expectByteAndOutput(c, (byte) 'T', HttpVersionState.T_1);
-                break;
-
-            case T_1:
-                expectByteAndOutput(c, (byte) 'T', HttpVersionState.T_2);
-                break;
-
-            case T_2:
-                expectByteAndOutput(c, (byte) 'P', HttpVersionState.P);
-                break;
-
-            case P:
-                expectByteAndOutput(c, (byte) '/', HttpVersionState.MAJOR_VERSION);
-                break;
-
-            case MAJOR_VERSION:
-                if (ParseUtils.isDigit(c) && c != (byte) '0') {
-                    httpMajorVersion *= 10;
-                    httpMajorVersion += c - (byte) '0';
-                    output.put(c);
-                } else if (c == (byte) '.' && httpMajorVersion != 0) {
-                    versionParse = HttpVersionState.MINOR_VERSION;
-                    output.put(c);
-                } else {
-                    handleError(versionParse);
-                }
-                break;
-
-            case MINOR_VERSION:
-                if (ParseUtils.isDigit(c)) {
-                    httpMinorVersion *= 10;
-                    httpMinorVersion += c - (byte) '0';
-                    output.put(c);
-                } else if (c == CR) {
-                    versionParse = HttpVersionState.READ_OK;
-                    httpParse = ParserState.CR_FIRST_LINE;
-                    output.put(c);
-                } else {
-                    handleError(versionParse);
-                }
-                break;
-
-            case READ_OK:
-                // No debería recibir nada más
-                handleError(versionParse);
-                break;
-        }
-    }
-
-    private void expectByteAndOutput(byte read, byte expected, HttpVersionState next) throws ParserFormatException {
-        if (read == expected) {
-            output.put(read);
-            versionParse = next;
-        } else {
-            handleError(versionParse);
-        }
-    }
-
 
     private boolean processMethod () {
         int strLen = methodName.position();
@@ -218,15 +148,9 @@ public class HeadersParserImpl implements HeadersParser, AsciiConstants {
     }
 
     private boolean hasParseErrors() {
-        return httpParse == ParserState.ERROR || versionParse == HttpVersionState.ERROR
+        return httpParse == ParserState.ERROR || versionParser.hasError()
             || headersParser.hasError();
 
-    }
-
-
-    private void handleError(HttpVersionState versionState) throws ParserFormatException {
-        versionState = HttpVersionState.ERROR;
-        throw new ParserFormatException("Error while parsing version");
     }
 
     private void handleError(ParserState parserState) throws ParserFormatException {

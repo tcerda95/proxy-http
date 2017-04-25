@@ -57,14 +57,13 @@ public class HttpHeadersParser {
 
 
     public boolean parseHeaders(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException {
-        boolean finished = false;
         while(inputBuffer.hasRemaining())
-            finished = parseHeaders(inputBuffer.get(),outputBuffer);
-        return finished;
+            if (parseHeaders(inputBuffer.get(), outputBuffer))
+                return true;
+        return false;
     }
 
     public boolean parseHeaders(byte c, ByteBuffer outputBuffer) throws ParserFormatException {
-
             switch (headerState) {
                 case START:
                     if (c == CR) {
