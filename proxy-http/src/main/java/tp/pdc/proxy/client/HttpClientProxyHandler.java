@@ -1,7 +1,6 @@
 package tp.pdc.proxy.client;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -12,13 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.HeadersParser;
+import tp.pdc.proxy.HeadersParserImpl;
 import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpResponse;
-import tp.pdc.proxy.HttpServerProxyHandler;
 import tp.pdc.proxy.Parser;
 import tp.pdc.proxy.ProxyProperties;
-import tp.pdc.proxy.RequestMethod;
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.server.HttpServerProxyHandler;
 
 public class HttpClientProxyHandler extends HttpHandler {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
@@ -32,6 +32,31 @@ public class HttpClientProxyHandler extends HttpHandler {
 	public HttpClientProxyHandler(int bufSize) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
 		state = ClientHandlerState.NOT_CONNECTED;
+		headersParser = new HeadersParserImpl();
+	}
+	
+	public void setConnectedState() {
+		if (this.state == ClientHandlerState.CONNECTING)
+			this.state = ClientHandlerState.CONNECTED;
+		else if (this.state == ClientHandlerState.REQUEST_PROCESSED_CONNECTING)
+			this.state = ClientHandlerState.REQUEST_PROCESSED;
+		else {
+			LOGGER.error("Invalid client state");
+			throw new IllegalStateException("State must be " + ClientHandlerState.CONNECTING + " or " + ClientHandlerState.REQUEST_PROCESSED_CONNECTING);
+		}
+	}
+	
+	public ClientHandlerState getState() {
+		return state;
+	}
+	
+	public void setRequestSentState() {
+		if (state == ClientHandlerState.REQUEST_PROCESSED)
+			state = ClientHandlerState.REQUEST_SENT;
+		else {
+			LOGGER.error("Invalid client state");
+			throw new IllegalStateException("State must be " + ClientHandlerState.REQUEST_PROCESSED);
+		}
 	}
 	
 	@Override
@@ -54,72 +79,98 @@ public class HttpClientProxyHandler extends HttpHandler {
 		
 		if (headersParser.hasFinished()) {
 			contentParser.parse(inputBuffer, processedBuffer);
+			
+			if (contentParser.hasFinished()) {
+				state = ClientHandlerState.REQUEST_PROCESSED;
+				key.interestOps(0);
+			}
 		}
 		else {
 			headersParser.parse(inputBuffer, processedBuffer);
 			
-			if (state == ClientHandlerState.NOT_CONNECTED && headersParser.hasHeaderValue(Header.HOST)) {
-				byte[] hostBytes = headersParser.getHeaderValue(Header.HOST);
-				
-				try {
-					tryConnect(hostBytes, key);
-				} catch (NumberFormatException e) {
-					LOGGER.warn("Failed to parse port {}", e.getMessage());
-					manageError(HttpResponse.BAD_REQUEST_400, key);
-				} catch (IllegalArgumentException e) {
-					LOGGER.warn("{}", e.getMessage());
-					manageError(HttpResponse.BAD_REQUEST_400, key);
-				} catch (IOException e) {
-					LOGGER.warn("Failed to connect to server: {}", e.getMessage());
-					manageError(HttpResponse.BAD_GATEWAY_502, key);
-				}
-			}
-						
-			if (state == ClientHandlerState.NOT_CONNECTED && headersParser.hasFinished() && !headersParser.hasHeaderValue(Header.HOST)) {
-				LOGGER.warn("Impossible to connect: host not found in request header");
-				manageError(HttpResponse.BAD_REQUEST_400, key);
-				return;
+			if (state == ClientHandlerState.NOT_CONNECTED)
+				manageNotConnected(key);
+			
+			if (state != ClientHandlerState.ERROR && headersParser.hasFinished() && headersParser.hasMethod(Method.POST)) {
+				// TODO: instanciar content parser
 			}
 			
-			if (headersParser.hasFinished() && headersParser.getMethod() == RequestMethod.POST) {
-
+			if (state == ClientHandlerState.CONNECTING && headersParser.hasFinished() && !headersParser.hasMethod(Method.POST)) {
+				state = ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
+				key.interestOps(0);
 			}
 			
-			if (headersParser.hasFinished() && headersParser.getMethod() != RequestMethod.POST 
-					&& state == ClientHandlerState.CONNECTED || state == ClientHandlerState.CONNECTING)
+			if (state == ClientHandlerState.CONNECTED && headersParser.hasFinished() && !headersParser.hasMethod(Method.POST)) {
 				state = ClientHandlerState.REQUEST_PROCESSED;
-			
-			
+				key.interestOps(0);
+			}
 		}
 		
-		if (state.shouldWrite() && processedBuffer.position() > 0) {
+		if (state.shouldWrite()) {
 			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+			if (!processedBuffer.hasRemaining()) {
+				LOGGER.debug("Processed buffer full");
+				
+				key.interestOps(0);				
+			}
 		}
-			
 	}
-
-
+	
 	@Override
 	protected void processWrite(ByteBuffer inputBuffer, SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
+		
 		try {
 			socketChannel.write(inputBuffer);
+			
 			if (!inputBuffer.hasRemaining() && state == ClientHandlerState.ERROR)
 				socketChannel.close();
-			if (!inputBuffer.hasRemaining() && state == ClientHandlerState.REQUEST_PROCESSED) {
-				state = ClientHandlerState.REQUEST_SENT;
-				key.interestOps(SelectionKey.OP_WRITE);
-			}
 		} catch (IOException e) {
 			e.printStackTrace();
 			// No se le pudo responder al cliente
 		}
 	}
 	
-	private void manageError(HttpResponse errorResponse, SelectionKey key) {
+	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {
 		state = ClientHandlerState.ERROR;
 		this.getWriteBuffer().put(errorResponse.getBytes());
 		key.interestOps(SelectionKey.OP_WRITE);
+	}
+	
+	private void manageNotConnected(SelectionKey key) {
+		ByteBuffer processedBuffer = this.getProcessedBuffer();
+		
+		if (headersParser.hasHeaderValue(Header.HOST)) {
+			byte[] hostBytes = headersParser.getHeaderValue(Header.HOST);
+			
+			try {
+				tryConnect(hostBytes, key);
+			} catch (NumberFormatException e) {
+				LOGGER.warn("Failed to parse port {}", e.getMessage());
+				setErrorState(HttpResponse.BAD_REQUEST_400, key);
+				return;
+			} catch (IllegalArgumentException e) {
+				LOGGER.warn("{}", e.getMessage());
+				setErrorState(HttpResponse.BAD_REQUEST_400, key);
+				return;
+			} catch (IOException e) {
+				LOGGER.warn("Failed to connect to server: {}", e.getMessage());
+				setErrorState(HttpResponse.BAD_GATEWAY_502, key);
+				return;
+			}
+		}
+					
+		if (!processedBuffer.hasRemaining()) {
+			LOGGER.warn("Buffer full and connection not established with server");
+			setErrorState(HttpResponse.BAD_REQUEST_400, key);
+			return;
+		}
+		
+		if (headersParser.hasFinished() && !headersParser.hasHeaderValue(Header.HOST)) {
+			LOGGER.warn("Impossible to connect: host not found in request header");
+			setErrorState(HttpResponse.BAD_REQUEST_400, key);
+			return;
+		}
 	}
 
 	private void tryConnect(byte[] hostBytes, SelectionKey key) throws IOException {

@@ -415,4 +415,9 @@ public class HeadersParserImpl implements HeadersParser {
         System.out.println(input);
         System.out.println(output);
     }
+
+	@Override
+	public boolean hasMethod(Method method) {
+		return this.method == method;
+	}
 }
