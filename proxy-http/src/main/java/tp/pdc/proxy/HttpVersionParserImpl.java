@@ -7,16 +7,20 @@ import java.nio.ByteBuffer;
 public class HttpVersionParserImpl implements HttpVersionParser {
 
     private int minorVersion, majorVersion;
-
+    private byte endByte;
     private HttpVersionState state;
 
     private enum HttpVersionState {
         NOT_READ_YET, H, T_1, T_2, P, MAJOR_VERSION, MINOR_VERSION, READ_OK, ERROR,
     }
 
-    public HttpVersionParserImpl () {
+    public HttpVersionParserImpl (byte endByte) {
         majorVersion = minorVersion = -1;
         state = HttpVersionState.NOT_READ_YET;
+
+        if (endByte < 0)
+            throw new IllegalArgumentException("Not a valid us-ascii character");
+        this.endByte = endByte;
     }
 
     @Override public boolean hasError () {
@@ -97,7 +101,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
                     minorVersion *= 10;
                     minorVersion += b - (byte) '0';
                     outputBuffer.put(b);
-                } else if (b == '\r') { //TODO: interfaz de constantes
+                } else if (b == endByte) { //TODO: interfaz de constantes
                     state = HttpVersionState.READ_OK;
 //                    httpParse = ParserState.CR_FIRST_LINE; TODO: el parser exterior pregunta si terminó para cambiar de estado
                     outputBuffer.put(b);

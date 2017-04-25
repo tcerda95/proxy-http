@@ -11,14 +11,10 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
 
-public class HeadersParserImpl implements HeadersParser {
+public class HeadersParserImpl implements HeadersParser, AsciiConstants {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HeadersParserImpl.class);
 
-    private static final char CR = 13;
-    private static final char LF = 10;
-    private static final char SP = 32;
-    private static final char HT = 9;
 
     @Override public boolean hasHeaderValue (Header header) {
         return relevantHeaders.containsKey(header);
