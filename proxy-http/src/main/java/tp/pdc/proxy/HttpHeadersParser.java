@@ -7,13 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpHeadersParser {
-
-    //TODO:Meter en algun lugar como constantes
-    private static final char CR = 13;
-    private static final char LF = 10;
-    private static final char SP = 32;
-
+public class HttpHeadersParser implements AsciiConstants {
 
     private enum HttpHeaderState {
         START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
