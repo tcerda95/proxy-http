@@ -1,5 +1,7 @@
 package tp.pdc.proxy;
 
+import tp.pdc.proxy.exceptions.ParserFormatException;
+
 import java.nio.ByteBuffer;
 
 public class HttpVersionParserImpl implements HttpVersionParser {
@@ -45,7 +47,8 @@ public class HttpVersionParserImpl implements HttpVersionParser {
         return minorVersion;
     }
 
-    @Override public boolean parse (ByteBuffer inputBuffer, ByteBuffer outputBuffer) {
+    @Override public boolean parse (ByteBuffer inputBuffer, ByteBuffer outputBuffer)
+        throws ParserFormatException {
         while (inputBuffer.hasRemaining()) {
             if (parse(inputBuffer.get(), outputBuffer)) {
                 return true;
@@ -54,7 +57,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
         return false;
     }
 
-    @Override public boolean parse (byte b, ByteBuffer outputBuffer) {
+    @Override public boolean parse (byte b, ByteBuffer outputBuffer) throws ParserFormatException {
         switch (state) {
             case NOT_READ_YET:
                 expectByteAndOutput(b, (byte) 'H', outputBuffer, HttpVersionState.H);
@@ -85,7 +88,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
                     state = HttpVersionState.MINOR_VERSION;
                     outputBuffer.put(b);
                 } else {
-                    state = HttpVersionState.ERROR;
+                    handleError();
                 }
                 break;
 
@@ -99,13 +102,12 @@ public class HttpVersionParserImpl implements HttpVersionParser {
 //                    httpParse = ParserState.CR_FIRST_LINE; TODO: el parser exterior pregunta si terminó para cambiar de estado
                     outputBuffer.put(b);
                 } else {
-                    state = HttpVersionState.ERROR;
+                    handleError();
                 }
                 break;
 
             case READ_OK:
-                // No debería recibir nada más
-                state = HttpVersionState.ERROR;
+                handleError(); // No debería recibir nada más
                 break;
         }
 
@@ -115,12 +117,18 @@ public class HttpVersionParserImpl implements HttpVersionParser {
         return state == HttpVersionState.READ_OK;
     }
 
-    private void expectByteAndOutput(byte read, byte expected, ByteBuffer out, HttpVersionState next) {
+    private void handleError() throws ParserFormatException {
+        state = HttpVersionState.ERROR;
+        throw new ParserFormatException("Error while parsing version");
+    }
+
+    private void expectByteAndOutput(byte read, byte expected, ByteBuffer out, HttpVersionState next)
+        throws ParserFormatException {
         if (read == expected) {
             out.put(read);
             state = next;
         } else {
-            state = HttpVersionState.ERROR;
+            handleError();
         }
     }
 }

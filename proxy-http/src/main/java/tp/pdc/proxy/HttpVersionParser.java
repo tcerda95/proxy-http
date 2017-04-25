@@ -1,5 +1,7 @@
 package tp.pdc.proxy;
 
+import tp.pdc.proxy.exceptions.ParserFormatException;
+
 import java.nio.ByteBuffer;
 
 public interface HttpVersionParser {
@@ -16,7 +18,7 @@ public interface HttpVersionParser {
 
     int getMinorHttpVersion();
 
-    boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer);
+    boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException;
 
-    boolean parse(byte b, ByteBuffer outputBuffer);
+    boolean parse(byte b, ByteBuffer outputBuffer) throws ParserFormatException;
 }
