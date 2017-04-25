@@ -16,6 +16,7 @@ import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.Parser;
 import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.server.HttpServerProxyHandler;
@@ -78,7 +79,13 @@ public class HttpClientProxyHandler extends HttpHandler {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
 		if (headersParser.hasFinished()) {
-			contentParser.parse(inputBuffer, processedBuffer);
+			try {
+				contentParser.parse(inputBuffer, processedBuffer);
+			} catch (ParserFormatException e) {
+				LOGGER.warn("Invalid body format: {}", e.getMessage());
+				setErrorState(HttpResponse.BAD_REQUEST_400, key);
+				return;
+			}
 			
 			if (contentParser.hasFinished()) {
 				state = ClientHandlerState.REQUEST_PROCESSED;
@@ -86,7 +93,13 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 		}
 		else {
-			headersParser.parse(inputBuffer, processedBuffer);
+			try {
+				headersParser.parse(inputBuffer, processedBuffer);
+			} catch (ParserFormatException e) {
+				LOGGER.warn("Invalid header format: {}", e.getMessage());
+				setErrorState(HttpResponse.BAD_REQUEST_400, key);
+				return;
+			}
 			
 			if (state == ClientHandlerState.NOT_CONNECTED)
 				manageNotConnected(key);

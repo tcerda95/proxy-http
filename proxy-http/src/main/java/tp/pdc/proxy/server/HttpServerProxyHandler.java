@@ -18,7 +18,6 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
 	
 	
-	
 	public HttpServerProxyHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer) {
 		super(readBufferSize, writeBuffer, processedBuffer);
 	}
