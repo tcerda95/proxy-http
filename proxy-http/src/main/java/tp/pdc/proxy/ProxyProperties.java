@@ -7,6 +7,7 @@ public class ProxyProperties {
 	private static final ProxyProperties INSTANCE = new ProxyProperties();
 	
 	private final Charset charset = Charset.forName("ASCII");
+	private final int bufferSize = 4096;
 	
 	private ProxyProperties() {
 	}
@@ -17,5 +18,9 @@ public class ProxyProperties {
 	
 	public final Charset getCharset() {
 		return charset;
+	}
+	
+	public final int getBufferSize() {
+		return bufferSize;
 	}
 }
