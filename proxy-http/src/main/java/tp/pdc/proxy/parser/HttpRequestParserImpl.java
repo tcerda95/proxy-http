@@ -216,4 +216,9 @@ public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants 
         System.out.println(input);
         System.out.println(output);
     }
+
+	@Override
+	public boolean hasMethod(Method method) {
+		return method == this.method;
+	}
 }
