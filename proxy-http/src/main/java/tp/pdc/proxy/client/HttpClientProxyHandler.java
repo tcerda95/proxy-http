@@ -28,7 +28,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	
 	private ClientHandlerState state;
 	private HeadersParser headersParser;
-	private Parser contentParser;
+	private Parser bodyParser;
 	
 	public HttpClientProxyHandler(int bufSize) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
@@ -80,17 +80,15 @@ public class HttpClientProxyHandler extends HttpHandler {
 		
 		if (headersParser.hasFinished()) {
 			try {
-				contentParser.parse(inputBuffer, processedBuffer);
+				bodyParser.parse(inputBuffer, processedBuffer);
 			} catch (ParserFormatException e) {
 				LOGGER.warn("Invalid body format: {}", e.getMessage());
 				setErrorState(HttpResponse.BAD_REQUEST_400, key);
 				return;
 			}
 			
-			if (contentParser.hasFinished()) {
-				state = ClientHandlerState.REQUEST_PROCESSED;
-				key.interestOps(0);
-			}
+			if (bodyParser.hasFinished())
+				setRequestProcessedState();
 		}
 		else {
 			try {
@@ -101,31 +99,47 @@ public class HttpClientProxyHandler extends HttpHandler {
 				return;
 			}
 			
-			if (state == ClientHandlerState.NOT_CONNECTED)
+			if (state == ClientHandlerState.NOT_CONNECTED) {
 				manageNotConnected(key);
+				if (state == ClientHandlerState.ERROR)
+					return;
+			}
 			
-			if (state != ClientHandlerState.ERROR && headersParser.hasFinished() && headersParser.hasMethod(Method.POST)) {
+			if (headersParser.hasFinished() && headersParser.hasMethod(Method.POST)) {
 				// TODO: instanciar content parser
 			}
 			
+			if (headersParser.hasFinished() && !headersParser.hasMethod(Method.POST))
+				setRequestProcessedState();
+						
 			if (state == ClientHandlerState.CONNECTING && headersParser.hasFinished() && !headersParser.hasMethod(Method.POST)) {
 				state = ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
 				key.interestOps(0);
 			}
-			
+						
 			if (state == ClientHandlerState.CONNECTED && headersParser.hasFinished() && !headersParser.hasMethod(Method.POST)) {
 				state = ClientHandlerState.REQUEST_PROCESSED;
 				key.interestOps(0);
 			}
 		}
 		
-		if (state.shouldWrite()) {
+		if (!processedBuffer.hasRemaining()) {
+			LOGGER.debug("Unregistering client from read: processed buffer full");
+			key.interestOps(0);				
+		}
+		
+		if (state.shouldWrite())
 			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
-			if (!processedBuffer.hasRemaining()) {
-				LOGGER.debug("Processed buffer full");
-				
-				key.interestOps(0);				
-			}
+	}
+	
+	private void setRequestProcessedState() {
+		if (state == ClientHandlerState.CONNECTING)
+			state = ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
+		else if (state == ClientHandlerState.CONNECTED)
+			state = ClientHandlerState.REQUEST_PROCESSED;
+		else {
+			LOGGER.error("Invalid client state");
+			throw new IllegalStateException("State must be " + ClientHandlerState.CONNECTING + " or " + ClientHandlerState.CONNECTING);
 		}
 	}
 	
@@ -138,12 +152,21 @@ public class HttpClientProxyHandler extends HttpHandler {
 			
 			if (!inputBuffer.hasRemaining() && state == ClientHandlerState.ERROR)
 				socketChannel.close();
+			else if (!inputBuffer.hasRemaining() && isServerResponseProcessed())
+				socketChannel.close();
+			
 		} catch (IOException e) {
+			LOGGER.warn("Failed to write to client");
 			e.printStackTrace();
 			// No se le pudo responder al cliente
 		}
 	}
 	
+	private boolean isServerResponseProcessed() {
+		SocketChannel socketChannel = (SocketChannel) this.getConnectedPeerKey().channel();
+		return !socketChannel.isOpen();
+	}
+
 	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {
 		state = ClientHandlerState.ERROR;
 		this.getWriteBuffer().put(errorResponse.getBytes());
