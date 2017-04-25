@@ -1,7 +1,6 @@
 package tp.pdc.proxy;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.header.Method;
 
 public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√≥n si hay error.
 
@@ -61,6 +61,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
     private HttpHeaderState headersParse;
     private int httpMajorVersion;
     private int httpMinorVersion;
+    private Method method;
 
     private final ByteBuffer methodName;
     private final ByteBuffer httpURI;
@@ -105,7 +106,7 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
                     if (ParseUtils.isAlphabetic(c)) {
                         methodName.put((byte) c);
                     } else if (c == SP) {
-                        httpParse = methodNameIsOk() ? ParserState.URI_READ : ParserState.ERROR;
+                        httpParse = processMethod() ? ParserState.URI_READ : ParserState.ERROR;
                     } else {
                         httpParse = ParserState.ERROR;
                     }
@@ -289,12 +290,13 @@ public class HeadersParserImpl implements HeadersParser { //TODO: tirar excepci√
     }
 
     // TODO: Hacer bien estas cosas.
-    private boolean methodNameIsOk() {
+    private boolean processMethod () {
         int strLen = methodName.position(); //TODO: hacer con bytes
-        String str = new String(methodName.array(), 0, strLen, ProxyProperties.getInstance().getCharset());
+//        String str = new String(methodName.array(), 0, strLen, ProxyProperties.getInstance().getCharset());
         methodName.flip();
-        LOGGER.debug("METHOD: {}", str);
-        return str.equals("GET") || str.equals("POST") || str.equals("HEAD");
+        method = Method.getByBytes(methodName, strLen);
+        LOGGER.debug("METHOD: {}", method);
+        return method != null;
     }
 
     private boolean URIIsOk() {

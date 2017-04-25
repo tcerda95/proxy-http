@@ -30,25 +30,7 @@ public enum Header {
 	}
 
 	public static Header getByBytes(ByteBuffer bytes, int length) {
-		boolean equals;
-
-		for (Map.Entry<byte[], Header> e: RELEVANT_HEADERS.entrySet()) {
-			equals = true;
-			if (length != e.getKey().length)
-				continue;
-
-			bytes.mark();
-			for (int i = 0; i < length && equals; i++) {
-				if (bytes.get() != e.getKey()[i]) {
-					equals = false;
-				}
-			}
-			bytes.reset();
-
-			if (equals)
-				return e.getValue();
-		}
-
-		return null;
+		return BytesUtils.getByBytes(RELEVANT_HEADERS.entrySet(), bytes, length);
 	}
+
 }
