@@ -162,14 +162,14 @@ public class HttpChunkedParser implements HttpBodyParser {
 	public boolean hasFinished() {
 		return parserState == ParserState.READ_BODY && bodyState == BodyState.END_OK
 				&& chunkSizeState == ChunkSizeState.CHUNKSIZE_IS_ZERO;
-	}
-	
-	public boolean chunkSizeisZero() {
-		return chunkSize == 0;
-	}
+	}	
 	
 	public boolean outputBufferisFull(ByteBuffer output) {
 		return output.position() != output.capacity();
+	}
+	
+	private boolean chunkSizeisZero() {
+		return chunkSize == 0;
 	}
 	
     private void handleError(ParserState parserState) throws ParserFormatException {
