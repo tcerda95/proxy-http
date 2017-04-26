@@ -41,12 +41,16 @@ public class HttpContentLengthParser implements HttpBodyParser{
 				
 				if ( (index == contentLength-1 && c != CR) 
 						|| (index == contentLength && c != LF))
+					handleError(parserState);
 				
+				if (index == contentLength)
+					parserState = ParserState.END_OK;
 				break;
 				
 			default:
 				handleError(parserState);
 			}
+			index++;
 		}
 		
 	}
