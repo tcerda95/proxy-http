@@ -6,16 +6,63 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 
 public class HttpContentLengthParser implements HttpBodyParser{
 
+	private int contentLength;
+	
+	private ParserState parserState;
+	
+	private static final char CR = 13;
+	private static final char LF = 10;
+	
+	public HttpContentLengthParser(int contentLength) {
+		this.contentLength = contentLength;
+		this.parserState = ParserState.START;
+	}
+
+	private enum ParserState {
+        START,
+        END_OK,
+        /* Error states */
+        ERROR,
+    }
+	
 	@Override
 	public void parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
-		// TODO Auto-generated method stub
+		
+		int index = 1;
+		
+		while (input.hasRemaining() && !outputBufferisFull(output)) {
+			
+			byte c = input.get();
+    		output.put(c);
+    		
+			switch (parserState) {
+			
+			case START:
+				
+				if ( (index == contentLength-1 && c != CR) 
+						|| (index == contentLength && c != LF))
+				
+				break;
+				
+			default:
+				handleError(parserState);
+			}
+		}
 		
 	}
 
 	@Override
 	public boolean hasFinished() {
-		// TODO Auto-generated method stub
-		return false;
+		return parserState == ParserState.END_OK;
 	}
+	
+	public boolean outputBufferisFull(ByteBuffer output) {
+		return output.position() != output.capacity();
+	}
+	
+    private void handleError(ParserState parserState) throws ParserFormatException {
+        parserState = ParserState.ERROR;
+        throw new ParserFormatException("Error while parsing");
+    }
 
 }
