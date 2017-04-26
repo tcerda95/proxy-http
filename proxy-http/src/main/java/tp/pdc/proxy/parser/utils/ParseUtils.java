@@ -1,6 +1,6 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser.utils;
 
-import java.nio.ByteBuffer;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 //TODO: tests
 public class ParseUtils {
@@ -8,12 +8,9 @@ public class ParseUtils {
 
     private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit;
 
-    private static final byte CR = (byte) 13, LF = (byte) 10, SP = (byte) 32, HT = (byte) 9;
 
     private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
-        '"', '/', '[', ']', '?', '=', '{', '}', SP, HT};
-
-//    private static final String[] supportedMethods = {"GET", "POST", "HEAD"};
+        '"', '/', '[', ']', '?', '=', '{', '}', SP.getValue(), HT.getValue()};
 
     // Cargo tablas estáticas para hacer los chequeos más rápido.
     static {
@@ -24,7 +21,7 @@ public class ParseUtils {
         for (int c = 0; c < US_ASCII_LENGTH; c++) {
             isSeparator[c] = contains(separator, (byte) c);
             isToken[c] = (31 < c && c < 127 && !isSeparator[c]);
-            isLWS[c] = (c == CR || c == LF || c == SP || c == HT);
+            isLWS[c] = (c == CR.getValue() || c == LF.getValue() || c == SP.getValue() || c == HT.getValue());
             isDigit[c] = ('0' <= c && c <= '9');
             isAlphabetic[c] = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
         }
@@ -38,15 +35,6 @@ public class ParseUtils {
         return false;
     }
 
-//    public static boolean isValidMethod(ByteBuffer bytes, int length) {
-//        for (byte[] m: methods) {
-//            for (int i = 0; i < length; i++) {
-//                if (bytes.get() != m[i])
-//                    return false;
-//            }
-//        }
-//    }
-
     public static boolean isHeaderNameChar (byte c) {
         return isToken[c];
     }
@@ -57,6 +45,10 @@ public class ParseUtils {
 
     public static boolean isDigit (byte c) {
         return isDigit[c];
+    }
+
+    public static boolean isText (byte c) {
+        return isToken[c] || isSeparator[c];
     }
 
     public static boolean isAlphabetic(byte c) {

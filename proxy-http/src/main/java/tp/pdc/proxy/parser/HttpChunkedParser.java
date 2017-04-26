@@ -1,14 +1,14 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
 import java.nio.ByteBuffer;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
+import tp.pdc.proxy.parser.utils.ParseUtils;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 public class HttpChunkedParser implements HttpBodyParser {
 
-	private static final char CR = 13;
-	private static final char LF = 10;
-	
     private ParserState parserState;
     private ChunkSizeState chunkSizeState;
     private ChunkState chunkState;
@@ -52,7 +52,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     }
     
     @Override
-	public void parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
+	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
     	
     	while (input.hasRemaining() && output.hasRemaining()) {
     		byte c = input.get();
@@ -71,6 +71,8 @@ public class HttpChunkedParser implements HttpBodyParser {
 	    			handleError(parserState);
     		}
     	}
+    	
+    	return hasFinished();
 	}
     
     private void parseChunkSize(byte c) throws ParserFormatException {
@@ -78,10 +80,10 @@ public class HttpChunkedParser implements HttpBodyParser {
     	switch(chunkSizeState) {
 	    	case START:
 	    		// TODO: considerar caso chunksize es hexa
-	    		if (c == LF || ParseUtils.isAlphabetic(c))
+	    		if (c == LF.getValue() || ParseUtils.isAlphabetic(c))
 	    			handleError(chunkSizeState);
 	    		
-	    		if (c == CR) {
+	    		if (c == CR.getValue()) {
 	    			if (!chunkSizeFound)
 						handleError(chunkSizeState);					
 					
@@ -96,7 +98,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 				
 			case END_LINE_CR:
 				
-				if (c == LF) {
+				if (c == LF.getValue()) {
 					
 					chunkSizeState = chunkSizeisZero() ? ChunkSizeState.CHUNKSIZE_IS_ZERO : 
 						ChunkSizeState.END_OK;
@@ -130,7 +132,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     	
     		case CHUNK_READ:
     			
-    			if (c != CR)
+    			if (c != CR.getValue())
     				handleError(chunkState);
     			
     			chunkState = ChunkState.END_LINE_CR;
@@ -139,7 +141,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     			
     		case END_LINE_CR:
     			
-    			if (c != LF)
+    			if (c != LF.getValue())
     				handleError(chunkState);
     			
     			if (chunkSizeState == ChunkSizeState.CHUNKSIZE_IS_ZERO)
