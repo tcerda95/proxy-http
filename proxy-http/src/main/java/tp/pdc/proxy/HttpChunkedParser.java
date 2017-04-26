@@ -28,7 +28,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 	
     private enum ParserState {
         READ_CHUNK_SIZE,
-        READ_BODY,
+        READ_CHUNK,
         
         /* Error states */
         ERROR,
@@ -54,7 +54,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     @Override
 	public void parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
     	
-    	while (input.hasRemaining() && !outputBufferisFull(output)) {
+    	while (input.hasRemaining() && output.hasRemaining()) {
     		byte c = input.get();
     		output.put(c);
     		
@@ -63,7 +63,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 	    			parseChunkSize(c);
 	    			break;
 	    		
-	    		case READ_BODY:
+	    		case READ_CHUNK:
 	    			parseChunk(c);
 	    			break;
 	    			
@@ -101,7 +101,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 					chunkSizeState = chunkSizeisZero() ? ChunkSizeState.CHUNKSIZE_IS_ZERO : 
 						ChunkSizeState.END_OK;
 					
-					parserState = ParserState.READ_BODY;
+					parserState = ParserState.READ_CHUNK;
 					chunkState = ChunkState.START;
 					chunkSizeFound = false;
 				}
@@ -160,13 +160,9 @@ public class HttpChunkedParser implements HttpBodyParser {
 
 	@Override
 	public boolean hasFinished() {
-		return parserState == ParserState.READ_BODY && chunkState == ChunkState.END_OK
+		return parserState == ParserState.READ_CHUNK && chunkState == ChunkState.END_OK
 				&& chunkSizeState == ChunkSizeState.CHUNKSIZE_IS_ZERO;
 	}	
-	
-	public boolean outputBufferisFull(ByteBuffer output) {
-		return output.position() != output.capacity();
-	}
 	
 	private boolean chunkSizeisZero() {
 		return chunkSize == 0;
