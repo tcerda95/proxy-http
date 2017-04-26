@@ -3,14 +3,14 @@ package tp.pdc.proxy.parser;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
-import tp.pdc.proxy.parser.utils.AsciiConstants;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
+public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     private enum HttpHeaderState {
         START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
@@ -63,7 +63,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
     @Override public boolean parse(byte c, ByteBuffer outputBuffer) throws ParserFormatException {
             switch (headerState) {
                 case START:
-                    if (c == CR) {
+                    if (c == CR.getValue()) {
                         headerState = HttpHeaderState.SECTION_END_CR;
                         outputBuffer.put(c);
                     } else if (ParseUtils.isHeaderNameChar(c)) {
@@ -101,7 +101,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
                     break;
 
                 case RELEVANT_COLON:
-                    expectByteAndOutput(c, (byte) SP, HttpHeaderState.RELEVANT_SPACE, outputBuffer);
+                    expectByteAndOutput(c, SP.getValue(), HttpHeaderState.RELEVANT_SPACE, outputBuffer);
                     break;
 
                 case RELEVANT_SPACE:
@@ -114,12 +114,12 @@ public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
                     break;
 
                 case RELEVANT_CONTENT:
-                    if (c == CR) {
+                    if (c == CR.getValue()) {
                         headerState = HttpHeaderState.END_LINE_CR;
                         headerValue.flip();
                         byte[] headerAux = new byte[headerValue.remaining()];
                         headerValue.get(headerAux);
-                        outputBuffer.put(headerAux).put((byte) CR);
+                        outputBuffer.put(headerAux).put(CR.getValue());
                         relevantHeaders.put(currentRelevantHeader, headerAux);
                     } else if (ParseUtils.isHeaderContentChar(c)) {
                         headerValue.put((byte) Character.toLowerCase(c));
@@ -127,7 +127,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
                     break;
 
                 case COLON:
-                    expectByteAndOutput(c, (byte) SP, HttpHeaderState.SPACE, outputBuffer);
+                    expectByteAndOutput(c, SP.getValue(), HttpHeaderState.SPACE, outputBuffer);
                     break;
 
                 case SPACE:
@@ -140,7 +140,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
                     break;
 
                 case CONTENT:
-                    if (c == CR) {
+                    if (c == CR.getValue()) {
                         headerState = HttpHeaderState.END_LINE_CR;
                         outputBuffer.put(c);
                     } else if (ParseUtils.isHeaderContentChar(c)) {
@@ -151,11 +151,11 @@ public class HttpHeadersParserImpl implements HttpHeaderParser, AsciiConstants {
                     break;
 
                 case END_LINE_CR:
-                    expectByteAndOutput(c, (byte) LF, HttpHeaderState.START, outputBuffer);
+                    expectByteAndOutput(c, LF.getValue(), HttpHeaderState.START, outputBuffer);
                     break;
 
                 case SECTION_END_CR:
-                    expectByteAndOutput(c, (byte) LF, HttpHeaderState.END_OK, outputBuffer);
+                    expectByteAndOutput(c, LF.getValue(), HttpHeaderState.END_OK, outputBuffer);
                     return true;
 
                 default: // ERROR

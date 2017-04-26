@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tp.pdc.proxy.parser.utils.AsciiConstants;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
@@ -14,7 +14,7 @@ import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
-public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants {
+public class HttpRequestParserImpl implements HttpRequestParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
 
@@ -57,7 +57,7 @@ public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants 
         methodName = ByteBuffer.allocate(16);
         httpURI = ByteBuffer.allocate(256);
         headersParser = new HttpHeadersParserImpl();
-        versionParser = new HttpVersionParserImpl((byte) CR);
+        versionParser = new HttpVersionParserImpl(CR.getValue());
     }
 
     // Receives buffer in read state
@@ -80,7 +80,7 @@ public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants 
                 case METHOD_READ:
                     if (ParseUtils.isAlphabetic(c)) {
                         methodName.put(c);
-                    } else if (c == SP && processMethod()) {
+                    } else if (c == SP.getValue() && processMethod()) {
                         requestState = RequestParserState.URI_READ;
                         output.put(methodName).put(c);
                     } else {
@@ -90,7 +90,7 @@ public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants 
 
                 case URI_READ:
                     //parseURI();
-                    if (c == SP) {
+                    if (c == SP.getValue()) {
                         requestState = URIIsOk() ? RequestParserState.HTTP_VERSION : RequestParserState.ERROR;
                         httpURI.flip();
                         output.put(httpURI).put(c);
@@ -108,7 +108,7 @@ public class HttpRequestParserImpl implements HttpRequestParser, AsciiConstants 
                     break;
 
                 case CR_FIRST_LINE:
-                    if (c == LF) {
+                    if (c == LF.getValue()) {
                         requestState = RequestParserState.READ_HEADERS;
                         output.put(c);
                     } else {

@@ -1,13 +1,13 @@
 package tp.pdc.proxy.parser;
 
-import tp.pdc.proxy.parser.utils.AsciiConstants;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
 
-public class HttpResponseLineParserImpl implements AsciiConstants {
+public class HttpResponseLineParserImpl {
 
     private HttpVersionParser versionParser;
     private int statusCode;
@@ -18,7 +18,7 @@ public class HttpResponseLineParserImpl implements AsciiConstants {
     }
 
     public HttpResponseLineParserImpl () {
-        versionParser = new HttpVersionParserImpl((byte) SP); // TODO: interfaz de constantes
+        versionParser = new HttpVersionParserImpl(SP.getValue()); // TODO: interfaz de constantes
         statusCode = 0;
         state = ResponseLineState.HTTP_VERSION;
     }
@@ -62,7 +62,7 @@ public class HttpResponseLineParserImpl implements AsciiConstants {
                     b = inputBuffer.get();
                     if (ParseUtils.isText(b)) {
                         outputBuffer.put(b);
-                    } else if (b == CR) {
+                    } else if (b == CR.getValue()) {
                         state = ResponseLineState.CR_END;
                     } else {
                         handleError();
@@ -70,7 +70,7 @@ public class HttpResponseLineParserImpl implements AsciiConstants {
                     break;
 
                 case CR_END:
-                    if (inputBuffer.get() == LF) {
+                    if (inputBuffer.get() == LF.getValue()) {
                         state = ResponseLineState.READ_OK;
                         return true;
                     }

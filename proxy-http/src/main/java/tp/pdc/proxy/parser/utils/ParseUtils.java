@@ -1,16 +1,16 @@
 package tp.pdc.proxy.parser.utils;
 
-import tp.pdc.proxy.parser.utils.AsciiConstants;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 //TODO: tests
-public class ParseUtils implements AsciiConstants {
+public class ParseUtils {
     private static final int US_ASCII_LENGTH = 128;
 
     private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit;
 
 
     private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
-        '"', '/', '[', ']', '?', '=', '{', '}', SP, HT};
+        '"', '/', '[', ']', '?', '=', '{', '}', SP.getValue(), HT.getValue()};
 
     // Cargo tablas estáticas para hacer los chequeos más rápido.
     static {
@@ -21,7 +21,7 @@ public class ParseUtils implements AsciiConstants {
         for (int c = 0; c < US_ASCII_LENGTH; c++) {
             isSeparator[c] = contains(separator, (byte) c);
             isToken[c] = (31 < c && c < 127 && !isSeparator[c]);
-            isLWS[c] = (c == (byte) CR || c == (byte) LF || c == (byte) SP || c == (byte) HT);
+            isLWS[c] = (c == CR.getValue() || c == LF.getValue() || c == SP.getValue() || c == HT.getValue());
             isDigit[c] = ('0' <= c && c <= '9');
             isAlphabetic[c] = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
         }

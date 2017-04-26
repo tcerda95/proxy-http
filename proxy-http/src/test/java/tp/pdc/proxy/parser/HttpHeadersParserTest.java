@@ -6,13 +6,12 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.parser.HttpHeadersParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
-import tp.pdc.proxy.parser.utils.AsciiConstants;
 
 import java.nio.ByteBuffer;
 
 import static org.junit.Assert.*;
 
-public class HttpHeadersParserTest implements AsciiConstants {
+public class HttpHeadersParserTest {
 
     String headers;
     ByteBuffer inputBuffer, outputBuffer;
@@ -20,13 +19,12 @@ public class HttpHeadersParserTest implements AsciiConstants {
 
     @Before
     public void init(){
-        headers = "Host: google.com" + CR + LF
-                + "user-agent: internet explorer 2" + CR + LF
-                + "connection: close" + CR + LF
-                + "transfer-encoding: chunked" + CR + LF
-                + "connection-no: close" + CR + LF
-                + "transfer-size: chunked" + CR + LF
-                + CR + LF;
+        headers = "Host: google.com\r\n"
+                + "user-agent: internet explorer 2\r\n"
+                + "connection: close\r\n"
+                + "transfer-encoding: chunked\r\n"
+                + "connection-no: close\r\n"
+                + "transfer-size: chunked\r\n\r\n";
         parser = new HttpHeadersParserImpl();
         outputBuffer = ByteBuffer.allocate(8000);
     }

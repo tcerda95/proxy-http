@@ -1,8 +1,9 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
 import java.nio.ByteBuffer;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class HttpChunkedParser implements HttpBodyParser {
 

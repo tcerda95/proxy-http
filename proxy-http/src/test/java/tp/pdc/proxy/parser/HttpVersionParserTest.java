@@ -5,16 +5,16 @@ import org.junit.Test;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.HttpVersionParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
-import tp.pdc.proxy.parser.utils.AsciiConstants;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 import java.nio.ByteBuffer;
 
-public class HttpVersionParserTest implements AsciiConstants {
+public class HttpVersionParserTest {
 
     @Test
     public void endCharacterTest() throws ParserFormatException {
-        HttpVersionParser parser1 = new HttpVersionParserImpl((byte) CR);
-        HttpVersionParser parser2 = new HttpVersionParserImpl((byte) CR);
+        HttpVersionParser parser1 = new HttpVersionParserImpl(CR.getValue());
+        HttpVersionParser parser2 = new HttpVersionParserImpl(CR.getValue());
 
         String s1 = "HTTP/1.1" + CR;
         String s2 = "HTTP/1.1";
@@ -33,7 +33,7 @@ public class HttpVersionParserTest implements AsciiConstants {
 
     @Test(expected = ParserFormatException.class)
     public void wrongEndChar() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl((byte) CR);
+        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/1.1" + LF;
 
         ByteBuffer b = ByteBuffer.wrap(s.getBytes());

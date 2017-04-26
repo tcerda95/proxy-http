@@ -3,6 +3,7 @@ package tp.pdc.proxy;
 import java.nio.ByteBuffer;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.HttpBodyParser;
 
 public class HttpContentLengthParser implements HttpBodyParser{
 
