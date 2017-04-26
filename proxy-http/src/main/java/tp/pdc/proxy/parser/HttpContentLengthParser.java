@@ -1,18 +1,16 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
 import java.nio.ByteBuffer;
 
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.HttpBodyParser;
+import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 
 public class HttpContentLengthParser implements HttpBodyParser{
 
 	private int contentLength;
 	
 	private ParserState parserState;
-	
-	private static final char CR = 13;
-	private static final char LF = 10;
 	
 	public HttpContentLengthParser(int contentLength) {
 		this.contentLength = contentLength;
@@ -27,7 +25,7 @@ public class HttpContentLengthParser implements HttpBodyParser{
     }
 	
 	@Override
-	public void parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
+	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
 		
 		int index = 1;
 		
@@ -40,8 +38,8 @@ public class HttpContentLengthParser implements HttpBodyParser{
 			
 			case START:
 				
-				if ( (index == contentLength-1 && c != CR) 
-						|| (index == contentLength && c != LF))
+				if ( (index == contentLength-1 && c != CR.getValue()) 
+						|| (index == contentLength && c != LF.getValue()))
 					handleError(parserState);
 				
 				if (index == contentLength)
@@ -54,6 +52,7 @@ public class HttpContentLengthParser implements HttpBodyParser{
 			index++;
 		}
 		
+		return hasFinished();
 	}
 
 	@Override

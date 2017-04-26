@@ -182,11 +182,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         return this.relevantHeaders.containsKey(header);
     }
 
-    @Override public boolean hasError(){
-        return headerState == HttpHeaderState.ERROR;
-    }
-
-    @Override public Map<Header, byte[]> getRelevantHeaders() {
+    public Map<Header, byte[]> getRelevantHeaders() {
         return relevantHeaders;
     }
 }

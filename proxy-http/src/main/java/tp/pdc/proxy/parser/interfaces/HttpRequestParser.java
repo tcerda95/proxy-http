@@ -1,6 +1,5 @@
 package tp.pdc.proxy.parser.interfaces;
 
-import tp.pdc.proxy.Parser;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
 

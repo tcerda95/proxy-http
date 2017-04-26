@@ -27,8 +27,8 @@ public class HttpVersionParserTest {
 
         parser1.parse(b1, o1);
         parser2.parse(b2, o2);
-        assertTrue(parser1.hasEndedOk());
-        assertFalse(parser2.hasEndedOk());
+        assertTrue(parser1.hasFinished());
+        assertFalse(parser2.hasFinished());
     }
 
     @Test(expected = ParserFormatException.class)

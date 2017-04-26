@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpProxySelectorProtocol;
 import tp.pdc.proxy.HttpResponse;
-import tp.pdc.proxy.Parser;
 import tp.pdc.proxy.client.ClientHandlerState;
 import tp.pdc.proxy.client.HttpClientProxyHandler;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
+import tp.pdc.proxy.parser.interfaces.Parser;
 
 public class HttpServerProxyHandler extends HttpHandler {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);

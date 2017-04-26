@@ -2,33 +2,36 @@ package tp.pdc.proxy.parser;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.interfaces.HttpResponseLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
 
-public class HttpResponseLineParserImpl {
+public class HttpResponseLineParserImpl implements HttpResponseLineParser {
 
     private HttpVersionParser versionParser;
     private int statusCode;
     private ResponseLineState state;
 
     private enum ResponseLineState {
-        HTTP_VERSION, VERSION_END, SP_1, STATUS_CODE, SP_2, REASON_PHRASE, CR_END, READ_OK, ERROR,
+        HTTP_VERSION, SP_1, STATUS_CODE, SP_2, REASON_PHRASE, CR_END, READ_OK, ERROR,
     }
 
     public HttpResponseLineParserImpl () {
-        versionParser = new HttpVersionParserImpl(SP.getValue()); // TODO: interfaz de constantes
+        versionParser = new HttpVersionParserImpl(SP.getValue());
         statusCode = 0;
         state = ResponseLineState.HTTP_VERSION;
     }
 
+    @Override
     public int getStatusCode() {
         if (hasStatusCode())
             return statusCode;
         throw new IllegalStateException(); //TODO
     }
 
+    @Override
     public boolean hasStatusCode() {
         return statusCode != 0;
     }
@@ -79,6 +82,7 @@ public class HttpResponseLineParserImpl {
                     break;
             }
         }
+        
         return false;
     }
 
@@ -86,4 +90,9 @@ public class HttpResponseLineParserImpl {
         state = ResponseLineState.ERROR;
         throw new ParserFormatException("Error while parsing response first line");
     }
+
+	@Override
+	public boolean hasFinished() {
+		return state == ResponseLineState.READ_OK;
+	}
 }

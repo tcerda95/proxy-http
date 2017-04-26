@@ -25,11 +25,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
         this.endByte = endByte;
     }
 
-    @Override public boolean hasError () {
-        return state == HttpVersionState.ERROR;
-    }
-
-    @Override public boolean hasEndedOk () {
+    @Override public boolean hasFinished() {
         return state == HttpVersionState.READ_OK;
     }
 

@@ -24,7 +24,7 @@ public class HttpChunkedParserTest {
 
 	@Test
 	public void testFinished() throws ParserFormatException, UnsupportedEncodingException {
-		String chunked = "7\r\n"
+		String chunked =   "7\r\n"
 						 + "hola co\r\n"
 						 + "8\r\n"
 						 + "mo te va\r\n"

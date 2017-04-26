@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpResponse;
-import tp.pdc.proxy.Parser;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.HttpRequestParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
+import tp.pdc.proxy.parser.interfaces.Parser;
 import tp.pdc.proxy.server.HttpServerProxyHandler;
 
 public class HttpClientProxyHandler extends HttpHandler {

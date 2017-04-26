@@ -18,7 +18,6 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
 
-
     @Override public boolean hasHeaderValue (Header header) {
         return headersParser.hasRelevantHeaderValue(header);
     }
@@ -61,10 +60,9 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     }
 
     // Receives buffer in read state
-    public void parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) throws ParserFormatException {
+    public boolean parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) throws ParserFormatException {
         output = outputBuffer;
         while (inputBuffer.hasRemaining()) {
-//            inputBuffer.mark();
             byte c = inputBuffer.get();
 
             switch (requestState) {
@@ -117,18 +115,13 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                     break;
 
                 case READ_HEADERS:
-//                    inputBuffer.reset();
-                    headersParser.parse(c,output);
-                    break;
+                    return headersParser.parse(c,output);
 
                 default:
                     handleError(requestState);
-                    return;
             }
-
-            if (hasParseErrors())
-                throw new IllegalStateException(); // TODO: Custom Exception
         }
+        return false;
     }
 
     private boolean processMethod () {
@@ -148,12 +141,6 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 
     private boolean isURIComponent(final byte c) {
         return c == '/';
-    }
-
-    private boolean hasParseErrors() {
-        return requestState == RequestParserState.ERROR || versionParser.hasError()
-            || headersParser.hasError();
-
     }
 
     private void handleError(RequestParserState parserState) throws ParserFormatException {
