@@ -29,7 +29,7 @@ public class HttpContentLengthParser implements HttpBodyParser{
 		
 		int index = 1;
 		
-		while (input.hasRemaining() && !outputBufferisFull(output)) {
+		while (input.hasRemaining() && output.hasRemaining()) {
 			
 			byte c = input.get();
     		output.put(c);
@@ -58,10 +58,6 @@ public class HttpContentLengthParser implements HttpBodyParser{
 	@Override
 	public boolean hasFinished() {
 		return parserState == ParserState.END_OK;
-	}
-	
-	public boolean outputBufferisFull(ByteBuffer output) {
-		return output.position() != output.capacity();
 	}
 	
     private void handleError(ParserState parserState) throws ParserFormatException {

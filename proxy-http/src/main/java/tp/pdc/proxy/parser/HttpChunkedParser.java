@@ -11,7 +11,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 
     private ParserState parserState;
     private ChunkSizeState chunkSizeState;
-    private BodyState bodyState;
+    private ChunkState chunkState;
         
     private int chunkSize;
     private boolean chunkSizeFound;
@@ -20,7 +20,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     public HttpChunkedParser() {
     	parserState = ParserState.READ_CHUNK_SIZE;
     	chunkSizeState = ChunkSizeState.START;
-    	bodyState = BodyState.NOT_READ_YET;
+    	chunkState = ChunkState.NOT_READ_YET;
    	 
     	chunkSize = 0;
     	chunkSizeFound = false;
@@ -28,7 +28,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 	
     private enum ParserState {
         READ_CHUNK_SIZE,
-        READ_BODY,
+        READ_CHUNK,
         
         /* Error states */
         ERROR,
@@ -42,7 +42,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     	ERROR,
     }
     
-    private enum BodyState {	
+    private enum ChunkState {	
     	NOT_READ_YET,
     	START,
     	CHUNK_READ,
@@ -54,7 +54,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     @Override
 	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
     	
-    	while (input.hasRemaining() && !outputBufferisFull(output)) {
+    	while (input.hasRemaining() && output.hasRemaining()) {
     		byte c = input.get();
     		output.put(c);
     		
@@ -63,8 +63,8 @@ public class HttpChunkedParser implements HttpBodyParser {
 	    			parseChunkSize(c);
 	    			break;
 	    		
-	    		case READ_BODY:
-	    			parseBody(c);
+	    		case READ_CHUNK:
+	    			parseChunk(c);
 	    			break;
 	    			
 	    		default:
@@ -103,8 +103,8 @@ public class HttpChunkedParser implements HttpBodyParser {
 					chunkSizeState = chunkSizeisZero() ? ChunkSizeState.CHUNKSIZE_IS_ZERO : 
 						ChunkSizeState.END_OK;
 					
-					parserState = ParserState.READ_BODY;
-					bodyState = BodyState.START;
+					parserState = ParserState.READ_CHUNK;
+					chunkState = ChunkState.START;
 					chunkSizeFound = false;
 				}
 				else
@@ -117,58 +117,54 @@ public class HttpChunkedParser implements HttpBodyParser {
     	}
     }
     
-    private void parseBody(byte c) throws ParserFormatException {
+    private void parseChunk(byte c) throws ParserFormatException {
     	
     	chunkSize--;
     	
-    	switch(bodyState) {
+    	switch(chunkState) {
     		
     		case START:
     			
     			if (chunkSize == 0)
-    				bodyState = BodyState.CHUNK_READ;
+    				chunkState = ChunkState.CHUNK_READ;
     			
     			break;
     	
     		case CHUNK_READ:
     			
     			if (c != CR.getValue())
-    				handleError(bodyState);
+    				handleError(chunkState);
     			
-    			bodyState = BodyState.END_LINE_CR;
+    			chunkState = ChunkState.END_LINE_CR;
     			
     			break;
     			
     		case END_LINE_CR:
     			
     			if (c != LF.getValue())
-    				handleError(bodyState);
+    				handleError(chunkState);
     			
     			if (chunkSizeState == ChunkSizeState.CHUNKSIZE_IS_ZERO)
-    				bodyState = BodyState.END_OK;
+    				chunkState = ChunkState.END_OK;
     			else {
     				parserState = ParserState.READ_CHUNK_SIZE;
     				chunkSizeState = ChunkSizeState.START;
-    				bodyState = BodyState.NOT_READ_YET;
+    				chunkState = ChunkState.NOT_READ_YET;
     			}
     		
     			break;
     			
 			default:
-				handleError(bodyState);
+				handleError(chunkState);
     	}
     }
     
 
 	@Override
 	public boolean hasFinished() {
-		return parserState == ParserState.READ_BODY && bodyState == BodyState.END_OK
+		return parserState == ParserState.READ_CHUNK && chunkState == ChunkState.END_OK
 				&& chunkSizeState == ChunkSizeState.CHUNKSIZE_IS_ZERO;
 	}	
-	
-	public boolean outputBufferisFull(ByteBuffer output) {
-		return output.position() != output.capacity();
-	}
 	
 	private boolean chunkSizeisZero() {
 		return chunkSize == 0;
@@ -184,8 +180,8 @@ public class HttpChunkedParser implements HttpBodyParser {
         throw new ParserFormatException("Error while parsing chunk size");
     }
     
-    private void handleError(BodyState bodyState) throws ParserFormatException {
-        bodyState = BodyState.ERROR;
+    private void handleError(ChunkState bodyState) throws ParserFormatException {
+        bodyState = ChunkState.ERROR;
         throw new ParserFormatException("Error while parsing body");
     }
 }
