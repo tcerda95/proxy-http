@@ -14,6 +14,7 @@ import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.client.ClientHandlerState;
 import tp.pdc.proxy.client.HttpClientProxyHandler;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.MockHeaderParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.Parser;
 
@@ -24,7 +25,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 	
 	public HttpServerProxyHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer) {
 		super(readBufferSize, writeBuffer, processedBuffer);
-		// TODO: instanciar parsers
+		// TODO: instanciar parsers de verdad
+		headersParser = new MockHeaderParser();
 	}
 
 	@Override
@@ -129,6 +131,6 @@ public class HttpServerProxyHandler extends HttpHandler {
 
 	private boolean isResponseWithBody() {
 		// TODO Auto-generated method stub
-		return true;
+		return false;
 	}
 }

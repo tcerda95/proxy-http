@@ -17,6 +17,7 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.HttpRequestParserImpl;
+import tp.pdc.proxy.parser.MockParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.Parser;
 import tp.pdc.proxy.server.HttpServerProxyHandler;
@@ -106,7 +107,8 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 			
 			if (headersParser.hasFinished() && headersParser.hasMethod(Method.POST)) {
-				// TODO: instanciar content parser
+				// TODO: instanciar body parser de verdad
+				bodyParser = new MockParser();
 			}
 			
 			if (headersParser.hasFinished() && !headersParser.hasMethod(Method.POST))
@@ -164,7 +166,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	
 	private boolean isServerResponseProcessed() {
 		SocketChannel socketChannel = (SocketChannel) this.getConnectedPeerKey().channel();
-		return !socketChannel.isOpen();
+		return !socketChannel.isOpen(); //TODO: esto es porq no tenemos conexiones persistentes con el servidor
 	}
 
 	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {
@@ -179,10 +181,13 @@ public class HttpClientProxyHandler extends HttpHandler {
 		if (headersParser.hasHeaderValue(Header.HOST)) {
 			byte[] hostBytes = headersParser.getHeaderValue(Header.HOST);
 			
+			LOGGER.debug("Host length: {}", hostBytes.length);
+			LOGGER.debug("Host: {}", new String(hostBytes, PROPERTIES.getCharset()));
+			
 			try {
 				tryConnect(hostBytes, key);
 			} catch (NumberFormatException e) {
-				LOGGER.warn("Failed to parse port {}", e.getMessage());
+				LOGGER.warn("Failed to parse port: {}", e.getMessage());
 				setErrorState(HttpResponse.BAD_REQUEST_400, key);
 				return;
 			} catch (IllegalArgumentException e) {
@@ -214,6 +219,8 @@ public class HttpClientProxyHandler extends HttpHandler {
 		Selector selector = key.selector();
 		SocketChannel serverSocket = SocketChannel.open();
 		SelectionKey serverKey;
+		
+		LOGGER.debug("InetSocketAddress {}", address);
 		
 		serverSocket.configureBlocking(false);
 		
