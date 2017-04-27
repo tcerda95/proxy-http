@@ -8,7 +8,6 @@ public class ParseUtils {
 
     private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit;
 
-
     private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
         '"', '/', '[', ']', '?', '=', '{', '}', SP.getValue(), HT.getValue()};
 
@@ -27,6 +26,9 @@ public class ParseUtils {
         }
     }
 
+    private ParseUtils() {
+    }
+    
     private static boolean contains(byte[] arr, byte toFind) {
         for (byte c: arr) {
             if (c == toFind)
@@ -54,4 +56,25 @@ public class ParseUtils {
     public static boolean isAlphabetic(byte c) {
         return isAlphabetic[c];
     }
+    
+	public static int parseInt(byte[] arr) {
+		return parseInt(arr, 0, arr.length);
+	}
+	
+	public static int parseInt(byte[] arr, int length) {
+		return parseInt(arr, 0, length);
+	}
+	
+	public static int parseInt(byte[] arr, int offset, int length) {
+		int num = 0;
+		
+		for (int i = offset; length > 0; i++, length--) {
+			if (ParseUtils.isDigit(arr[i]))
+				num = num * 10 + arr[i] - '0';
+			else
+				throw new NumberFormatException("Invalid number format");
+		}
+		
+		return num;
+	}
 }

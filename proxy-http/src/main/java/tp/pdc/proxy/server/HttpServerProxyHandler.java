@@ -14,6 +14,9 @@ import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.client.ClientHandlerState;
 import tp.pdc.proxy.client.HttpClientProxyHandler;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.BytesUtils;
+import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.parser.MockHeaderParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.Parser;
@@ -71,10 +74,10 @@ public class HttpServerProxyHandler extends HttpHandler {
 				headersParser.parse(inputBuffer, processedBuffer);
 				if (headersParser.hasFinished() && isResponseWithBody()) {
 					if (isContentLength()) {
-						// TODO: instanciar parser correspondiente de body
+						// TODO: instanciar parser de content length
 					}
 					else if (isChunked()) {
-						// TODO: instanciar parser correspondiente de body
+						// TODO: instanciar parser de chunked
 					}
 				}
 			} catch (ParserFormatException e) {
@@ -120,13 +123,12 @@ public class HttpServerProxyHandler extends HttpHandler {
 	}
 	
 	private boolean isChunked() {
-		// TODO Auto-generated method stub
-		return false;
+		return headersParser.hasHeaderValue(Header.TRANSFER_ENCODING) 
+				&& BytesUtils.equalsBytes(headersParser.getHeaderValue(Header.TRANSFER_ENCODING), HeaderValue.CHUNKED.getValue());
 	}
 
 	private boolean isContentLength() {
-		// TODO Auto-generated method stub
-		return false;
+		return headersParser.hasHeaderValue(Header.CONTENT_LENGTH);
 	}
 
 	private boolean isResponseWithBody() {

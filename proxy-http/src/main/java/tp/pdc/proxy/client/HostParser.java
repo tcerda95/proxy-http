@@ -3,6 +3,7 @@ package tp.pdc.proxy.client;
 import java.net.InetSocketAddress;
 
 import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class HostParser {
 	public static final int DEFAULT_PORT = 80;
@@ -21,28 +22,9 @@ public class HostParser {
 		if (colonIndex == hostBytes.length)
 			port = DEFAULT_PORT;
 		else {
-			port = parsePort(hostBytes, colonIndex+1);
-		}
-					
-		return new InetSocketAddress(hostname, port);
-	}
-	
-	private int parsePort(byte[] hostBytes, int i) {
-		int port = 0;
-		for (; i < hostBytes.length; i++) {
-			if (isNum(hostBytes[i]))
-				port = port * 10 + hostBytes[i] - '0';
-			else
-				throw new NumberFormatException("Invalid port format");
+			port = ParseUtils.parseInt(hostBytes, colonIndex+1, hostBytes.length - colonIndex - 1);
 		}
 		
-		return port;
+		return new InetSocketAddress(hostname, port);
 	}
-
-	private boolean isNum(byte b) {
-		if (b >= '0' && b <= '9')
-			return true;
-		return false;
-	}
-
 }
