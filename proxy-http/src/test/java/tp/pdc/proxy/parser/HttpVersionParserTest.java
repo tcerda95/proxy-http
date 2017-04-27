@@ -1,6 +1,7 @@
 package tp.pdc.proxy.parser;
 
 import org.junit.Test;
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 
@@ -153,15 +154,20 @@ public class HttpVersionParserTest {
     }
 
     @Test
-    public void leaveUnreadDataTest() {
+    public void leaveUnreadDataTest() throws ParserFormatException {
         HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
 
-        String remaining = "HelloWorld";
         String version = "HTTP/1.2\r";
+        String remaining = "HelloWorld";
         String sum = version + remaining;
 
-        ByteBuffer input = ByteBuffer.allocate(64);
+        ByteBuffer input = ByteBuffer.wrap(sum.getBytes());
         ByteBuffer output = ByteBuffer.allocate(64);
-        ;
+
+        parser.parse(input, output);
+
+        assertEquals(remaining,
+            // Bytes left in inputBuffer
+            new String(input.array(), input.position(), input.remaining(), ProxyProperties.getInstance().getCharset()));
     }
 }
