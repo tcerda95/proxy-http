@@ -30,7 +30,7 @@ public class HttpRequestParserImplTest {
 		
 		inputBuffer = ByteBuffer.wrap(request.getBytes());
 		
-		assertTrue(parser.parse(inputBuffer, outputBuffer));
+ 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasFinished());
 	}
 

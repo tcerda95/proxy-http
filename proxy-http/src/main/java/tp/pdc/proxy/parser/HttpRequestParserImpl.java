@@ -27,14 +27,14 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     }
 
     @Override public boolean hasFinished () {
-        return requestState == RequestParserState.READ_HEADERS && headersParser.hasFinished();
+        return requestState == RequestParserState.READ_OK;
     }
 
     private enum RequestParserState {
         /* First Line */
         REQUEST_START, METHOD_READ, URI_READ, HTTP_VERSION, CR_END_LINE, CR_FIRST_LINE,
 
-        READ_HEADERS,
+        READ_HEADERS, READ_OK,
 
         /* Error states */
         ERROR,
@@ -115,7 +115,11 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                     break;
 
                 case READ_HEADERS:
-                    return headersParser.parse(c,output);
+                    if (headersParser.parse(c, output)) {
+                        requestState = RequestParserState.READ_OK;
+                        return true;
+                    }
+                    break;
 
                 default:
                     handleError(requestState);
@@ -166,14 +170,13 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     }*/
 
     public static void main (String[] args) throws Exception {
-        String s = "GET / HTTP/1.1" + CR + LF
-            + "Host: google.com" + CR + LF
-            + "User-Agent: Internet Explorer 2" + CR + LF
-            + "Connection: Close" + CR + LF
-            + "Transfer-encoding: Chunked" + CR + LF
-            + "Connection-no: Close" + CR + LF
-            + "Transfer-size: Chunked" + CR + LF
-            + CR + LF;
+        String s = "GET / HTTP/1.1\r\n"
+            + "Host: google.com\r\n"
+            + "User-Agent: Internet Explorer 2\r\n"
+            + "Connection: Close\r\n"
+            + "Transfer-encoding: Chunked\r\n"
+            + "Connection-no: Close\r\n"
+            + "Transfer-size: Chunked\r\n\r\n";
 
         for (int i = 0; i < 1/*s.length()*/; i++) {
             System.out.println("ITERACION: " + i);
