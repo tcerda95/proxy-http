@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.interfaces.HttpResponseLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
 import java.nio.ByteBuffer;
@@ -61,5 +60,7 @@ public class HttpResponseParserTest {
             new String(inputWithRemaining.array(), inputWithRemaining.position(),
                 inputWithRemaining.remaining(), ProxyProperties.getInstance().getCharset()));
     }
+
+    //TODO: hacer mas. Falta probar mandar sin headers, y mandar cosas en pedazos.
 
 }
