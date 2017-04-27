@@ -1,6 +1,7 @@
 package tp.pdc.proxy.parser;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
@@ -44,7 +45,19 @@ public class HttpResponseParserImpl implements HttpResponseParser {
         return false;
     }
 
+    @Override public boolean parse (byte c, ByteBuffer outputBuffer) throws ParserFormatException {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
     @Override public boolean hasFinished () {
         return lineParser.hasFinished() && headerParser.hasFinished();
+    }
+
+    @Override public boolean hasRelevantHeaderValue (Header header) {
+        return headerParser.hasRelevantHeaderValue(header);
+    }
+
+    @Override public byte[] getRelevantHeaderValue (Header header) {
+        return headerParser.getRelevantHeaderValue(header);
     }
 }

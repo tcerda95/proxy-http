@@ -22,7 +22,7 @@ public class HttpResponseLineParserTest {
     @Before
     public void init(){
         statusCode = new Random().nextInt(999);
-        message = "Hi I'm a response message";
+        message = "Hi I'm a responseLine message";
         response = "HTTP/1.1 " + statusCode + " " + message + "\r\n";
         parser = new HttpResponseLineParserImpl();
         input = ByteBuffer.wrap(response.getBytes());
