@@ -14,7 +14,7 @@ public class HttpResponseLineParserImpl {
     private ResponseLineState state;
 
     private enum ResponseLineState {
-        HTTP_VERSION, VERSION_END, SP_1, STATUS_CODE, SP_2, REASON_PHRASE, CR_END, READ_OK, ERROR,
+        HTTP_VERSION, STATUS_CODE, REASON_PHRASE, CR_END, READ_OK, ERROR,
     }
 
     public HttpResponseLineParserImpl () {
@@ -41,7 +41,7 @@ public class HttpResponseLineParserImpl {
                 case HTTP_VERSION:
                     boolean ended = versionParser.parse(inputBuffer, outputBuffer);
                     if (ended)
-                        state = ResponseLineState.SP_1;
+                        state = ResponseLineState.STATUS_CODE;
                     break;
 
                 case STATUS_CODE:
@@ -51,7 +51,7 @@ public class HttpResponseLineParserImpl {
                         statusCode += b - '0';
                         outputBuffer.put(b);
                     } else if (b == ' ') {
-                        state = ResponseLineState.SP_2;
+                        state = ResponseLineState.REASON_PHRASE;
                         outputBuffer.put(b);
                     } else {
                         handleError();
