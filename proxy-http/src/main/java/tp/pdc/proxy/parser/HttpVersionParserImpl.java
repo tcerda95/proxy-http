@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 public class HttpVersionParserImpl implements HttpVersionParser {
 
     private int minorVersion, majorVersion;
+    private boolean readMinorVersion, readMajorVersion;
     private byte endByte;
     private HttpVersionState state;
 
@@ -17,7 +18,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     }
 
     public HttpVersionParserImpl (byte endByte) {
-        majorVersion = minorVersion = -1;
+        majorVersion = minorVersion = 0;
         state = HttpVersionState.NOT_READ_YET;
 
         if (endByte < 0)
@@ -30,11 +31,11 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     }
 
     @Override public boolean readMinorVersion () {
-        return minorVersion != -1;
+        return readMinorVersion;
     }
 
     @Override public boolean readMajorVersion () {
-        return majorVersion != -1;
+        return readMajorVersion;
     }
 
     @Override public int getMajorHttpVersion () {
@@ -82,10 +83,13 @@ public class HttpVersionParserImpl implements HttpVersionParser {
                 break;
 
             case MAJOR_VERSION:
-                if (ParseUtils.isDigit(b) && b != (byte) '0') {
-                    majorVersion *= 10;
-                    majorVersion += b - (byte) '0';
-                    outputBuffer.put(b);
+                if (ParseUtils.isDigit(b)) {
+                    if (readMajorVersion || b != (byte) '0') { // No es cero a la izquierda
+                        readMajorVersion = true;
+                        majorVersion *= 10;
+                        majorVersion += (b - (byte) '0');
+                        outputBuffer.put(b);
+                    }
                 } else if (b == (byte) '.' && majorVersion != 0) {
                     state = HttpVersionState.MINOR_VERSION;
                     outputBuffer.put(b);
@@ -96,12 +100,14 @@ public class HttpVersionParserImpl implements HttpVersionParser {
 
             case MINOR_VERSION:
                 if (ParseUtils.isDigit(b)) {
-                    minorVersion *= 10;
-                    minorVersion += b - (byte) '0';
-                    outputBuffer.put(b);
+                    if (readMinorVersion || b != (byte) '0') { // No es cero a la izquierda
+                        readMinorVersion = true;
+                        minorVersion *= 10;
+                        minorVersion += (b - (byte) '0');
+                        outputBuffer.put(b);
+                    }
                 } else if (b == endByte) { //TODO: interfaz de constantes
                     state = HttpVersionState.READ_OK;
-//                    httpParse = ParserState.CR_FIRST_LINE; TODO: el parser exterior pregunta si terminó para cambiar de estado
                     outputBuffer.put(b);
                 } else {
                     handleError();

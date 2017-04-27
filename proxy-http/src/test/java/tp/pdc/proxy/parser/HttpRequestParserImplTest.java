@@ -28,7 +28,7 @@ public class HttpRequestParserImplTest {
 				 + "Host: localhost:8080\r\n"
 				 + "\r\n";
 		
-		inputBuffer = ByteBuffer.wrap(request.getBytes("ASCII"));
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
 		
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasFinished());
