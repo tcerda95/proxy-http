@@ -22,9 +22,10 @@ public class HttpProxySelectorProtocol {
 		try {
 			SocketChannel socketChannel = ((ServerSocketChannel) key.channel()).accept();
 			socketChannel.configureBlocking(false);
-			socketChannel.register(key.selector(), SelectionKey.OP_READ, new HttpClientProxyHandler(bufSize)); // Leer del cliente
+			socketChannel.register(key.selector(), SelectionKey.OP_READ, new HttpClientProxyHandler(bufSize));
+			LOGGER.info("Client connection accepted");
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.warn("Failed to accept client connection: {}", e.getMessage());
 		}
 	}
 
@@ -39,11 +40,13 @@ public class HttpProxySelectorProtocol {
 		
 		try {
 			if (socketChannel.finishConnect()) {
+				LOGGER.info("Server connection established");
+				
 				key.interestOps(SelectionKey.OP_WRITE);
 				clientHandler.setConnectedState();
 			}
 		} catch (IOException e) {
-			LOGGER.warn("Failed to connect to server {}", e.getMessage());
+			LOGGER.warn("Failed to connect to server: {}", e.getMessage());
 			
 			HttpHandler serverHandler = (HttpHandler) key.attachment();
 			SelectionKey clientKey = serverHandler.getConnectedPeerKey();

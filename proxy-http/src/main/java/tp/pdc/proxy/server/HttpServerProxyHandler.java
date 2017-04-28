@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.HttpHandler;
-import tp.pdc.proxy.HttpProxySelectorProtocol;
 import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.client.ClientHandlerState;
 import tp.pdc.proxy.client.HttpClientProxyHandler;
@@ -22,7 +21,7 @@ import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.Parser;
 
 public class HttpServerProxyHandler extends HttpHandler {
-	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
+	private final static Logger LOGGER = LoggerFactory.getLogger(HttpServerProxyHandler.class);
 	private HttpRequestParser headersParser;
 	private Parser bodyParser;
 	
@@ -93,6 +92,10 @@ public class HttpServerProxyHandler extends HttpHandler {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		else if (!processedBuffer.hasRemaining()) {
+			LOGGER.debug("Unregistering server: server's processed buffer full");
+			key.interestOps(0);
 		}
 	}
 	

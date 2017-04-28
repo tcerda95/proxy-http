@@ -43,22 +43,52 @@ public class HttpClientProxyHandler extends HttpHandler {
 		else if (state == ClientHandlerState.REQUEST_PROCESSED_CONNECTING)
 			state = ClientHandlerState.REQUEST_PROCESSED;
 		else {
-			LOGGER.error("Invalid client state");
+			LOGGER.error("Invalid client state: {}", state);
 			throw new IllegalStateException("State must be " + ClientHandlerState.CONNECTING + " or " + ClientHandlerState.REQUEST_PROCESSED_CONNECTING);
 		}
 	}
 	
 	public void setRequestSentState() {
-		if (state == ClientHandlerState.REQUEST_PROCESSED)
+		if (state == ClientHandlerState.REQUEST_PROCESSED) {
+			LOGGER.debug("Complete request sent");
 			state = ClientHandlerState.REQUEST_SENT;
+		}
 		else {
-			LOGGER.error("Invalid client state");
+			LOGGER.error("Invalid client state: {}", state);
 			throw new IllegalStateException("State must be " + ClientHandlerState.REQUEST_PROCESSED);
 		}
 	}
 	
 	public ClientHandlerState getState() {
 		return state;
+	}
+	
+	@Override
+	protected void processWrite(ByteBuffer inputBuffer, SelectionKey key) {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		
+		try {
+			socketChannel.write(inputBuffer);
+			
+			if (!inputBuffer.hasRemaining()) {
+				key.interestOps(0);			
+				if (state == ClientHandlerState.ERROR)
+					socketChannel.close();
+				else if (isServerResponseProcessed()) {
+					LOGGER.info("Server response processed and sent: closing connection to client");
+					socketChannel.close();
+				}
+			}
+			
+			if (state != ClientHandlerState.ERROR && !isServerResponseProcessed()) {
+				LOGGER.debug("Registering server for read: server's response not processed yet");
+				this.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
+			}
+			
+		} catch (IOException e) {
+			LOGGER.warn("Failed to write to client: {}", e.getMessage());
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -70,7 +100,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 			if (socketChannel.read(buffer) == -1)
 				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo?
 		} catch (IOException e) {
-			// TODO No se pudo leer del cliente
 			LOGGER.warn("Failed to read from client: {}", e.getMessage());
 			e.printStackTrace();
 		}
@@ -139,30 +168,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 	
-	@Override
-	protected void processWrite(ByteBuffer inputBuffer, SelectionKey key) {
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		
-		try {
-			socketChannel.write(inputBuffer);
-			
-			if (!inputBuffer.hasRemaining()) {
-				key.interestOps(0);			
-				if (state == ClientHandlerState.ERROR)
-					socketChannel.close();
-				else if (isServerResponseProcessed()) {
-					LOGGER.info("Server response processed. Closing connection to client.");
-					socketChannel.close();
-				}
-			}
-			
-		} catch (IOException e) {
-			LOGGER.warn("Failed to write to client");
-			e.printStackTrace();
-			// No se le pudo responder al cliente
-		}
-	}
-	
 	private boolean isServerResponseProcessed() {
 		SocketChannel socketChannel = (SocketChannel) this.getConnectedPeerKey().channel();
 		return !socketChannel.isOpen(); //TODO: esto es porq no tenemos conexiones persistentes con el servidor
@@ -179,9 +184,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 		
 		if (headersParser.hasHeaderValue(Header.HOST)) {
 			byte[] hostBytes = headersParser.getHeaderValue(Header.HOST);
-			
-			LOGGER.debug("Host length: {}", hostBytes.length);
-			LOGGER.debug("Host: {}", new String(hostBytes, PROPERTIES.getCharset()));
 			
 			try {
 				tryConnect(hostBytes, key);
@@ -218,9 +220,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		Selector selector = key.selector();
 		SocketChannel serverSocket = SocketChannel.open();
 		SelectionKey serverKey;
-		
-		LOGGER.debug("InetSocketAddress {}", address);
-		
+				
 		serverSocket.configureBlocking(false);
 		
 		if (serverSocket.connect(address)) {
