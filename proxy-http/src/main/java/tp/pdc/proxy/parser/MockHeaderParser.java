@@ -37,4 +37,8 @@ public class MockHeaderParser implements HttpRequestParser {
 	public boolean hasMethod(Method method) {
 		return false;
 	}
+
+	@Override public boolean hasHost () {
+		return false;
+	}
 }
