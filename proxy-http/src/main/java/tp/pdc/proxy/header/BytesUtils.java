@@ -4,7 +4,20 @@ import java.nio.ByteBuffer;
 
 public class BytesUtils {
 
-     public static boolean equalsBytes(byte[] array, ByteBuffer byteBuffer, int length) {
+	/**
+	 * Copies length bytes from input buffer to output buffer using the bulk put operation 
+	 * and updates input's position pointer accordingly.
+	 * @param input Buffer from which bytes must be read. Must be in read mode.
+	 * @param output Buffer from which bytes will be written to.
+	 * @param length Amount of bytes to copy.
+	 */
+	public static void lengthPut(ByteBuffer input, ByteBuffer output, int length) {
+		int inputPos = input.position();
+		output.put(input.array(), inputPos, length);
+		input.position(inputPos + length);
+	}
+	
+    public static boolean equalsBytes(byte[] array, ByteBuffer byteBuffer, int length) {
     	byte[] bufferArray = byteBuffer.array();
     	int offset = byteBuffer.position();
     	
