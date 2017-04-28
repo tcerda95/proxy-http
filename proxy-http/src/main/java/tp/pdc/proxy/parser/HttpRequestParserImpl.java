@@ -32,7 +32,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 
     private enum RequestParserState {
         /* First Line */
-        REQUEST_START, METHOD_READ, URI_READ, HTTP_VERSION, CR_END_LINE, CR_FIRST_LINE,
+        REQUEST_START, METHOD_READ, URI_READ, HTTP_VERSION, CR_FIRST_LINE,
 
         READ_HEADERS, READ_OK,
 
@@ -89,10 +89,10 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                 case URI_READ:
                     //parseURI();
                     if (c == SP.getValue()) {
-                        requestState = URIIsOk() ? RequestParserState.HTTP_VERSION : RequestParserState.ERROR;
+                        requestState = RequestParserState.HTTP_VERSION;
                         httpURI.flip();
                         output.put(httpURI).put(c);
-                    } else if (isURIComponent(c)) {
+                    } else if (ParseUtils.isUriCharacter(c)) {
                         httpURI.put(c);
                     } else {
                         handleError(requestState);
@@ -143,72 +143,35 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         //        return httpURI.toString().equals("/");
     }
 
-    private boolean isURIComponent(final byte c) {
-        return c == '/';
-    }
+//    -- NOTAS RFC --
+//
+//    URI = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
+//    1. If Request-URI is an absoluteURI, the host is part of the
+//    Request-URI. Any Host header field value in the request MUST be
+//    ignored.
+//
+//    2. If the Request-URI is not an absoluteURI, and the request includes
+//    a Host header field, the host is determined by the Host header
+//    field value.
+//
+//        3. If the host as determined by rule 1 or 2 is not a valid host on
+//    the server, the response MUST be a 400 (Bad Request) error message.
+//    A server
+//    SHOULD return 414 (Request-URI Too Long) status if a URI is longer
+//    than the server can handle
 
+    // TODO: arreglar esto
     private void handleError(RequestParserState parserState) throws ParserFormatException {
         parserState = RequestParserState.ERROR;
         throw new ParserFormatException("Error while parsing");
-    }
-
-    //test
-/*    @Override public String toString () {
-        return "HttpRequestParserImpl{" +
-            "requestState=" + requestState +
-            ", versionParse=" + versionParse +
-            ", headersParse=" + headersParse +
-            ", httpMajorVersion=" + httpMajorVersion +
-            ", httpMinorVersion=" + httpMinorVersion +
-            ", methodName=" + methodName +
-            ", httpURI=" + httpURI +
-            ", headerName=" + headerName +
-            ", headerValue=" + headerValue +
-            ", currentRelevantHeader=" + currentRelevantHeader +
-            ", relevantHeaders=" + relevantHeaders +
-            '}';
-    }*/
-
-    public static void main (String[] args) throws Exception {
-        String s = "GET / HTTP/1.1\r\n"
-            + "Host: google.com\r\n"
-            + "User-Agent: Internet Explorer 2\r\n"
-            + "Connection: Close\r\n"
-            + "Transfer-encoding: Chunked\r\n"
-            + "Connection-no: Close\r\n"
-            + "Transfer-size: Chunked\r\n\r\n";
-
-        for (int i = 0; i < 1/*s.length()*/; i++) {
-            System.out.println("ITERACION: " + i);
-
-            String s1 = s.substring(0, i);
-            String s2 = s.substring(i);
-
-            HttpRequestParserImpl parser = new HttpRequestParserImpl();
-            ByteBuffer buf1 = ByteBuffer.wrap(s1.getBytes(StandardCharsets.US_ASCII));
-            ByteBuffer buf2 = ByteBuffer.wrap(s2.getBytes(StandardCharsets.US_ASCII));
-
-            parser.parse(buf1, ByteBuffer.allocate(4096));
-            parser.parse(buf2, ByteBuffer.allocate(4096));
-
-            System.out.println(parser.toString());
-
-            for (Map.Entry<Header, byte[]> e: parser.headersParser.getRelevantHeaders().entrySet()) {
-                System.out.println("KEY: " + e. getKey().name());
-                System.out.println("VALUE: " + new String(e.getValue()));
-            }
-        }
-
-        ByteBuffer input = ByteBuffer.wrap(s.getBytes(StandardCharsets.US_ASCII));
-        ByteBuffer output = ByteBuffer.allocate(input.capacity());
-        new HttpRequestParserImpl().parse(input, output);
-
-        System.out.println(input);
-        System.out.println(output);
     }
 
 	@Override
 	public boolean hasMethod(Method method) {
 		return method == this.method;
 	}
+
+    @Override public boolean hasHost () {
+        return hasHeaderValue(Header.HOST); // TODO: puede venir del URI
+    }
 }

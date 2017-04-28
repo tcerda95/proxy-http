@@ -53,6 +53,8 @@ public class ParseUtils {
         return isToken[c] || isSeparator[c];
     }
 
+    public static boolean isUriCharacter(byte c) { return isToken[c] || isDigit[c] || isSeparator[c]; }
+
     public static boolean isAlphabetic(byte c) {
         return isAlphabetic[c];
     }
