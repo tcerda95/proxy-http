@@ -40,11 +40,11 @@ public class HttpServerProxyHandler extends HttpHandler {
 		
 		try {
 			bytesRead = socketChannel.read(buffer);
-						
-			if (bytesRead == -1 || responseProcessed())
+			
+			if (bytesRead == -1)
 				socketChannel.close();
-			else
-				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);	
+			else if (bytesRead > 0)
+				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read response from server");
@@ -63,6 +63,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 	@Override
 	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
+		
 		if (headersParser.hasFinished())
 			try {
 				bodyParser.parse(inputBuffer, processedBuffer);
@@ -84,6 +85,15 @@ public class HttpServerProxyHandler extends HttpHandler {
 				// TODO: respuesta de server mal formada. Qué devolver al cliente?
 			}
 		}
+		
+		if (responseProcessed()) {
+			try {
+				key.channel().close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	@Override
@@ -93,6 +103,9 @@ public class HttpServerProxyHandler extends HttpHandler {
 		try {
 			LOGGER.info("Sending {} bytes to server", inputBuffer.remaining());
 			socketChannel.write(inputBuffer);
+			
+			if (getClientState() != ClientHandlerState.REQUEST_PROCESSED)
+				this.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
 			
 			if (!inputBuffer.hasRemaining() && getClientState() != ClientHandlerState.REQUEST_PROCESSED) {
 				LOGGER.debug("Unregistering server from write: nothing left in client processed buffer");
@@ -104,9 +117,6 @@ public class HttpServerProxyHandler extends HttpHandler {
 				key.interestOps(SelectionKey.OP_READ);
 				getClientHandler().setRequestSentState();
 			}
-			
-			if (getClientState() != ClientHandlerState.REQUEST_PROCESSED)
-				this.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
 			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write request to server");

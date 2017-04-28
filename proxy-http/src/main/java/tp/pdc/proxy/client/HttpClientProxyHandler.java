@@ -38,18 +38,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 	
 	public void setConnectedState() {
-		if (this.state == ClientHandlerState.CONNECTING)
-			this.state = ClientHandlerState.CONNECTED;
-		else if (this.state == ClientHandlerState.REQUEST_PROCESSED_CONNECTING)
-			this.state = ClientHandlerState.REQUEST_PROCESSED;
+		if (state == ClientHandlerState.CONNECTING)
+			state = ClientHandlerState.CONNECTED;
+		else if (state == ClientHandlerState.REQUEST_PROCESSED_CONNECTING)
+			state = ClientHandlerState.REQUEST_PROCESSED;
 		else {
 			LOGGER.error("Invalid client state");
 			throw new IllegalStateException("State must be " + ClientHandlerState.CONNECTING + " or " + ClientHandlerState.REQUEST_PROCESSED_CONNECTING);
 		}
-	}
-	
-	public ClientHandlerState getState() {
-		return state;
 	}
 	
 	public void setRequestSentState() {
@@ -61,13 +57,18 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 	
+	public ClientHandlerState getState() {
+		return state;
+	}
+	
 	@Override
 	protected void processRead(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		ByteBuffer buffer = this.getReadBuffer();
 		
 		try {
-			socketChannel.read(buffer);
+			if (socketChannel.read(buffer) == -1)
+				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo?
 		} catch (IOException e) {
 			// TODO No se pudo leer del cliente
 			LOGGER.warn("Failed to read from client: {}", e.getMessage());
@@ -89,7 +90,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 			
 			if (bodyParser.hasFinished())
-				setRequestProcessedState();
+				setRequestProcessedState(key);
 		}
 		else {
 			try {
@@ -112,17 +113,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 			
 			if (headersParser.hasFinished() && !headersParser.hasMethod(Method.POST))
-				setRequestProcessedState();
-						
-			if (state == ClientHandlerState.CONNECTING && headersParser.hasFinished() && !headersParser.hasMethod(Method.POST)) {
-				state = ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
-				key.interestOps(0);
-			}
-						
-			if (state == ClientHandlerState.CONNECTED && headersParser.hasFinished() && !headersParser.hasMethod(Method.POST)) {
-				state = ClientHandlerState.REQUEST_PROCESSED;
-				key.interestOps(0);
-			}
+				setRequestProcessedState(key);						
 		}
 		
 		if (!processedBuffer.hasRemaining()) {
@@ -130,11 +121,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 			key.interestOps(0);				
 		}
 		
-		if (state.shouldWrite())
+		if (state.shouldWrite()) {
+			LOGGER.debug("Registering server for write. Must send {} bytes", processedBuffer.position());
 			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+		}
 	}
 	
-	private void setRequestProcessedState() {
+	private void setRequestProcessedState(SelectionKey key) {
+		key.interestOps(0);
 		if (state == ClientHandlerState.CONNECTING)
 			state = ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
 		else if (state == ClientHandlerState.CONNECTED)
@@ -152,10 +146,15 @@ public class HttpClientProxyHandler extends HttpHandler {
 		try {
 			socketChannel.write(inputBuffer);
 			
-			if (!inputBuffer.hasRemaining() && state == ClientHandlerState.ERROR)
-				socketChannel.close();
-			else if (!inputBuffer.hasRemaining() && isServerResponseProcessed())
-				socketChannel.close();
+			if (!inputBuffer.hasRemaining()) {
+				key.interestOps(0);			
+				if (state == ClientHandlerState.ERROR)
+					socketChannel.close();
+				else if (isServerResponseProcessed()) {
+					LOGGER.info("Server response processed. Closing connection to client.");
+					socketChannel.close();
+				}
+			}
 			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write to client");
