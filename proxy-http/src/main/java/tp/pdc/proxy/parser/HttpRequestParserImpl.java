@@ -1,8 +1,6 @@
 package tp.pdc.proxy.parser;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +30,10 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 
     private enum RequestParserState {
         /* First Line */
-        REQUEST_START, METHOD_READ, URI_READ, HTTP_VERSION, CR_FIRST_LINE,
+        REQUEST_START, METHOD_READ, HTTP_VERSION, CR_FIRST_LINE,
+
+        /* URI */
+        URI_READ, HOST_PROTOCOL, URI_HOST_ADDR, URI_NO_HOST, URI_HOST_SLASH,
 
         READ_HEADERS, READ_OK,
 
@@ -43,10 +44,9 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     private RequestParserState requestState;
     private Method method;
 
-    private final ByteBuffer methodName;
-    private final ByteBuffer httpURI;
+    private final ByteBuffer methodName, URIHost;
 
-    private ByteBuffer output;
+    private boolean gotHostFromURI;
 
     private HttpHeadersParserImpl headersParser;
     private HttpVersionParser versionParser;
@@ -54,14 +54,13 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     public HttpRequestParserImpl () {
         requestState = RequestParserState.REQUEST_START;
         methodName = ByteBuffer.allocate(16);
-        httpURI = ByteBuffer.allocate(256);
+        URIHost = ByteBuffer.allocate(256);
         headersParser = new HttpHeadersParserImpl();
         versionParser = new HttpVersionParserImpl(CR.getValue());
     }
 
-    // Receives buffer in read state
     public boolean parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) throws ParserFormatException {
-        output = outputBuffer;
+        ByteBuffer output = outputBuffer;
         while (inputBuffer.hasRemaining()) {
             byte c = inputBuffer.get();
 
@@ -71,7 +70,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                         requestState = RequestParserState.METHOD_READ;
                         methodName.put(c);
                     } else {
-                        handleError(requestState);
+                        handleError();
                     }
                     break;
 
@@ -82,20 +81,63 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                         requestState = RequestParserState.URI_READ;
                         output.put(methodName).put(c);
                     } else {
-                        handleError(requestState);
+                        handleError();
                     }
                     break;
 
                 case URI_READ:
-                    //parseURI();
+                    if (c == '/') {
+                        output.put(c);
+                        requestState = RequestParserState.URI_NO_HOST;
+                    } else if (Character.toLowerCase(c) == 'h') { // Has protocol so it has host.
+                        URIHost.put(c);
+                        requestState = RequestParserState.HOST_PROTOCOL;
+                    } else {
+                        handleError();
+                    }
+                    break;
+
+                case URI_NO_HOST:
                     if (c == SP.getValue()) {
                         requestState = RequestParserState.HTTP_VERSION;
-                        httpURI.flip();
-                        output.put(httpURI).put(c);
+                        output.put(c);
                     } else if (ParseUtils.isUriCharacter(c)) {
-                        httpURI.put(c);
+                        output.put(c);
                     } else {
-                        handleError(requestState);
+                        handleError();
+                    }
+                    break;
+
+                case HOST_PROTOCOL:
+                    if (c == '/') {
+                        requestState = RequestParserState.URI_HOST_SLASH;
+                        URIHost.put(c);
+                    } else if (ParseUtils.isUriCharacter(c)) {
+                        URIHost.put(c);
+                    } else {
+                        handleError();
+                    }
+                    break;
+
+                case URI_HOST_SLASH:
+                    if (c == '/') {
+                        requestState = RequestParserState.URI_HOST_ADDR;
+                        URIHost.put(c);
+                    } else {
+                        handleError();
+                    }
+                    break;
+
+                case URI_HOST_ADDR:
+                    if (c == SP.getValue() || c == '/') {
+                        gotHostFromURI = true;
+                        URIHost.flip();
+                        output.put(URIHost).put(c);
+                        requestState = c == '/' ? RequestParserState.URI_NO_HOST : RequestParserState.HTTP_VERSION;
+                    } else if (ParseUtils.isUriCharacter(c)) {
+                        URIHost.put(c);
+                    } else {
+                        handleError();
                     }
                     break;
 
@@ -110,7 +152,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                         requestState = RequestParserState.READ_HEADERS;
                         output.put(c);
                     } else {
-                        handleError(requestState);
+                        handleError();
                     }
                     break;
 
@@ -122,7 +164,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                     break;
 
                 default:
-                    handleError(requestState);
+                    handleError();
             }
         }
         return false;
@@ -136,42 +178,38 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         return method != null;
     }
 
-    private boolean URIIsOk() {
-        return true;
-        //        httpURI.flip();
-        //        LOGGER.debug("URI: {}", httpURI);
-        //        return httpURI.toString().equals("/");
-    }
+    //    A server
+    //    SHOULD return 414 (Request-URI Too Long) status if a URI is longer
+    //    than the server can handle
 
-//    -- NOTAS RFC --
-//
-//    URI = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
-//    1. If Request-URI is an absoluteURI, the host is part of the
-//    Request-URI. Any Host header field value in the request MUST be
-//    ignored.
-//
-//    2. If the Request-URI is not an absoluteURI, and the request includes
-//    a Host header field, the host is determined by the Host header
-//    field value.
-//
-//        3. If the host as determined by rule 1 or 2 is not a valid host on
-//    the server, the response MUST be a 400 (Bad Request) error message.
-//    A server
-//    SHOULD return 414 (Request-URI Too Long) status if a URI is longer
-//    than the server can handle
-
-    // TODO: arreglar esto
-    private void handleError(RequestParserState parserState) throws ParserFormatException {
-        parserState = RequestParserState.ERROR;
+    private void handleError() throws ParserFormatException {
+        requestState = RequestParserState.ERROR;
         throw new ParserFormatException("Error while parsing");
     }
 
-	@Override
-	public boolean hasMethod(Method method) {
-		return method == this.method;
-	}
+    @Override
+    public boolean hasMethod(Method method) {
+        return method == this.method;
+    }
 
-    @Override public boolean hasHost () {
-        return hasHeaderValue(Header.HOST); // TODO: puede venir del URI
+    @Override
+    public boolean hasHost () {
+        return gotHostFromURI || hasHeaderValue(Header.HOST);
+    }
+
+    @Override
+    public byte[] getHostValue() {
+        if (!hasHost()) {
+            throw new IllegalStateException(); //TODO
+        }
+        byte[] host;
+        if (gotHostFromURI) {
+            URIHost.flip();
+            host = new byte[URIHost.remaining()];
+            URIHost.get(host);
+        } else {
+            host = getHeaderValue(Header.HOST);
+        }
+        return host;
     }
 }

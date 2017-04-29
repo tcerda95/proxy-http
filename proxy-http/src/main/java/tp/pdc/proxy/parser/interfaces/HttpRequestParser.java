@@ -7,4 +7,6 @@ public interface HttpRequestParser extends Parser, HttpRequestLineParser {
     boolean hasHeaderValue(Header header);
 
     byte[] getHeaderValue(Header header);
+
+    byte[] getHostValue();
 }
