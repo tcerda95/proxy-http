@@ -15,8 +15,7 @@ import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.header.Header;
-import tp.pdc.proxy.parser.HttpRequestParserImpl;
+import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
 import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
@@ -193,10 +192,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private void manageNotConnected(SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
-		if (headersParser.hasHeaderValue(Header.HOST)) {
-			byte[] hostBytes = headersParser.getHeaderValue(Header.HOST);
+		if (headersParser.hasHost()) {
+			byte[] hostValue = headersParser.getHostValue();
 			try {
-				tryConnect(hostBytes, key);
+				tryConnect(hostValue, key);
 			} catch (NumberFormatException e) {
 				LOGGER.warn("Failed to parse port: {}", e.getMessage());
 				setErrorState(HttpResponse.BAD_REQUEST_400, key);

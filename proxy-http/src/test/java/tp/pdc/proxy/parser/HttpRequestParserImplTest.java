@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
 
 public class HttpRequestParserImplTest {
 
@@ -45,6 +46,95 @@ public class HttpRequestParserImplTest {
 
 		assertFalse(parser.parse(inputBuffer, outputBuffer));
 		assertFalse(parser.hasFinished());
+	}
+
+	@Test
+	public void notHasHostTest() throws UnsupportedEncodingException, ParserFormatException {
+		String request = "GET / HTTP/1.1\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
+
+		assertTrue(parser.parse(inputBuffer, outputBuffer));
+		assertTrue(parser.hasFinished());
+		assertFalse(parser.hasHost());
+	}
+
+	@Test
+	public void hasHostInHeaderTest() throws UnsupportedEncodingException, ParserFormatException {
+		String request = "GET / HTTP/1.1\r\n"
+				+ "Host: localhost:8080\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
+
+		assertTrue(parser.parse(inputBuffer, outputBuffer));
+		assertTrue(parser.hasFinished());
+		assertTrue(parser.hasHost());
+	}
+
+	@Test
+	public void getHostInHeaderTest() throws UnsupportedEncodingException, ParserFormatException {
+		String host = "localhost:8080";
+		String request =  "GET / HTTP/1.1\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "Host: " + host + "\r\n"
+				+ "X-Header-2: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
+
+		parser.parse(inputBuffer, outputBuffer);
+
+		assertArrayEquals(host.getBytes(), parser.getHostValue());
+	}
+
+	@Test
+	public void getHostInURITest() throws UnsupportedEncodingException, ParserFormatException {
+		String host = "http://localhost:8080";
+		String request =  "GET " + host + "/ HTTP/1.1\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "X-Header-2: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
+
+		parser.parse(inputBuffer, outputBuffer);
+
+		assertArrayEquals(host.getBytes(), parser.getHostValue());
+	}
+
+	@Test
+	public void getJUSTHostInURITest() throws UnsupportedEncodingException, ParserFormatException {
+		String host = "http://localhost:8080";
+		String relative = "/hello/give/me/the/resource/a.html";
+		String request =  "GET " + host + relative + "/ HTTP/1.1\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "X-Header-2: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
+
+		parser.parse(inputBuffer, outputBuffer);
+
+		assertArrayEquals(host.getBytes(), parser.getHostValue());
+	}
+
+
+
+	@Test
+	public void hasHostInURITest() throws UnsupportedEncodingException, ParserFormatException {
+		String request = "GET http://google.com HTTP/1.1\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
+
+		assertTrue(parser.parse(inputBuffer, outputBuffer));
+		assertTrue(parser.hasFinished());
+		assertTrue(parser.hasHost());
 	}
 
 	@Test

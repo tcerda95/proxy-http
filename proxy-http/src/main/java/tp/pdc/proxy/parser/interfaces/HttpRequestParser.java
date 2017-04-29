@@ -1,4 +1,4 @@
 package tp.pdc.proxy.parser.interfaces;
 
-public interface HttpRequestParser extends HttpRequestLineParser, HttpHeaderParser {
+public interface HttpRequestParser extends HttpHeaderParser, HttpRequestLineParser {
 }

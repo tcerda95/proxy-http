@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.parser.componentParsers.HttpHeadersParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 
 import java.nio.ByteBuffer;

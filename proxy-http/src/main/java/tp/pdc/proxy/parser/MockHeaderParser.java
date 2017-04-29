@@ -33,6 +33,10 @@ public class MockHeaderParser implements HttpRequestParser {
 		return null;
 	}
 
+	@Override public byte[] getHostValue () {
+		return new byte[0];
+	}
+
 	@Override
 	public boolean hasMethod(Method method) {
 		return false;
@@ -41,7 +45,7 @@ public class MockHeaderParser implements HttpRequestParser {
 	@Override public boolean hasHost () {
 		return false;
 	}
-
+	
 	@Override
 	public boolean parse(byte c, ByteBuffer outputBuffer) throws ParserFormatException {
 		outputBuffer.put(c);

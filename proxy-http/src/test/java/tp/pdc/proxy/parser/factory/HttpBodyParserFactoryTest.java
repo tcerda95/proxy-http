@@ -78,11 +78,18 @@ public class HttpBodyParserFactoryTest {
 	
 	@Test
 	public void testClientNullParser() throws IllegalHttpHeadersException {
-		HttpBodyParser parser = HttpBodyParserFactory.getServerHttpBodyParser(headersParserMock, Method.GET);		
+		HttpBodyParser parser = HttpBodyParserFactory.getClientHttpBodyParser(headersParserMock, Method.GET);		
 		assertNotNull(parser);
 		assertEquals(HttpNullBodyParser.getInstance(), parser);
 		
-		parser = HttpBodyParserFactory.getServerHttpBodyParser(headersParserMock, Method.HEAD);		
+		parser = HttpBodyParserFactory.getClientHttpBodyParser(headersParserMock, Method.HEAD);		
+		assertNotNull(parser);
+		assertEquals(HttpNullBodyParser.getInstance(), parser);
+	}
+	
+	@Test
+	public void testServerNullParser() throws IllegalHttpHeadersException {
+		HttpBodyParser parser = HttpBodyParserFactory.getServerHttpBodyParser(headersParserMock, Method.HEAD);		
 		assertNotNull(parser);
 		assertEquals(HttpNullBodyParser.getInstance(), parser);
 	}

@@ -1,7 +1,9 @@
-package tp.pdc.proxy.parser;
+package tp.pdc.proxy.parser.mainParsers;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.parser.componentParsers.HttpHeadersParserImpl;
+import tp.pdc.proxy.parser.componentParsers.HttpResponseLineParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
