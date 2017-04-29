@@ -14,7 +14,7 @@ public class HttpContentLengthParserTest {
 
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
-	private HttpContentLengthLeetParser parser;
+	private HttpContentLengthParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	private String body;
@@ -29,7 +29,7 @@ public class HttpContentLengthParserTest {
 
 	@Test
 	public void testFinished() throws ParserFormatException {
-		parser = new HttpContentLengthLeetParser(body.length());
+		parser = new HttpContentLengthParser(body.length());
 
 		parser.parse(inputBuffer, outputBuffer);
 		assertEquals(body, byteBufferToString(outputBuffer));
@@ -39,7 +39,7 @@ public class HttpContentLengthParserTest {
 
 	@Test
 	public void testNotFinishedLongerContentLength() throws ParserFormatException {
-		parser = new HttpContentLengthLeetParser(body.length() + 5);
+		parser = new HttpContentLengthParser(body.length() + 5);
 		
 		parser.parse(inputBuffer, outputBuffer);
 		assertEquals(body, byteBufferToString(outputBuffer));
@@ -58,7 +58,7 @@ public class HttpContentLengthParserTest {
 
 	@Test
 	public void testFinishedShorterContentLength() throws ParserFormatException {
-		parser = new HttpContentLengthLeetParser(body.length() - 2);
+		parser = new HttpContentLengthParser(body.length() - 2);
 		
 		parser.parse(inputBuffer, outputBuffer);
 		String parsed = byteBufferToString(outputBuffer);
@@ -72,7 +72,7 @@ public class HttpContentLengthParserTest {
 
 	@Test
 	public void testShortOutputBuffer() throws ParserFormatException {
-		parser = new HttpContentLengthLeetParser(body.length());
+		parser = new HttpContentLengthParser(body.length());
 		outputBuffer = ByteBuffer.allocate(4);
 		
 		assertFalse(parser.parse(inputBuffer, outputBuffer));
