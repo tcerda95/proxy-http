@@ -56,20 +56,21 @@ public class HttpBodyParserFactory {
 		return parser;
 	}
 	
+	// It is imperative to prioritize Chunked over Content-Length parsing: RFC 2616 4.4.3
 	private static HttpBodyParser buildBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
 		try {
 			if (shouldL33t(headersParser)) {
-				if (hasContentLength(headersParser))
-					; // TODO: Retornar ContentLeetParser
-				else if (hasChunked(headersParser))
+				if (hasChunked(headersParser))
 					; // TODO: Retornar ChunkedLeetParser
+				else if (hasContentLength(headersParser))
+					; // TODO: Retornar ContentLeetParser
 			}
 			else {
-				if (hasContentLength(headersParser))
-					return new HttpContentLengthParser(ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
-				
-				else if (hasChunked(headersParser))
+				if (hasChunked(headersParser))
 					return new HttpChunkedParser();
+				
+				else if (hasContentLength(headersParser))
+					return new HttpContentLengthParser(ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
 			}
 		} catch (NumberFormatException e) {
 			throw new IllegalHttpHeadersException("Invalid content-length value: illegal number format");
