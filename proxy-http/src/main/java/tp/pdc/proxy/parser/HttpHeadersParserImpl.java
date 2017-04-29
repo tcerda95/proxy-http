@@ -174,11 +174,11 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         return this.headerState  == HttpHeaderState.END_OK;
     }
 
-    @Override public byte[] getRelevantHeaderValue(Header header){
+    @Override public byte[] getHeaderValue(Header header){
         return this.relevantHeaders.get(header);
     }
 
-    @Override public boolean hasRelevantHeaderValue(Header header){
+    @Override public boolean hasHeaderValue(Header header){
         return this.relevantHeaders.containsKey(header);
     }
 

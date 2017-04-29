@@ -49,6 +49,6 @@ public final class BytesUtils {
     }
     
     public static boolean equalsBytes(byte[] arr1, byte[] arr2) {
-    	return arr1.length == arr2.length && equalsBytes(arr1, arr2, arr1.length);
+    	return (arr1 == arr2) || (arr1.length == arr2.length && equalsBytes(arr1, arr2, arr1.length));
     }
 }

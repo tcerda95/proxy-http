@@ -53,11 +53,11 @@ public class HttpResponseParserImpl implements HttpResponseParser {
         return lineParser.hasFinished() && headerParser.hasFinished();
     }
 
-    @Override public boolean hasRelevantHeaderValue (Header header) {
-        return headerParser.hasRelevantHeaderValue(header);
+    @Override public boolean hasHeaderValue (Header header) {
+        return headerParser.hasHeaderValue(header);
     }
 
-    @Override public byte[] getRelevantHeaderValue (Header header) {
-        return headerParser.getRelevantHeaderValue(header);
+    @Override public byte[] getHeaderValue (Header header) {
+        return headerParser.getHeaderValue(header);
     }
 }

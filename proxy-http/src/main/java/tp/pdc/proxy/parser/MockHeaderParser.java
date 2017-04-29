@@ -41,4 +41,15 @@ public class MockHeaderParser implements HttpRequestParser {
 	@Override public boolean hasHost () {
 		return false;
 	}
+
+	@Override
+	public boolean parse(byte c, ByteBuffer outputBuffer) throws ParserFormatException {
+		outputBuffer.put(c);
+		return false;
+	}
+
+	@Override
+	public Method getMethod() {
+		return Method.GET;
+	}
 }

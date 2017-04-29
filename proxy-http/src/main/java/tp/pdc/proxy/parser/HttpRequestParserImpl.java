@@ -1,8 +1,6 @@
 package tp.pdc.proxy.parser;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +17,11 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
 
     @Override public boolean hasHeaderValue (Header header) {
-        return headersParser.hasRelevantHeaderValue(header);
+        return headersParser.hasHeaderValue(header);
     }
 
     @Override public byte[] getHeaderValue (Header header) {
-        return headersParser.getRelevantHeaderValue(header);
+        return headersParser.getHeaderValue(header);
     }
 
     @Override public boolean hasFinished () {
@@ -59,72 +57,79 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         versionParser = new HttpVersionParserImpl(CR.getValue());
     }
 
-    // Receives buffer in read state
-    public boolean parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) throws ParserFormatException {
-        output = outputBuffer;
-        while (inputBuffer.hasRemaining()) {
-            byte c = inputBuffer.get();
-
+	@Override
+	public boolean parse(byte c, ByteBuffer outputBuffer) throws ParserFormatException {
+		output = outputBuffer;
+		if (outputBuffer.hasRemaining()) {
             switch (requestState) {
-                case REQUEST_START:
-                    if (ParseUtils.isAlphabetic(c)) {
-                        requestState = RequestParserState.METHOD_READ;
-                        methodName.put(c);
-                    } else {
-                        handleParserError();
-                    }
-                    break;
-
-                case METHOD_READ:
-                    if (ParseUtils.isAlphabetic(c)) {
-                        methodName.put(c);
-                    } else if (c == SP.getValue() && processMethod()) {
-                        requestState = RequestParserState.URI_READ;
-                        output.put(methodName).put(c);
-                    } else {
-                        handleParserError();
-                    }
-                    break;
-
-                case URI_READ:
-                    //parseURI();
-                    if (c == SP.getValue()) {
-                        requestState = RequestParserState.HTTP_VERSION;
-                        httpURI.flip();
-                        output.put(httpURI).put(c);
-                    } else if (ParseUtils.isUriCharacter(c)) {
-                        httpURI.put(c);
-                    } else {
-                        handleParserError();
-                    }
-                    break;
-
-                case HTTP_VERSION:
-                    if (versionParser.parse(c, outputBuffer)) {
-                        requestState = RequestParserState.CR_FIRST_LINE;
-                    }
-                    break;
-
-                case CR_FIRST_LINE:
-                    if (c == LF.getValue()) {
-                        requestState = RequestParserState.READ_HEADERS;
-                        output.put(c);
-                    } else {
-                        handleParserError();
-                    }
-                    break;
-
-                case READ_HEADERS:
-                    if (headersParser.parse(c, output)) {
-                        requestState = RequestParserState.READ_OK;
-                        return true;
-                    }
-                    break;
-
-                default:
-                    handleParserError();
+	            case REQUEST_START:
+	                if (ParseUtils.isAlphabetic(c)) {
+	                    requestState = RequestParserState.METHOD_READ;
+	                    methodName.put(c);
+	                } else {
+	                    handleParserError();
+	                }
+	                break;
+	
+	            case METHOD_READ:
+	                if (ParseUtils.isAlphabetic(c)) {
+	                    methodName.put(c);
+	                } else if (c == SP.getValue() && processMethod()) {
+	                    requestState = RequestParserState.URI_READ;
+	                    output.put(methodName).put(c);
+	                } else {
+	                    handleParserError();
+	                }
+	                break;
+	
+	            case URI_READ:
+	                //parseURI();
+	                if (c == SP.getValue()) {
+	                    requestState = RequestParserState.HTTP_VERSION;
+	                    httpURI.flip();
+	                    output.put(httpURI).put(c);
+	                } else if (ParseUtils.isUriCharacter(c)) {
+	                    httpURI.put(c);
+	                } else {
+	                    handleParserError();
+	                }
+	                break;
+	
+	            case HTTP_VERSION:
+	                if (versionParser.parse(c, outputBuffer)) {
+	                    requestState = RequestParserState.CR_FIRST_LINE;
+	                }
+	                break;
+	
+	            case CR_FIRST_LINE:
+	                if (c == LF.getValue()) {
+	                    requestState = RequestParserState.READ_HEADERS;
+	                    output.put(c);
+	                } else {
+	                    handleParserError();
+	                }
+	                break;
+	
+	            case READ_HEADERS:
+	                if (headersParser.parse(c, output)) {
+	                    requestState = RequestParserState.READ_OK;
+	                    return true;
+	                }
+	                break;
+	
+	            default:
+	                handleParserError();
             }
-        }
+		}
+		return false;
+	}
+    
+    // Receives buffer in read state
+	@Override
+    public boolean parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) throws ParserFormatException {
+        while (inputBuffer.hasRemaining() && outputBuffer.hasRemaining())
+        	if (parse(inputBuffer.get(), outputBuffer))
+        		return true;
         return false;
     }
 
@@ -174,4 +179,10 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     @Override public boolean hasHost () {
         return hasHeaderValue(Header.HOST); // TODO: puede venir del URI
     }
+
+	@Override
+	public Method getMethod() {
+		return method;
+	}
+
 }

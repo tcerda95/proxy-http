@@ -41,25 +41,25 @@ public class HttpHeadersParserTest {
     public void HasRelevantHeadersTest() throws ParserFormatException {
         parser.parse(inputBuffer1,outputBuffer);
 
-        assertTrue(parser.hasRelevantHeaderValue(Header.HOST));
-        assertTrue(parser.hasRelevantHeaderValue(Header.CONNECTION));
-        assertTrue(parser.hasRelevantHeaderValue(Header.TRANSFER_ENCODING));
+        assertTrue(parser.hasHeaderValue(Header.HOST));
+        assertTrue(parser.hasHeaderValue(Header.CONNECTION));
+        assertTrue(parser.hasHeaderValue(Header.TRANSFER_ENCODING));
     }
 
     @Test
     public void CheckRelevantHeadersValueTest() throws ParserFormatException {
         parser.parse(inputBuffer1,outputBuffer);
 
-        assertArrayEquals("google.com".getBytes(), parser.getRelevantHeaderValue(Header.HOST));
-        assertArrayEquals("close".getBytes(), parser.getRelevantHeaderValue(Header.CONNECTION));
-        assertArrayEquals("chunked".getBytes(), parser.getRelevantHeaderValue(Header.TRANSFER_ENCODING));
+        assertArrayEquals("google.com".getBytes(), parser.getHeaderValue(Header.HOST));
+        assertArrayEquals("close".getBytes(), parser.getHeaderValue(Header.CONNECTION));
+        assertArrayEquals("chunked".getBytes(), parser.getHeaderValue(Header.TRANSFER_ENCODING));
 
     }
 
     @Test
     public void NotRelevantHeadersTest() throws ParserFormatException {
         parser.parse(inputBuffer1,outputBuffer);
-        assertFalse(parser.hasRelevantHeaderValue(Header.CONTENT_LENGTH));
+        assertFalse(parser.hasHeaderValue(Header.CONTENT_LENGTH));
     }
 
     @Test(expected = ParserFormatException.class)
