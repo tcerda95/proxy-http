@@ -71,7 +71,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                         requestState = RequestParserState.METHOD_READ;
                         methodName.put(c);
                     } else {
-                        handleError(requestState);
+                        handleParserError();
                     }
                     break;
 
@@ -82,7 +82,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                         requestState = RequestParserState.URI_READ;
                         output.put(methodName).put(c);
                     } else {
-                        handleError(requestState);
+                        handleParserError();
                     }
                     break;
 
@@ -95,7 +95,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                     } else if (ParseUtils.isUriCharacter(c)) {
                         httpURI.put(c);
                     } else {
-                        handleError(requestState);
+                        handleParserError();
                     }
                     break;
 
@@ -110,7 +110,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                         requestState = RequestParserState.READ_HEADERS;
                         output.put(c);
                     } else {
-                        handleError(requestState);
+                        handleParserError();
                     }
                     break;
 
@@ -122,7 +122,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                     break;
 
                 default:
-                    handleError(requestState);
+                    handleParserError();
             }
         }
         return false;
@@ -161,8 +161,8 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 //    than the server can handle
 
     // TODO: arreglar esto
-    private void handleError(RequestParserState parserState) throws ParserFormatException {
-        parserState = RequestParserState.ERROR;
+    private void handleParserError() throws ParserFormatException {
+        requestState = RequestParserState.ERROR;
         throw new ParserFormatException("Error while parsing");
     }
 

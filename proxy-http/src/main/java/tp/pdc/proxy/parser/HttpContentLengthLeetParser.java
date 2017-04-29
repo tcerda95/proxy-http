@@ -44,7 +44,7 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
 				break;
 				
 			default:
-				handleError(parserState);
+				handleParserError();
 			}
 			index++;
 		}
@@ -57,7 +57,7 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
 		return parserState == ParserState.END_OK;
 	}
 	
-    private void handleError(ParserState parserState) throws ParserFormatException {
+    private void handleParserError() throws ParserFormatException {
         parserState = ParserState.ERROR;
         throw new ParserFormatException("Error while parsing");
     }
