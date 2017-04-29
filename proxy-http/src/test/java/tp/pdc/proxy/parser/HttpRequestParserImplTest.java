@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
 
 public class HttpRequestParserImplTest {
 

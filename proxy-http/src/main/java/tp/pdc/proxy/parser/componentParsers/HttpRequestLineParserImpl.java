@@ -1,4 +1,4 @@
-package tp.pdc.proxy.parser;
+package tp.pdc.proxy.parser.componentParsers;
 
 
 import org.slf4j.Logger;
@@ -7,6 +7,7 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
+import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;

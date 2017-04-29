@@ -5,6 +5,7 @@ import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
+import tp.pdc.proxy.parser.mainParsers.HttpResponseParserImpl;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
