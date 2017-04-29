@@ -14,13 +14,13 @@ public class MockHeaderParser implements HttpRequestParser {
 	@Override
 	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
 		output.put(input);
-		finished = true;
+		this.finished = true;
 		return hasFinished();
 	}
 
 	@Override
 	public boolean hasFinished() {
-		return finished;
+		return this.finished;
 	}
 
 	@Override

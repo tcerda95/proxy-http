@@ -53,22 +53,18 @@ public class Pruebita {
 				keyIter.remove();
 								
 				if (key.isAcceptable()) {
-					LOGGER.debug("Key acceptable");
 					protocol.handleAccept(key);
 				}
 								
 				if (key.isConnectable()) {
-					LOGGER.debug("Key connectable");
 					protocol.handleConnect(key);
 				}
 				
 				if (key.isValid() && key.isReadable()) {
-					LOGGER.debug("Key readable");
 					protocol.handleRead(key);
 				}
 				
 				if (key.isValid() && key.isWritable()) {  // OJO: tratar casos en los que el servidor pudo haber cerrado la conexión
-					LOGGER.debug("Key writable");
 					protocol.handleWrite(key);
 				}
 			}

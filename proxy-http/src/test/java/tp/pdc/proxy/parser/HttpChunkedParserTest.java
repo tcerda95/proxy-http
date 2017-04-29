@@ -8,10 +8,13 @@ import java.nio.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 
 public class HttpChunkedParserTest {
 
+	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	
 	private HttpChunkedParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
@@ -33,6 +36,7 @@ public class HttpChunkedParserTest {
 		inputBuffer = ByteBuffer.wrap(chunked.getBytes("ASCII"));
 		
 		parser.parse(inputBuffer, outputBuffer);
+		assertEquals(chunked, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
 		assertTrue(parser.hasFinished());
 	}
 
@@ -45,6 +49,22 @@ public class HttpChunkedParserTest {
 		inputBuffer = ByteBuffer.wrap(chunked.getBytes("ASCII"));
 		
 		parser.parse(inputBuffer, outputBuffer);
+		assertEquals(chunked, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
 		assertFalse(parser.hasFinished());
+	}
+	
+	@Test
+	public void testIncludeCRLF() throws ParserFormatException, UnsupportedEncodingException {
+		String chunked = "7\r\n"
+				 + "hola co\r\n"
+				 + "10\r\n"
+				 + "mo te va\r\n\r\n"
+				 + "0\r\n"
+				 + "\r\n";
+		inputBuffer = ByteBuffer.wrap(chunked.getBytes("ASCII"));
+
+		parser.parse(inputBuffer, outputBuffer);
+		assertEquals(chunked, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+		assertTrue(parser.hasFinished());
 	}
 }

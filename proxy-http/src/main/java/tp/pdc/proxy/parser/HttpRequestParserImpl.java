@@ -59,10 +59,9 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         versionParser = new HttpVersionParserImpl(CR.getValue());
     }
 
-    public boolean parse(final ByteBuffer inputBuffer, final ByteBuffer outputBuffer) throws ParserFormatException {
-        ByteBuffer output = outputBuffer;
-        while (inputBuffer.hasRemaining()) {
-            byte c = inputBuffer.get();
+    public boolean parse(final ByteBuffer input, final ByteBuffer output) throws ParserFormatException {
+        while (input.hasRemaining()) {
+            byte c = input.get();
 
             switch (requestState) {
                 case REQUEST_START:
@@ -142,7 +141,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
                     break;
 
                 case HTTP_VERSION:
-                    if (versionParser.parse(c, outputBuffer)) {
+                    if (versionParser.parse(c, output)) {
                         requestState = RequestParserState.CR_FIRST_LINE;
                     }
                     break;
