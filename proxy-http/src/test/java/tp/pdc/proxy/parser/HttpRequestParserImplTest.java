@@ -105,6 +105,22 @@ public class HttpRequestParserImplTest {
 		assertArrayEquals(host.getBytes(), parser.getHostValue());
 	}
 
+	@Test
+	public void getJUSTHostInURITest() throws UnsupportedEncodingException, ParserFormatException {
+		String host = "http://localhost:8080";
+		String relative = "/hello/give/me/the/resource/a.html";
+		String request =  "GET " + host + relative + "/ HTTP/1.1\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "X-Header-2: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes());
+
+		parser.parse(inputBuffer, outputBuffer);
+
+		assertArrayEquals(host.getBytes(), parser.getHostValue());
+	}
+
 
 
 	@Test
