@@ -66,6 +66,7 @@ public class HttpResponseLineParserImpl implements HttpResponseLineParser {
                     if (ParseUtils.isText(b)) {
                         outputBuffer.put(b);
                     } else if (b == CR.getValue()) {
+                    	outputBuffer.put(b);
                         state = ResponseLineState.CR_END;
                     } else {
                         handleError();
@@ -73,7 +74,9 @@ public class HttpResponseLineParserImpl implements HttpResponseLineParser {
                     break;
 
                 case CR_END:
-                    if (inputBuffer.get() == LF.getValue()) {
+                	b = inputBuffer.get();
+                    if (b == LF.getValue()) {
+                    	outputBuffer.put(b);
                         state = ResponseLineState.READ_OK;
                         return true;
                     }

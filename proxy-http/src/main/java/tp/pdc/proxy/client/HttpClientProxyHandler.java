@@ -27,13 +27,13 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private static final HostParser HOST_PARSER = new HostParser();
 	
 	private ClientHandlerState state;
-	private HttpRequestParser headersParser;
+	private HttpRequestParser requestParser;
 	private HttpBodyParser bodyParser;
 	
 	public HttpClientProxyHandler(int bufSize) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
 		state = ClientHandlerState.NOT_CONNECTED;
-		headersParser = new HttpRequestParserImpl();
+		requestParser = new HttpRequestParserImpl();
 	}
 	
 	public void setConnectedState() {
@@ -108,7 +108,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
-		if (headersParser.hasFinished())
+		if (requestParser.hasFinished())
 			processBody(inputBuffer, processedBuffer, key);
 		else
 			processHeaders(inputBuffer, processedBuffer, key);
@@ -142,7 +142,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	
 	private void processHeaders(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
-			headersParser.parse(inputBuffer, outputBuffer);
+			requestParser.parse(inputBuffer, outputBuffer);
 			
 			if (state == ClientHandlerState.NOT_CONNECTED) {
 				manageNotConnected(key);
@@ -150,8 +150,8 @@ public class HttpClientProxyHandler extends HttpHandler {
 					return;
 			}
 			
-			if (headersParser.hasFinished()) {
-				bodyParser = HttpBodyParserFactory.getClientHttpBodyParser(headersParser, headersParser.getMethod());
+			if (requestParser.hasFinished()) {
+				bodyParser = HttpBodyParserFactory.getClientHttpBodyParser(requestParser);
 				processBody(inputBuffer, outputBuffer, key);
 			}
 
@@ -179,8 +179,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 	
 	private boolean isServerResponseProcessed() {
-		SocketChannel socketChannel = (SocketChannel) this.getConnectedPeerKey().channel();
-		return !socketChannel.isOpen(); //TODO: esto es porq no tenemos conexiones persistentes con el servidor
+		return getServerHandler().isResponseProcessed();
 	}
 
 	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {
@@ -192,8 +191,8 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private void manageNotConnected(SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
-		if (headersParser.hasHost()) {
-			byte[] hostValue = headersParser.getHostValue();
+		if (requestParser.hasHost()) {
+			byte[] hostValue = requestParser.getHostValue();
 			try {
 				tryConnect(hostValue, key);
 			} catch (NumberFormatException e) {
@@ -213,7 +212,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			setErrorState(HttpResponse.BAD_REQUEST_400, key);
 		}		
 		
-		else if (headersParser.hasFinished()) {
+		else if (requestParser.hasFinished()) {
 			LOGGER.warn("Impossible to connect: host not found in request header");
 			setErrorState(HttpResponse.BAD_REQUEST_400, key);
 		}
@@ -240,8 +239,12 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 	
 	private HttpServerProxyHandler buildHttpServerProxyHandler(SelectionKey key) {
-		HttpServerProxyHandler handler = new HttpServerProxyHandler(PROPERTIES.getBufferSize(), this.getProcessedBuffer(), this.getWriteBuffer());
+		HttpServerProxyHandler handler = new HttpServerProxyHandler(PROPERTIES.getBufferSize(), this.getProcessedBuffer(), this.getWriteBuffer(), requestParser.getMethod());
 		handler.setConnectedPeerKey(key);
 		return handler;
-	}	
+	}
+	
+	private HttpServerProxyHandler getServerHandler() {
+		return (HttpServerProxyHandler) this.getConnectedPeerKey().attachment();
+	}
 }

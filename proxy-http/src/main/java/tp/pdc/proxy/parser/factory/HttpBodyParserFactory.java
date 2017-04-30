@@ -11,6 +11,8 @@ import tp.pdc.proxy.parser.HttpContentLengthParser;
 import tp.pdc.proxy.parser.HttpNullBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
+import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
+import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class HttpBodyParserFactory {
@@ -20,8 +22,8 @@ public class HttpBodyParserFactory {
 	private HttpBodyParserFactory() {
 	}
 	
-	public static HttpBodyParser getClientHttpBodyParser(HttpHeaderParser headersParser, Method method) throws IllegalHttpHeadersException {
-		if (method == Method.POST)
+	public static HttpBodyParser getClientHttpBodyParser(HttpRequestParser headersParser) throws IllegalHttpHeadersException {
+		if (headersParser.hasMethod(Method.POST))
 			return buildClientBodyParser(headersParser);
 		return NULL_PARSER;
 	}
@@ -36,12 +38,16 @@ public class HttpBodyParserFactory {
 	}
 
 	// TODO: recibir también el response code: los 1xx, 204 y 304 NO DEBEN incluir un message-body
-	public static HttpBodyParser getServerHttpBodyParser(HttpHeaderParser headersParser, Method method) throws IllegalHttpHeadersException {
-		if (method != Method.HEAD)
+	public static HttpBodyParser getServerHttpBodyParser(HttpResponseParser headersParser, Method method) throws IllegalHttpHeadersException {
+		if (method != Method.HEAD && isBodyStatusCode(headersParser.getStatusCode()))
 			return buildServerBodyParser(headersParser);
 		return NULL_PARSER;
 	}
 	
+	private static boolean isBodyStatusCode(int statusCode) {
+		return statusCode / 100 != 1 && statusCode != 204 && statusCode != 304;
+	}
+
 	private static HttpBodyParser buildServerBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
 		HttpBodyParser parser = buildBodyParser(headersParser);
 
