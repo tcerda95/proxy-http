@@ -67,7 +67,9 @@ public class HttpClientProxyHandler extends HttpHandler {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		
 		try {
-			socketChannel.write(inputBuffer);
+			int bytesSent = socketChannel.write(inputBuffer);
+			
+			LOGGER.info("Sent {} bytes to client", bytesSent);
 			
 			if (!inputBuffer.hasRemaining()) {
 				key.interestOps(0);			
