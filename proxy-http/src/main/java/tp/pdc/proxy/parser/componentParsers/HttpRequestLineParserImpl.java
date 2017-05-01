@@ -88,7 +88,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         output.put(c);
                         state = RequestLineParserState.URI_NO_HOST;
                     } else if (Character.toLowerCase(c) == 'h') { // Has protocol so it has host.
-                        URIHostBuf.put(c);
+                        output.put(c);
                         state = RequestLineParserState.HOST_PROTOCOL;
                     } else {
                         handleError();
@@ -107,11 +107,9 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     break;
 
                 case HOST_PROTOCOL:
-                    if (c == '/') {
-                        state = RequestLineParserState.URI_HOST_SLASH;
-                        URIHostBuf.put(c);
-                    } else if (ParseUtils.isUriCharacter(c)) {
-                        URIHostBuf.put(c);
+                    if (ParseUtils.isUriCharacter(c)) {
+                        state = c != '/' ? state : RequestLineParserState.URI_HOST_SLASH;
+                        output.put(c);
                     } else {
                         handleError();
                     }
@@ -120,7 +118,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                 case URI_HOST_SLASH:
                     if (c == '/') {
                         state = RequestLineParserState.URI_HOST_ADDR;
-                        URIHostBuf.put(c);
+                        output.put(c);
                     } else {
                         handleError();
                     }
@@ -173,12 +171,13 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         methodName.flip();
         method = Method.getByBytes(methodName, strLen);
         LOGGER.debug("METHOD: {}", method);
+        //TODO: si es un método no soportado se podría loggear cual era.
         return method != null;
     }
 
     private void handleError() throws ParserFormatException {
         state = RequestLineParserState.ERROR;
-        throw new ParserFormatException("Error while parsing request first line");
+        throw new ParserFormatException("Error while parsing response first line");
     }
 
     @Override public boolean hasFinished () {

@@ -93,8 +93,9 @@ public class HttpRequestParserImplTest {
 
 	@Test
 	public void getHostInURITest() throws UnsupportedEncodingException, ParserFormatException {
-		String host = "http://localhost:8080";
-		String request =  "GET " + host + "/ HTTP/1.1\r\n"
+		String scheme = "http://";
+		String host = "localhost:8080";
+		String request =  "GET " + scheme + host + "/ HTTP/1.1\r\n"
 				+ "X-Header: Custom\r\n"
 				+ "X-Header-2: Custom\r\n"
 				+ "\r\n";
@@ -108,9 +109,10 @@ public class HttpRequestParserImplTest {
 
 	@Test
 	public void getJUSTHostInURITest() throws UnsupportedEncodingException, ParserFormatException {
-		String host = "http://localhost:8080";
+		String scheme = "http://";
+		String host = "localhost:8080";
 		String relative = "/hello/give/me/the/resource/a.html";
-		String request =  "GET " + host + relative + "/ HTTP/1.1\r\n"
+		String request =  "GET " + scheme + host + relative + "/ HTTP/1.1\r\n"
 				+ "X-Header: Custom\r\n"
 				+ "X-Header-2: Custom\r\n"
 				+ "\r\n";
