@@ -89,6 +89,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write to client: {}", e.getMessage());
 			e.printStackTrace();
+			try {
+				socketChannel.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}
 	}
 	
