@@ -1,5 +1,7 @@
 package tp.pdc.proxy.client;
 
+import static tp.pdc.proxy.client.ClientHandlerState.*;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -12,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpResponse;
-import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
@@ -23,7 +24,6 @@ import tp.pdc.proxy.server.HttpServerProxyHandler;
 
 public class HttpClientProxyHandler extends HttpHandler {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
-	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final HostParser HOST_PARSER = new HostParser();
 	
 	private ClientHandlerState state;
@@ -32,29 +32,29 @@ public class HttpClientProxyHandler extends HttpHandler {
 	
 	public HttpClientProxyHandler(int bufSize) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
-		state = ClientHandlerState.NOT_CONNECTED;
+		state = NOT_CONNECTED;
 		requestParser = new HttpRequestParserImpl();
 	}
 	
 	public void setConnectedState() {
-		if (state == ClientHandlerState.CONNECTING)
-			state = ClientHandlerState.CONNECTED;
-		else if (state == ClientHandlerState.REQUEST_PROCESSED_CONNECTING)
-			state = ClientHandlerState.REQUEST_PROCESSED;
+		if (state == CONNECTING)
+			state = CONNECTED;
+		else if (state == REQUEST_PROCESSED_CONNECTING)
+			state = REQUEST_PROCESSED;
 		else {
 			LOGGER.error("Invalid client state: {}", state);
-			throw new IllegalStateException("State must be " + ClientHandlerState.CONNECTING + " or " + ClientHandlerState.REQUEST_PROCESSED_CONNECTING);
+			throw new IllegalStateException("State must be " + CONNECTING + " or " + REQUEST_PROCESSED_CONNECTING);
 		}
 	}
 	
 	public void setRequestSentState() {
-		if (state == ClientHandlerState.REQUEST_PROCESSED) {
+		if (state == REQUEST_PROCESSED) {
 			LOGGER.debug("Complete request sent");
-			state = ClientHandlerState.REQUEST_SENT;
+			state = REQUEST_SENT;
 		}
 		else {
 			LOGGER.error("Invalid client state: {}", state);
-			throw new IllegalStateException("State must be " + ClientHandlerState.REQUEST_PROCESSED);
+			throw new IllegalStateException("State must be " + REQUEST_PROCESSED);
 		}
 	}
 	
@@ -73,7 +73,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			
 			if (!inputBuffer.hasRemaining()) {
 				key.interestOps(0);			
-				if (state == ClientHandlerState.ERROR)
+				if (state == ERROR)
 					socketChannel.close();
 				else if (isServerResponseProcessed()) {
 					LOGGER.info("Server response processed and sent: closing connection to client");
@@ -81,7 +81,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 				}
 			}
 			
-			if (state != ClientHandlerState.ERROR && !isServerResponseProcessed()) {
+			if (state != ERROR && !isServerResponseProcessed()) {
 				LOGGER.debug("Registering server for read: server's response not processed yet");
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
 			}
@@ -120,7 +120,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		else
 			processHeaders(inputBuffer, processedBuffer, key);
 		
-		if (state == ClientHandlerState.ERROR)
+		if (state == ERROR)
 			return;
 			
 		if (!processedBuffer.hasRemaining()) {
@@ -151,9 +151,9 @@ public class HttpClientProxyHandler extends HttpHandler {
 		try {
 			requestParser.parse(inputBuffer, outputBuffer);
 			
-			if (state == ClientHandlerState.NOT_CONNECTED) {
+			if (state == NOT_CONNECTED) {
 				manageNotConnected(key);
-				if (state == ClientHandlerState.ERROR)
+				if (state == ERROR)
 					return;
 			}
 			
@@ -175,13 +175,13 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private void setRequestProcessedState(SelectionKey key) {
 		key.interestOps(0);
 		
-		if (state == ClientHandlerState.CONNECTING)
-			state = ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
-		else if (state == ClientHandlerState.CONNECTED)
-			state = ClientHandlerState.REQUEST_PROCESSED;
+		if (state == CONNECTING)
+			state = REQUEST_PROCESSED_CONNECTING;
+		else if (state == CONNECTED)
+			state = REQUEST_PROCESSED;
 		else {
 			LOGGER.error("Cannot set request processed state: invalid client state");
-			throw new IllegalStateException("State must be " + ClientHandlerState.CONNECTING + " or " + ClientHandlerState.CONNECTING);
+			throw new IllegalStateException("State must be " + CONNECTING + " or " + CONNECTING);
 		}
 	}
 	
@@ -190,7 +190,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 
 	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {
-		state = ClientHandlerState.ERROR;
+		state = ERROR;
 		this.getWriteBuffer().put(errorResponse.getBytes());
 		key.interestOps(SelectionKey.OP_WRITE);
 	}
@@ -232,21 +232,22 @@ public class HttpClientProxyHandler extends HttpHandler {
 		SelectionKey serverKey;
 				
 		serverSocket.configureBlocking(false);
+		LOGGER.debug("Server address: {}", address);
 		
 		if (serverSocket.connect(address)) {
 			serverKey = serverSocket.register(selector, SelectionKey.OP_WRITE, buildHttpServerProxyHandler(key));
-			state = ClientHandlerState.CONNECTED;
+			state = CONNECTED;
 		}
 		else {
 			serverKey = serverSocket.register(selector, SelectionKey.OP_CONNECT, buildHttpServerProxyHandler(key));
-			state = ClientHandlerState.CONNECTING;
+			state = CONNECTING;
 		}
 		
 		this.setConnectedPeerKey(serverKey);
 	}
 	
 	private HttpServerProxyHandler buildHttpServerProxyHandler(SelectionKey key) {
-		HttpServerProxyHandler handler = new HttpServerProxyHandler(PROPERTIES.getBufferSize(), this.getProcessedBuffer(), this.getWriteBuffer(), requestParser.getMethod());
+		HttpServerProxyHandler handler = new HttpServerProxyHandler(this.getProcessedBuffer().capacity(), this.getProcessedBuffer(), this.getWriteBuffer(), requestParser.getMethod());
 		handler.setConnectedPeerKey(key);
 		return handler;
 	}

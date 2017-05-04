@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class Pruebita {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
-	private static final int BUF_SIZE = 4096;
+	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
 	public void run(int port) {
 		ServerSocketChannel serverChannel;
@@ -22,7 +22,7 @@ public class Pruebita {
 		
 		LOGGER.info("Setting up proxy...");
 		
-		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol(BUF_SIZE);
+		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol(PROPERTIES.getProxyBufferSize());
 		
 		try {
 			serverChannel = ServerSocketChannel.open();
@@ -72,6 +72,6 @@ public class Pruebita {
 	}
 	
 	public static void main(String[] args) {
-		new Pruebita().run(9090);
+		new Pruebita().run(PROPERTIES.getProxyPort());
 	}
 }
