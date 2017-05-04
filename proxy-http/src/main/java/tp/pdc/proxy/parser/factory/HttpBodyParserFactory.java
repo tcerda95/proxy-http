@@ -73,7 +73,7 @@ public class HttpBodyParserFactory {
 			}
 			else {
 				if (hasChunked(headersParser))
-					return new HttpChunkedParser();
+					return new HttpChunkedParser(false);
 				
 				else if (hasContentLength(headersParser))
 					return new HttpContentLengthParser(ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));

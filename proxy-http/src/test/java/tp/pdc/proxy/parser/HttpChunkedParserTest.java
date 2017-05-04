@@ -21,7 +21,7 @@ public class HttpChunkedParserTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		parser = new HttpChunkedParser();
+		parser = new HttpChunkedParser(false);
 		outputBuffer = ByteBuffer.allocate(4000);
 	}
 
