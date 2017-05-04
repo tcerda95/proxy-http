@@ -180,4 +180,11 @@ public class HttpChunkedParser implements HttpBodyParser {
         chunkState = ChunkState.ERROR;
         throw new ParserFormatException("Error while parsing body");
     }
+
+	@Override
+	public void reset() {
+		parserState = ParserState.READ_CHUNK_SIZE;
+    	chunkSizeState = ChunkSizeState.START;
+    	chunkState = ChunkState.NOT_READ_YET;
+	}
 }

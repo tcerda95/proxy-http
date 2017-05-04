@@ -62,4 +62,9 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
         throw new ParserFormatException("Error while parsing");
     }
 
+	@Override
+	public void reset() {
+		this.parserState = ParserState.START;
+	}
+
 }
