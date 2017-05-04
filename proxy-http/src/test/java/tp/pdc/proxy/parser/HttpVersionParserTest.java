@@ -98,9 +98,7 @@ public class HttpVersionParserTest {
 
     @Test
     public void majorVersionTest() throws ParserFormatException {
-        HttpVersionParser parser1 = new HttpVersionParserImpl(CR.getValue());
-        HttpVersionParser parser2 = new HttpVersionParserImpl(CR.getValue());
-        HttpVersionParser parser3 = new HttpVersionParserImpl(CR.getValue());
+        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
 
         String s1 = "HTTP/1.2\r";
         String s2 = "HTTP/009.001\r";
@@ -112,24 +110,24 @@ public class HttpVersionParserTest {
 
         ByteBuffer o = ByteBuffer.allocate(64);
 
-        parser1.parse(b1, o);
-        assertEquals(1, parser1.getMajorHttpVersion());
+        parser.parse(b1, o);
+        assertEquals(1, parser.getMajorHttpVersion());
         o.clear();
 
-        parser2.parse(b2, o);
-        assertEquals(9, parser2.getMajorHttpVersion());
+        parser.reset();
+        parser.parse(b2, o);
+        assertEquals(9, parser.getMajorHttpVersion());
         o.clear();
 
-        parser3.parse(b3, o);
-        assertEquals(1701, parser3.getMajorHttpVersion());
+        parser.reset();
+        parser.parse(b3, o);
+        assertEquals(1701, parser.getMajorHttpVersion());
         o.clear();
     }
 
     @Test
     public void minorVersionTest() throws ParserFormatException {
-        HttpVersionParser parser1 = new HttpVersionParserImpl(CR.getValue());
-        HttpVersionParser parser2 = new HttpVersionParserImpl(CR.getValue());
-        HttpVersionParser parser3 = new HttpVersionParserImpl(CR.getValue());
+        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
 
         String s1 = "HTTP/1.2\r";
         String s2 = "HTTP/009.007\r";
@@ -141,16 +139,18 @@ public class HttpVersionParserTest {
 
         ByteBuffer o = ByteBuffer.allocate(64);
 
-        parser1.parse(b1, o);
-        assertEquals(2, parser1.getMinorHttpVersion());
+        parser.parse(b1, o);
+        assertEquals(2, parser.getMinorHttpVersion());
         o.clear();
 
-        parser2.parse(b2, o);
-        assertEquals(7, parser2.getMinorHttpVersion());
+        parser.reset();
+        parser.parse(b2, o);
+        assertEquals(7, parser.getMinorHttpVersion());
         o.clear();
 
-        parser3.parse(b3, o);
-        assertEquals(740, parser3.getMinorHttpVersion());
+        parser.reset();
+        parser.parse(b3, o);
+        assertEquals(740, parser.getMinorHttpVersion());
         o.clear();
     }
 

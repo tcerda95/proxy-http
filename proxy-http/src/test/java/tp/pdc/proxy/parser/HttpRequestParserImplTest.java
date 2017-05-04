@@ -153,13 +153,13 @@ public class HttpRequestParserImplTest {
 
 		outputBuffer.clear();
 		inputBuffer = ByteBuffer.wrap((head + nomethod).getBytes());
-		parser = new HttpRequestParserImpl();
+		parser.reset();
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasMethod(Method.HEAD));
 
 		outputBuffer.clear();
 		inputBuffer = ByteBuffer.wrap((post + nomethod).getBytes());
-		parser = new HttpRequestParserImpl();
+		parser.reset();
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 	}
 

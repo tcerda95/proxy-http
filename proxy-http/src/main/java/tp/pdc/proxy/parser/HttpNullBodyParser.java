@@ -26,4 +26,8 @@ public class HttpNullBodyParser implements HttpBodyParser {
 		return true;
 	}
 
+	@Override public void reset () {
+		//TODO
+	}
+
 }

@@ -160,8 +160,12 @@ public class HttpChunkedParser implements HttpBodyParser {
 	public boolean hasFinished() {
 		return parserState == ParserState.READ_CHUNK && chunkState == ChunkState.END_OK
 				&& chunkSizeState == ChunkSizeState.CHUNKSIZE_IS_ZERO;
-	}	
-	
+	}
+
+	@Override public void reset () {
+		//TODO
+	}
+
 	private boolean chunkSizeisZero() {
 		return chunkSize == 0;
 	}

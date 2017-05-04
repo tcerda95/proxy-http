@@ -101,4 +101,10 @@ public class HttpResponseLineParserImpl implements HttpResponseLineParser {
 	public boolean hasFinished() {
 		return state == ResponseLineState.READ_OK;
 	}
+
+    @Override public void reset () {
+        statusCode = 0;
+        state = ResponseLineState.HTTP_VERSION;
+        versionParser.reset();
+    }
 }

@@ -55,6 +55,11 @@ public class HttpResponseParserImpl implements HttpResponseParser {
         return lineParser.hasFinished() && headerParser.hasFinished();
     }
 
+    @Override public void reset () {
+        lineParser.reset();
+        headerParser.reset();
+    }
+
     @Override public boolean hasHeaderValue (Header header) {
         return headerParser.hasHeaderValue(header);
     }

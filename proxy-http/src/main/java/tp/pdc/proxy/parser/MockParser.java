@@ -21,4 +21,8 @@ public class MockParser implements Parser {
 		return finished;
 	}
 
+	@Override public void reset () {
+		//TODO
+	}
+
 }

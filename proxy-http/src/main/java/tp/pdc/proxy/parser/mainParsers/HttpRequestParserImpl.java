@@ -49,6 +49,11 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         return requestLineParser.hasFinished() && headersParser.hasFinished();
     }
 
+    @Override public void reset () {
+        headersParser.reset();
+        requestLineParser.reset();
+    }
+
     public HttpRequestParserImpl () {
         headersParser = new HttpHeadersParserImpl();
         requestLineParser = new HttpRequestLineParserImpl();
@@ -77,8 +82,4 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 	public Method getMethod() {
 		return requestLineParser.getMethod();
 	}
-
-    //    A server
-    //    SHOULD return 414 (Request-URI Too Long) status if a URI is longer
-    //    than the server can handle
 }

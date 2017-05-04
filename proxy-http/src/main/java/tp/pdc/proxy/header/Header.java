@@ -10,18 +10,18 @@ public enum Header {
 	private String headerName;
 	private byte[] headerBytes;
 
-	public static boolean isRelevantHeader(ByteBuffer bytes, int length) {
-		return getByBytes(bytes, length) != null;
-	}
+//	public static boolean isRelevantHeader(ByteBuffer bytes, int length) {
+//		return getHeaderByBytes(bytes, length) != null;
+//	}
 
-	public static Header getByBytes(ByteBuffer bytes, int length) {
+	public static Header getHeaderByBytes (ByteBuffer bytes, int length) {
 		for (Header header : values())
 			if (BytesUtils.equalsBytes(header.headerBytes, bytes, length))
 				return header;
 		return null;
 	}
 	
-	private Header(String header) {
+	Header(String header) {
 		headerName = header;
 		headerBytes = header.getBytes(ProxyProperties.getInstance().getCharset());
 	}
@@ -30,5 +30,6 @@ public enum Header {
 	public String toString() {
 		return headerName;
 	}
-	
+
+	public byte[] getBytes() { return headerBytes; }
 }

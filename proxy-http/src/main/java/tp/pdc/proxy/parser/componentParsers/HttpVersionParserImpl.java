@@ -30,6 +30,11 @@ public class HttpVersionParserImpl implements HttpVersionParser {
         return state == HttpVersionState.READ_OK;
     }
 
+    @Override public void reset () {
+        majorVersion = minorVersion = 0;
+        state = HttpVersionState.NOT_READ_YET;
+    }
+
     @Override public boolean readMinorVersion () {
         return readMinorVersion;
     }
@@ -106,7 +111,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
                         minorVersion += (b - (byte) '0');
                         outputBuffer.put(b);
                     }
-                } else if (b == endByte) { //TODO: interfaz de constantes
+                } else if (b == endByte) {
                     state = HttpVersionState.READ_OK;
                     outputBuffer.put(b);
                 } else {

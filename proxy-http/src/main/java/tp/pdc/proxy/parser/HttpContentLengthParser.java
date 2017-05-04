@@ -46,4 +46,9 @@ public class HttpContentLengthParser implements HttpBodyParser{
 	public boolean hasFinished() {
 		return contentLength == 0;
 	}
+
+	@Override public void reset () {
+		// TODO
+		return;
+	}
 }

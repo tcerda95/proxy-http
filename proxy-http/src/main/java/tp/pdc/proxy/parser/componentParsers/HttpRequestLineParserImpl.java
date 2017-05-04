@@ -184,7 +184,14 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         return state == RequestLineParserState.READ_OK;
     }
 
-	@Override
+    @Override public void reset () {
+        versionParser.reset();
+        state = RequestLineParserState.START;
+        methodName.clear();
+        URIHostBuf.clear();
+    }
+
+    @Override
 	public Method getMethod() {
 		return method;
 	}

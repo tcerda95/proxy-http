@@ -23,6 +23,10 @@ public class MockHeaderParser implements HttpRequestParser {
 		return this.finished;
 	}
 
+	@Override public void reset () {
+		//TODO
+	}
+
 	@Override
 	public boolean hasHeaderValue(Header header) {
 		return false;
