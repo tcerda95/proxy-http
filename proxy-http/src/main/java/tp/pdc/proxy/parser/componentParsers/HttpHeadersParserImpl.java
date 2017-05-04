@@ -16,35 +16,31 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
         NAME,
 
-        /* Relevant headers */
         RELEVANT_COLON, RELEVANT_SPACE, RELEVANT_CONTENT,
 
         IGNORED_CONTENT, IGNORED_CR,
 
-        /* Other headers */
-        COLON, SPACE, CONTENT;
+        COLON, SPACE, CONTENT,
     }
 
     private HttpHeaderState state;
-    private final Map<Header, byte[]> savedHeaders;
-    private ByteBuffer headerName;
-    private ByteBuffer headerValue;
     private Header currentHeader;
+    private ByteBuffer headerName, headerValue;
+    private final Map<Header, byte[]> savedHeaders;
 
     private Set<Header> headersToSave;
-
     private Set<Header> headersToRemove;
     private Map<Header, byte[]> headersToAdd;
 
     public HttpHeadersParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
-        this.headersToRemove = toRemove;
-        this.headersToAdd = toAdd;
-        this.headersToSave = toSave;
-
         state = HttpHeaderState.ADD_HEADERS;
         headerName = ByteBuffer.allocate(128); //TODO: capacity
         headerValue = ByteBuffer.allocate(128);
         savedHeaders = new HashMap<>();
+
+        this.headersToRemove = toRemove;
+        this.headersToAdd = toAdd;
+        this.headersToSave = toSave;
     }
 
     private void expectByteAndOutput(byte read, byte expected, HttpHeaderState next, ByteBuffer outputBuffer) throws ParserFormatException {
@@ -63,7 +59,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
 
     @Override public boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException {
-        while(inputBuffer.hasRemaining())
+        while(inputBuffer.hasRemaining() && outputBuffer.hasRemaining())
             if (parse(inputBuffer.get(), outputBuffer))
                 return true;
         return false;
@@ -73,7 +69,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
             switch (state) {
                 case ADD_HEADERS:
                     addHeaders(output);
-                    // fallthrough
+                    // Fallthrough
 
                 case LINE_START:
                     if (c == CR.getValue()) {
@@ -188,7 +184,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     private void handleHeaderName(byte c, ByteBuffer outputBuffer) {
         headerName.flip();
         int nameLen = headerName.remaining();
-        currentHeader = Header.getHeaderByBytes(headerName, nameLen);
+        currentHeader = Header.getHeaderByBytes(headerName, nameLen); //TODO: podría ser más optimo, pero no es determinante
 
         if (headersToRemove.contains(currentHeader) || headersToAdd.containsKey(currentHeader) /* gets changed */) {
             state = HttpHeaderState.IGNORED_CONTENT;
