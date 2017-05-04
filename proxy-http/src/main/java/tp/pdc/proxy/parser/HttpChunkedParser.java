@@ -79,7 +79,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     	switch(chunkSizeState) {
 	    	case START:
 	    		// TODO: considerar caso chunksize es hexa
-	    		if (c == LF.getValue() || ParseUtils.isAlphabetic(c))
+	    		if (c == LF.getValue() || (!ParseUtils.isHexadecimal(c) && c != CR.getValue()))
 	    			handleChunkSizeError();
 	    		
 	    		if (c == CR.getValue()) {
@@ -89,7 +89,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 					chunkSizeState = ChunkSizeState.END_LINE_CR;
 				}		
 				else {
-					chunkSize = chunkSize*10 + c - '0';
+					chunkSize = chunkSize*16 + c - (byte) (ParseUtils.isDigit(c) ? '0' : 'A' - 10);
 					chunkSizeFound = true;
 				}
 					
@@ -181,7 +181,6 @@ public class HttpChunkedParser implements HttpBodyParser {
         throw new ParserFormatException("Error while parsing body");
     }
 
-	@Override
 	public void reset() {
 		parserState = ParserState.READ_CHUNK_SIZE;
     	chunkSizeState = ChunkSizeState.START;

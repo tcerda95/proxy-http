@@ -57,8 +57,8 @@ public class HttpChunkedParserTest {
 	public void testIncludeCRLF() throws ParserFormatException, UnsupportedEncodingException {
 		String chunked = "7\r\n"
 				 + "hola co\r\n"
-				 + "10\r\n"
-				 + "mo te va\r\n\r\n"
+				 + "8\r\n"
+				 + "mo te \r\n\r\n"
 				 + "0\r\n"
 				 + "\r\n";
 		inputBuffer = ByteBuffer.wrap(chunked.getBytes("ASCII"));
