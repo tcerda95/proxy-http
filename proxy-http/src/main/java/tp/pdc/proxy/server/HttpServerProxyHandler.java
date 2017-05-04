@@ -43,10 +43,14 @@ public class HttpServerProxyHandler extends HttpHandler {
 		try {
 			bytesRead = socketChannel.read(buffer);
 			
-			if (bytesRead == -1)
+			if (bytesRead == -1) {
+				LOGGER.warn("Closing connection to server: EOF");
 				socketChannel.close();
-			else if (bytesRead > 0)
+			}
+			else if (bytesRead > 0) {
+				LOGGER.info("Read {} bytes from server", bytesRead);
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+			}
 			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read response from server");
@@ -69,6 +73,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 		// Conexión no persistente
 		if (isResponseProcessed()) {
 			try {
+				LOGGER.info("Closing connection to server: whole response processed");
 				key.channel().close();
 			} catch (IOException e) {
 				e.printStackTrace();
