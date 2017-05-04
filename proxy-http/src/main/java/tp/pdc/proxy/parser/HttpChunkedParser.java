@@ -192,9 +192,12 @@ public class HttpChunkedParser implements HttpBodyParser {
         throw new ParserFormatException("Error while parsing body");
     }
 
-	public void reset() {
+	public void reset(boolean l33tFlag) {
 		parserState = ParserState.READ_CHUNK_SIZE;
     	chunkSizeState = ChunkSizeState.START;
     	chunkState = ChunkState.NOT_READ_YET;
+    	chunkSize = 0;
+    	chunkSizeFound = false;
+    	this.l33tFlag = l33tFlag;
 	}
 }
