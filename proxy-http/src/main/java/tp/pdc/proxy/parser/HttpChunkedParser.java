@@ -6,9 +6,10 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
+import static tp.pdc.proxy.parser.utils.DecimalConstants.*;
 
 public class HttpChunkedParser implements HttpBodyParser {
-
+	
     private ParserState parserState;
     private ChunkSizeState chunkSizeState;
     private ChunkState chunkState;
@@ -29,7 +30,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     private enum ParserState {
         READ_CHUNK_SIZE,
         READ_CHUNK,
-        
+ 
         /* Error states */
         ERROR,
     }
@@ -78,7 +79,6 @@ public class HttpChunkedParser implements HttpBodyParser {
     	
     	switch(chunkSizeState) {
 	    	case START:
-	    		// TODO: considerar caso chunksize es hexa
 	    		if (c == LF.getValue() || (!ParseUtils.isHexadecimal(c) && c != CR.getValue()))
 	    			handleChunkSizeError();
 	    		
@@ -89,7 +89,8 @@ public class HttpChunkedParser implements HttpBodyParser {
 					chunkSizeState = ChunkSizeState.END_LINE_CR;
 				}		
 				else {
-					chunkSize = chunkSize*16 + c - (byte) (ParseUtils.isDigit(c) ? '0' : 'A' - 10);
+					chunkSize = chunkSize*HEXA_BASE_VALUE.getValue() + c 
+							- (byte) (ParseUtils.isDigit(c) ? '0' : 'A' - A_DECIMAL_VALUE.getValue());
 					chunkSizeFound = true;
 				}
 					
