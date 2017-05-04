@@ -23,7 +23,7 @@ public class ParseUtils {
             isLWS[c] = (c == CR.getValue() || c == LF.getValue() || c == SP.getValue() || c == HT.getValue());
             isDigit[c] = ('0' <= c && c <= '9');
             isAlphabetic[c] = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
-            isHexadecimal[c] = isDigit[c] || ('A' <= c && c <= 'F');
+            isHexadecimal[c] = isDigit[c] || ('A' <= c && c <= 'F') || ('a' <= c && c <='f');
         }
     }
 

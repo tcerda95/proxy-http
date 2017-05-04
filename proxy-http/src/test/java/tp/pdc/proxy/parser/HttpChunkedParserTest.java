@@ -70,7 +70,7 @@ public class HttpChunkedParserTest {
 	
 	@Test
 	public void testHexaSizeValues() throws ParserFormatException, UnsupportedEncodingException {
-		String chunked = "A\r\n"
+		String chunked = "a\r\n"
 				 + "hola como \r\n"
 				 + "E\r\n"
 				 + "andas en el di\r\n"
