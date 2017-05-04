@@ -10,10 +10,6 @@ public enum Header {
 	private String headerName;
 	private byte[] headerBytes;
 
-//	public static boolean isRelevantHeader(ByteBuffer bytes, int length) {
-//		return getHeaderByBytes(bytes, length) != null;
-//	}
-
 	public static Header getHeaderByBytes (ByteBuffer bytes, int length) {
 		for (Header header : values())
 			if (BytesUtils.equalsBytes(header.headerBytes, bytes, length))

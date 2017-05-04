@@ -9,6 +9,10 @@ import tp.pdc.proxy.parser.interfaces.HttpResponseLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 
 public class HttpResponseParserImpl implements HttpResponseParser {
@@ -17,8 +21,15 @@ public class HttpResponseParserImpl implements HttpResponseParser {
     HttpHeaderParser headerParser;
 
     public HttpResponseParserImpl () {
+        // TODO por ahora esta esto aca
+        Set<Header> toSave = Collections.emptySet();
+        Set<Header> toRemove = Collections.emptySet();
+        Map<Header, byte[]> toAdd = new HashMap<>();
+        toAdd.put(Header.CONNECTION, "close".getBytes());
+        //
+
         lineParser = new HttpResponseLineParserImpl();
-        headerParser = new HttpHeadersParserImpl();
+        headerParser = new HttpHeadersParserImpl(toAdd, toRemove, toSave);
     }
 
     @Override public int getStatusCode () {

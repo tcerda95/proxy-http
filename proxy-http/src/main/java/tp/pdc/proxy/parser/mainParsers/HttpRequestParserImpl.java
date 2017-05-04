@@ -1,6 +1,7 @@
 package tp.pdc.proxy.parser.mainParsers;
 
 import java.nio.ByteBuffer;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,15 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     }
 
     public HttpRequestParserImpl () {
-        headersParser = new HttpHeadersParserImpl();
+        //TODO: por ahora dejo esto acá
+        Set<Header> toRemove = Collections.emptySet();
+        Map<Header, byte[]> toAdd = new HashMap<>();
+        toAdd.put(Header.CONNECTION, "close".getBytes());
+        Set<Header> toSave = new HashSet<>();
+        toSave.add(Header.HOST);
+        //
+
+        headersParser = new HttpHeadersParserImpl(toAdd, toRemove, toSave);
         requestLineParser = new HttpRequestLineParserImpl();
     }
 

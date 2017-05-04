@@ -36,24 +36,6 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     private Set<Header> headersToRemove;
     private Map<Header, byte[]> headersToAdd;
 
-    public HttpHeadersParserImpl () {
-        state = HttpHeaderState.ADD_HEADERS;
-        headerName = ByteBuffer.allocate(128); //TODO: capacity
-        headerValue = ByteBuffer.allocate(128);
-        savedHeaders = new HashMap<>();
-
-        //TODO sacar todo esto
-        headersToAdd = Collections.emptyMap();
-        headersToRemove = Collections.emptySet();
-
-        Header[] save = {Header.CONNECTION, Header.HOST, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING};
-        headersToSave = new HashSet<>();
-        for (Header h: save) {
-            headersToSave.add(h);
-        }
-
-    }
-
     public HttpHeadersParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
         this.headersToRemove = toRemove;
         this.headersToAdd = toAdd;
