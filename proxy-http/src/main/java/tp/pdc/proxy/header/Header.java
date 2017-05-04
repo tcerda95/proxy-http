@@ -5,7 +5,7 @@ import tp.pdc.proxy.ProxyProperties;
 
 public enum Header {
 	HOST("host"), CONNECTION("connection"), CONTENT_LENGTH("content-length"),
-	TRANSFER_ENCODING("transfer-encoding");
+	TRANSFER_ENCODING("transfer-encoding"), USER_AGENT("user-agent");
 
 	private String headerName;
 	private byte[] headerBytes;
