@@ -1,0 +1,4 @@
+GET /wp-content/uploads/2010/07/beagle-dog.jpg HTTP/1.1
+Host: www.mascotalia.es
+Accept: */*
+

@@ -6,7 +6,7 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 public class ParseUtils {
     private static final int US_ASCII_LENGTH = 128;
 
-    private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit;
+    private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit, isHexadecimal;
 
     private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
         '"', '/', '[', ']', '?', '=', '{', '}', SP.getValue(), HT.getValue()};
@@ -15,7 +15,7 @@ public class ParseUtils {
     static {
         isToken = new boolean[US_ASCII_LENGTH]; isSeparator = new boolean[US_ASCII_LENGTH];
         isLWS = new boolean[US_ASCII_LENGTH]; isDigit = new boolean[US_ASCII_LENGTH];
-        isAlphabetic = new boolean[US_ASCII_LENGTH];
+        isAlphabetic = new boolean[US_ASCII_LENGTH]; isHexadecimal = new boolean[US_ASCII_LENGTH];
 
         for (int c = 0; c < US_ASCII_LENGTH; c++) {
             isSeparator[c] = contains(separator, (byte) c);
@@ -23,6 +23,7 @@ public class ParseUtils {
             isLWS[c] = (c == CR.getValue() || c == LF.getValue() || c == SP.getValue() || c == HT.getValue());
             isDigit[c] = ('0' <= c && c <= '9');
             isAlphabetic[c] = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+            isHexadecimal[c] = isDigit[c] || ('A' <= c && c <= 'F') || ('a' <= c && c <='f');
         }
     }
 
@@ -57,6 +58,10 @@ public class ParseUtils {
 
     public static boolean isAlphabetic(byte c) {
         return isAlphabetic[c];
+    }
+    
+    public static boolean isHexadecimal(byte c) {
+        return isHexadecimal[c];
     }
     
 	public static int parseInt(byte[] arr) {

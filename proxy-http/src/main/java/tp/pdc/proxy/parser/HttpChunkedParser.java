@@ -4,11 +4,14 @@ import java.nio.ByteBuffer;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
+import tp.pdc.proxy.parser.interfaces.l33tEncoder;
+import tp.pdc.proxy.parser.encoders.*;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
+import static tp.pdc.proxy.parser.utils.DecimalConstants.*;
 
 public class HttpChunkedParser implements HttpBodyParser {
-
+	
     private ParserState parserState;
     private ChunkSizeState chunkSizeState;
     private ChunkState chunkState;
@@ -16,20 +19,24 @@ public class HttpChunkedParser implements HttpBodyParser {
     private int chunkSize;
     private boolean chunkSizeFound;
     
+    private l33tEncoder l33tEncoder;
+    private boolean l33tFlag;
     
-    public HttpChunkedParser() {
+    public HttpChunkedParser(boolean l33tFlag) {
     	parserState = ParserState.READ_CHUNK_SIZE;
     	chunkSizeState = ChunkSizeState.START;
     	chunkState = ChunkState.NOT_READ_YET;
    	 
     	chunkSize = 0;
     	chunkSizeFound = false;
+    	this.l33tFlag = l33tFlag;
+    	l33tEncoder = new l33tEncoderImpl();
     }
 	
     private enum ParserState {
         READ_CHUNK_SIZE,
         READ_CHUNK,
-        
+ 
         /* Error states */
         ERROR,
     }
@@ -55,7 +62,6 @@ public class HttpChunkedParser implements HttpBodyParser {
     	
     	while (input.hasRemaining() && output.hasRemaining()) {
     		byte c = input.get();
-    		output.put(c);
     		
     		switch(parserState) {
 	    		case READ_CHUNK_SIZE:	    			
@@ -64,11 +70,16 @@ public class HttpChunkedParser implements HttpBodyParser {
 	    		
 	    		case READ_CHUNK:
 	    			parseChunk(c);
+	    			
+	    			if (l33tFlag)
+	    				c = l33tEncoder.encodeByte(c);
+	  
 	    			break;
 	    			
 	    		default:
 	    			handleParserError();
     		}
+			output.put(c);
     	}
     	
     	return hasFinished();
@@ -78,8 +89,7 @@ public class HttpChunkedParser implements HttpBodyParser {
     	
     	switch(chunkSizeState) {
 	    	case START:
-	    		// TODO: considerar caso chunksize es hexa
-	    		if (c == LF.getValue() || ParseUtils.isAlphabetic(c))
+	    		if (c == LF.getValue() || (!ParseUtils.isHexadecimal(c) && c != CR.getValue()))
 	    			handleChunkSizeError();
 	    		
 	    		if (c == CR.getValue()) {
@@ -89,7 +99,9 @@ public class HttpChunkedParser implements HttpBodyParser {
 					chunkSizeState = ChunkSizeState.END_LINE_CR;
 				}		
 				else {
-					chunkSize = chunkSize*10 + c - '0';
+					c = (byte) Character.toUpperCase(c);
+					chunkSize = chunkSize*HEXA_BASE_VALUE.getValue() + c 
+							- (byte) (ParseUtils.isDigit(c) ? '0' : 'A' - A_DECIMAL_VALUE.getValue());
 					chunkSizeFound = true;
 				}
 					
@@ -184,4 +196,13 @@ public class HttpChunkedParser implements HttpBodyParser {
         chunkState = ChunkState.ERROR;
         throw new ParserFormatException("Error while parsing body");
     }
+
+	public void reset(boolean l33tFlag) {
+		parserState = ParserState.READ_CHUNK_SIZE;
+    	chunkSizeState = ChunkSizeState.START;
+    	chunkState = ChunkState.NOT_READ_YET;
+    	chunkSize = 0;
+    	chunkSizeFound = false;
+    	this.l33tFlag = l33tFlag;
+	}
 }
