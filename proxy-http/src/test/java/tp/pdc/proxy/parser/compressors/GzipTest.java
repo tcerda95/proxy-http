@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import tp.pdc.proxy.ProxyProperties;
@@ -14,7 +15,13 @@ public class GzipTest {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
+	private Gzip gzip;
 	private ByteBuffer inputBuffer;
+	
+	@Before
+	public void setUp() throws Exception {
+		gzip = new Gzip();
+	}
 
 	@Test
 	public void testCompressandDecompress() throws ParserFormatException, IOException {
@@ -23,11 +30,11 @@ public class GzipTest {
 		
 		inputBuffer = ByteBuffer.wrap(stringtoEncode.getBytes("ASCII"));
 
-        byte[] compressed = Gzip.compress(inputBuffer);
+        byte[] compressed = gzip.compress(inputBuffer);
 
         inputBuffer = ByteBuffer.wrap(compressed);
         
-        byte[] decompressed = Gzip.decompress(inputBuffer);
+        byte[] decompressed = gzip.decompress(inputBuffer);
         
 		assertEquals(stringtoEncode, new String(decompressed, PROPERTIES.getCharset()));
 	}

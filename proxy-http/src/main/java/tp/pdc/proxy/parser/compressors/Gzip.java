@@ -7,9 +7,11 @@ import java.nio.ByteBuffer;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class Gzip {
+import tp.pdc.proxy.parser.interfaces.Compressor;
 
-	public static byte[] compress(ByteBuffer input) throws IOException {
+public class Gzip implements Compressor {
+
+	public byte[] compress(ByteBuffer input) throws IOException {
     	
 		byte[] remainingBytes = new byte[input.remaining()];
 		input.get(remainingBytes, 0, remainingBytes.length);
@@ -26,7 +28,7 @@ public class Gzip {
     }
 
       
-    public static byte[] decompress(ByteBuffer input) throws IOException {
+    public byte[] decompress(ByteBuffer input) throws IOException {
     	
     	byte[] remainingBytes = new byte[input.remaining()];
 		input.get(remainingBytes, 0, remainingBytes.length);
