@@ -37,7 +37,6 @@ public class HttpBodyParserFactory {
 		return parser;
 	}
 
-	// TODO: recibir también el response code: los 1xx, 204 y 304 NO DEBEN incluir un message-body
 	public static HttpBodyParser getServerHttpBodyParser(HttpResponseParser headersParser, Method method) throws IllegalHttpHeadersException {
 		if (method != Method.HEAD && isBodyStatusCode(headersParser.getStatusCode()))
 			return buildServerBodyParser(headersParser);

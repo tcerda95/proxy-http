@@ -61,6 +61,8 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         toAdd.put(Header.CONNECTION, "close".getBytes());
         Set<Header> toSave = new HashSet<>();
         toSave.add(Header.HOST);
+        toSave.add(Header.CONTENT_LENGTH);
+        toSave.add(Header.TRANSFER_ENCODING);
         //
 
         headersParser = new HttpHeadersParserImpl(toAdd, toRemove, toSave);
