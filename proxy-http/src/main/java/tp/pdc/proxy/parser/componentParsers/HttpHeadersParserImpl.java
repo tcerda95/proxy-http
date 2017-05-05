@@ -13,14 +13,8 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     private enum HttpHeaderState {
         ADD_HEADERS, LINE_START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
-
-        NAME,
-
-        RELEVANT_COLON, RELEVANT_SPACE, RELEVANT_CONTENT,
-
-        IGNORED_CONTENT, IGNORED_CR,
-
-        COLON, SPACE, CONTENT,
+        NAME, RELEVANT_COLON, RELEVANT_SPACE, RELEVANT_CONTENT,
+        COLON, SPACE, CONTENT, IGNORED_CONTENT, IGNORED_CR,
     }
 
     private HttpHeaderState state;
@@ -65,7 +59,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         return false;
     }
 
-    @Override public boolean parse(byte c, ByteBuffer output) throws ParserFormatException {
+    public boolean parse(byte c, ByteBuffer output) throws ParserFormatException {
             switch (state) {
                 case ADD_HEADERS:
                     addHeaders(output);
@@ -112,6 +106,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
                 case RELEVANT_CONTENT:
                     if (c == CR.getValue()) {
+                        // TODO: y si no le entra todo a output buffer?
                         state = HttpHeaderState.END_LINE_CR;
                         headerValue.flip();
                         byte[] headerAux = new byte[headerValue.remaining()];
@@ -181,6 +176,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     }
 
+    // TODO: y si no le entra todo a output buffer?
     private void handleHeaderName(byte c, ByteBuffer outputBuffer) {
         headerName.flip();
         int nameLen = headerName.remaining();
@@ -201,6 +197,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         }
     }
 
+    // TODO: y si no le entra todo a output buffer?
     private void addHeaders(ByteBuffer output) {
         byte colon = (byte) ':';
         for (Map.Entry<Header, byte[]> e: headersToAdd.entrySet()) {

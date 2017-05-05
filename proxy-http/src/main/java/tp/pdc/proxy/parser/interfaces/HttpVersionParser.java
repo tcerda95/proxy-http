@@ -14,7 +14,6 @@ public interface HttpVersionParser extends Parser {
 
     int getMinorHttpVersion();
 
-    boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException;
+    boolean parse(byte c, ByteBuffer outputBuffer) throws ParserFormatException;
 
-    boolean parse(byte b, ByteBuffer outputBuffer) throws ParserFormatException;
 }

@@ -7,6 +7,7 @@ import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
+import java.util.NoSuchElementException;
 
 public class HttpResponseLineParserImpl implements HttpResponseLineParser {
 
@@ -28,7 +29,7 @@ public class HttpResponseLineParserImpl implements HttpResponseLineParser {
     public int getStatusCode() {
         if (hasStatusCode())
             return statusCode;
-        throw new IllegalStateException(); //TODO
+        throw new NoSuchElementException("Status code not read");
     }
 
     @Override
@@ -39,7 +40,7 @@ public class HttpResponseLineParserImpl implements HttpResponseLineParser {
     public boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer)
         throws ParserFormatException {
         byte b;
-        while (inputBuffer.hasRemaining()) {
+        while (inputBuffer.hasRemaining() && outputBuffer.hasRemaining()) {
             switch (state) {
                 case HTTP_VERSION:
                     boolean ended = versionParser.parse(inputBuffer, outputBuffer);

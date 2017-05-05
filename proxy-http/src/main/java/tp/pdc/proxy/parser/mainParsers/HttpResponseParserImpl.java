@@ -9,10 +9,7 @@ import tp.pdc.proxy.parser.interfaces.HttpResponseLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class HttpResponseParserImpl implements HttpResponseParser {
@@ -34,7 +31,7 @@ public class HttpResponseParserImpl implements HttpResponseParser {
 
     @Override public int getStatusCode () {
         if (!hasStatusCode()) {
-            throw new IllegalArgumentException(); //TODO: exception
+            throw new NoSuchElementException("No status code read");
         }
         return lineParser.getStatusCode();
     }
@@ -45,7 +42,7 @@ public class HttpResponseParserImpl implements HttpResponseParser {
 
     @Override public boolean parse (ByteBuffer input, ByteBuffer output)
         throws ParserFormatException {
-        while (input.hasRemaining()) {
+        while (input.hasRemaining() && output.hasRemaining()) {
             if (!lineParser.hasFinished()) {
                 lineParser.parse(input, output);
             } else if (!headerParser.hasFinished()) {
@@ -56,10 +53,6 @@ public class HttpResponseParserImpl implements HttpResponseParser {
             }
         }
         return false;
-    }
-
-    @Override public boolean parse (byte c, ByteBuffer outputBuffer) throws ParserFormatException {
-        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override public boolean hasFinished () {

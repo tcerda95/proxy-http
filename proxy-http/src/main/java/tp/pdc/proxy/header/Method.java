@@ -5,7 +5,8 @@ import tp.pdc.proxy.ProxyProperties;
 
 
 public enum Method {
-    GET("GET"), POST("POST"), HEAD("HEAD");
+    GET("GET"), POST("POST"), HEAD("HEAD"), OPTIONS("OPTIONS"), PUT("PUT"),
+        DELETE("DELETE"), TRACE("TRACE"), CONNECT("CONNECT");
 
     private String methodName;
     private byte[] methodBytes;
@@ -29,5 +30,22 @@ public enum Method {
     @Override
     public String toString() {
     	return methodName;
+    }
+
+    public static void main (String[] args) {
+        ByteBuffer b = ByteBuffer.allocate(10);
+
+        b.put((byte) 'a');
+        b.put((byte) 'b');
+        b.put((byte) 'c');
+        b.put((byte) 'd');
+
+        b.flip();
+        System.out.println(b.get());
+        System.out.println(b);
+
+        b.position(b.position() - 1);
+        System.out.println(b.get());
+        System.out.println(b);
     }
 }

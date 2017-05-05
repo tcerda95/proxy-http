@@ -5,6 +5,7 @@ import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
+import java.util.NoSuchElementException;
 
 public class HttpVersionParserImpl implements HttpVersionParser {
 
@@ -45,19 +46,19 @@ public class HttpVersionParserImpl implements HttpVersionParser {
 
     @Override public int getMajorHttpVersion () {
         if (!readMajorVersion())
-            throw new IllegalStateException(); //TODO: unread
+            throw new NoSuchElementException("Major Http Version not read");
         return majorVersion;
     }
 
     @Override public int getMinorHttpVersion () {
         if (!readMinorVersion())
-            throw new IllegalStateException(); //TODO: unread
+            throw new NoSuchElementException("Minor Http Version not read");
         return minorVersion;
     }
 
     @Override public boolean parse (ByteBuffer inputBuffer, ByteBuffer outputBuffer)
         throws ParserFormatException {
-        while (inputBuffer.hasRemaining()) {
+        while (inputBuffer.hasRemaining() && outputBuffer.hasRemaining()) {
             if (parse(inputBuffer.get(), outputBuffer)) {
                 return true;
             }
@@ -66,6 +67,9 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     }
 
     @Override public boolean parse (byte b, ByteBuffer outputBuffer) throws ParserFormatException {
+        if (!outputBuffer.hasRemaining())
+            return false;
+
         switch (state) {
             case NOT_READ_YET:
                 expectByteAndOutput(b, (byte) 'H', outputBuffer, HttpVersionState.H);

@@ -30,8 +30,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 
     @Override public byte[] getHostValue () {
         if (!hasHost())
-            throw new IllegalStateException(); //TODO
-
+            throw new NoSuchElementException("Host not read yet");
         if (requestLineParser.hasHost())
             return requestLineParser.getHostValue();
         else
@@ -81,11 +80,6 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         }
         return false;
     }
-
-	@Override
-	public boolean parse(byte c, ByteBuffer output) throws ParserFormatException {
-        throw new UnsupportedOperationException(); // TODO
-	}
 
 	@Override
 	public Method getMethod() {

@@ -11,6 +11,7 @@ import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
+import java.util.NoSuchElementException;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
@@ -20,19 +21,15 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private RequestLineParserState state;
     private Method method;
+    private byte[] hostValue;
 
     private final ByteBuffer methodName, URIHostBuf;
-    private byte[] hostValue;
 
     private HttpVersionParser versionParser;
 
-
     private enum RequestLineParserState {
         START, METHOD_READ, HTTP_VERSION, CR,
-
-        /* URI */
         URI_READ, HOST_PROTOCOL, URI_HOST_ADDR, URI_NO_HOST, URI_HOST_SLASH,
-
         READ_OK, ERROR,
     }
 
@@ -45,7 +42,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     @Override public byte[] getHostValue () {
         if (!hasHost())
-            throw new IllegalStateException(); //TODO
+            throw new NoSuchElementException("Host not read");
         return hostValue;
     }
 
@@ -59,7 +56,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     @Override public boolean parse (ByteBuffer input, ByteBuffer output)
         throws ParserFormatException {
-        while (input.hasRemaining()) {
+        while (input.hasRemaining() && output.hasRemaining()) {
             byte c = input.get();
 
             switch (state) {
@@ -76,8 +73,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     if (ParseUtils.isAlphabetic(c)) {
                         methodName.put(c);
                     } else if (c == SP.getValue() && processMethod()) {
-                        state = RequestLineParserState.URI_READ;
-                        output.put(methodName).put(c);
+                        if (!handlePutMethod(c, input, output))
+                            return false;
                     } else {
                         handleError();
                     }
@@ -126,10 +123,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
                 case URI_HOST_ADDR:
                     if (c == SP.getValue() || c == '/') {
-                        loadHostValue();
-                        output.put(hostValue).put(c);
-                        state = c == '/' ? RequestLineParserState.URI_NO_HOST :
-                            RequestLineParserState.HTTP_VERSION;
+                        if (!handlePutHost(c, input, output))
+                            return false;
                     } else if (ParseUtils.isUriCharacter(c)) {
                         URIHostBuf.put(c);
                     } else {
@@ -160,19 +155,50 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         return false;
     }
 
+    // TODO esta y handlePutHost repiten código
+    private boolean handlePutMethod(byte c, ByteBuffer input, ByteBuffer output) {
+        if (output.remaining() < methodName.limit() + 1) {
+            input.position(input.position() - 1);
+            return false;
+        }
+
+        state = RequestLineParserState.URI_READ;
+        output.put(methodName).put(c);
+        return true;
+    }
+
+    private boolean handlePutHost(byte c, ByteBuffer input, ByteBuffer output) {
+        loadHostValue();
+
+        if (output.remaining() < hostValue.length + 1) {
+            input.position(input.position() - 1); // "Puts back the read byte".
+            return false;
+        }
+
+        output.put(hostValue).put(c);
+        state = c == '/' ? RequestLineParserState.URI_NO_HOST :
+            RequestLineParserState.HTTP_VERSION;
+        return true;
+    }
+
     private void loadHostValue() {
+        if (hostValue != null)
+            return; // already loaded
+
         URIHostBuf.flip();
         hostValue = new byte[URIHostBuf.remaining()];
         URIHostBuf.get(hostValue);
     }
 
     private boolean processMethod () {
+        if (method != null)
+            return true; // Already loaded
+
         int strLen = methodName.position();
         methodName.flip();
         method = Method.getByBytes(methodName, strLen);
         LOGGER.debug("METHOD: {}", method);
-        //TODO: si es un método no soportado se podría loggear cual era.
-        return method != null;
+        return method != null; // Valid method
     }
 
     private void handleError() throws ParserFormatException {
@@ -189,6 +215,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         state = RequestLineParserState.START;
         methodName.clear();
         URIHostBuf.clear();
+        method = null; hostValue = null;
     }
 
     @Override
