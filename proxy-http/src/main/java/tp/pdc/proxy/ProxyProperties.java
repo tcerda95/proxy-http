@@ -52,5 +52,20 @@ public class ProxyProperties {
 	public final int getProtocolPort() {
 		return Integer.parseInt(properties.getProperty("protocol.port"));
 	}
-	
+
+	public final int getMethodBufferSize() {
+		return Integer.parseInt(properties.getProperty("parser.methodBufferSize"));
+	}
+
+	public final int getURIBufferSize() {
+		return Integer.parseInt(properties.getProperty("parser.URIBufferSize"));
+	}
+
+	public final int getHeaderNameBufferSize() {
+		return Integer.parseInt(properties.getProperty("parser.headerNameBufferSize"));
+	}
+
+	public final int getHeaderContentBufferSize() {
+		return Integer.parseInt(properties.getProperty("parser.headerContentBufferSize"));
+	}
 }

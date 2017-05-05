@@ -3,6 +3,7 @@ package tp.pdc.proxy.parser.componentParsers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
@@ -10,6 +11,7 @@ import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
@@ -18,6 +20,8 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
+    private static final int METHOD_NAME_SIZE = ProxyProperties.getInstance().getMethodBufferSize();
+    private static final int URI_SIZE = ProxyProperties.getInstance().getURIBufferSize();
 
     private RequestLineParserState state;
     private Method method;
@@ -36,8 +40,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
     public HttpRequestLineParserImpl () {
         versionParser = new HttpVersionParserImpl(CR.getValue());
         state = RequestLineParserState.START;
-        methodName = ByteBuffer.allocate(16); //TODO: capacity
-        URIHostBuf = ByteBuffer.allocate(256);
+        methodName = ByteBuffer.allocate(METHOD_NAME_SIZE);
+        URIHostBuf = ByteBuffer.allocate(URI_SIZE);
     }
 
     @Override public byte[] getHostValue () {

@@ -1,5 +1,6 @@
 package tp.pdc.proxy.parser.componentParsers;
 
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
@@ -17,6 +18,9 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         COLON, SPACE, CONTENT, IGNORED_CONTENT, IGNORED_CR,
     }
 
+    private static final int HEADER_NAME_SIZE = ProxyProperties.getInstance().getHeaderNameBufferSize();
+    private static final int HEADER_CONTENT_SIZE = ProxyProperties.getInstance().getHeaderContentBufferSize();
+
     private HttpHeaderState state;
     private Header currentHeader;
     private ByteBuffer headerName, headerValue;
@@ -28,8 +32,8 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     public HttpHeadersParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
         state = HttpHeaderState.ADD_HEADERS;
-        headerName = ByteBuffer.allocate(128); //TODO: capacity
-        headerValue = ByteBuffer.allocate(128);
+        headerName = ByteBuffer.allocate(HEADER_NAME_SIZE);
+        headerValue = ByteBuffer.allocate(HEADER_CONTENT_SIZE);
         savedHeaders = new HashMap<>();
 
         this.headersToRemove = toRemove;
@@ -74,7 +78,6 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                         headerName.clear();
                         headerValue.clear();
                         currentHeader = null;
-
                         headerName.put((byte) Character.toLowerCase(c));
                         state = HttpHeaderState.NAME;
                     } else
