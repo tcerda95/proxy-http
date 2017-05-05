@@ -30,6 +30,9 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     private Set<Header> headersToRemove;
     private Map<Header, byte[]> headersToAdd;
 
+    // Buffered bytes que todavía no se escribieron en outputBuffer
+    private int buffered = 0;
+
     public HttpHeadersParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
         state = HttpHeaderState.ADD_HEADERS;
         headerName = ByteBuffer.allocate(HEADER_NAME_SIZE);
@@ -57,13 +60,13 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
 
     @Override public boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException {
-        while(inputBuffer.hasRemaining() && outputBuffer.hasRemaining())
+        while(inputBuffer.hasRemaining() && outputBuffer.remaining() > buffered)
             if (parse(inputBuffer.get(), outputBuffer))
                 return true;
         return false;
     }
 
-    public boolean parse(byte c, ByteBuffer output) throws ParserFormatException {
+    private boolean parse(byte c, ByteBuffer output) throws ParserFormatException {
             switch (state) {
                 case ADD_HEADERS:
                     addHeaders(output);
@@ -109,7 +112,6 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
                 case RELEVANT_CONTENT:
                     if (c == CR.getValue()) {
-                        // TODO: y si no le entra todo a output buffer?
                         state = HttpHeaderState.END_LINE_CR;
                         headerValue.flip();
                         byte[] headerAux = new byte[headerValue.remaining()];
@@ -175,11 +177,11 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     throw new IllegalStateException();
             }
 
+        buffered = headerName.position() + headerValue.position();
         return false;
 
     }
 
-    // TODO: y si no le entra todo a output buffer?
     private void handleHeaderName(byte c, ByteBuffer outputBuffer) {
         headerName.flip();
         int nameLen = headerName.remaining();

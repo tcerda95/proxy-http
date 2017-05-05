@@ -27,6 +27,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
     private Method method;
     private byte[] hostValue;
 
+    private int buffered = 0;
+
     private final ByteBuffer methodName, URIHostBuf;
 
     private HttpVersionParser versionParser;
@@ -60,7 +62,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     @Override public boolean parse (ByteBuffer input, ByteBuffer output)
         throws ParserFormatException {
-        while (input.hasRemaining() && output.hasRemaining()) {
+        while (input.hasRemaining() && output.remaining() > buffered) {
             byte c = input.get();
 
             switch (state) {
@@ -68,6 +70,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     if (ParseUtils.isAlphabetic(c)) {
                         state = RequestLineParserState.METHOD_READ;
                         methodName.put(c);
+                        buffered++;
                     } else {
                         handleError();
                     }
@@ -76,9 +79,11 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                 case METHOD_READ:
                     if (ParseUtils.isAlphabetic(c)) {
                         methodName.put(c);
+                        buffered++;
                     } else if (c == SP.getValue() && processMethod()) {
-                        if (!handlePutMethod(c, input, output))
-                            return false;
+                        state = RequestLineParserState.URI_READ;
+                        output.put(methodName).put(c);
+                        buffered = 0;
                     } else {
                         handleError();
                     }
@@ -127,10 +132,14 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
                 case URI_HOST_ADDR:
                     if (c == SP.getValue() || c == '/') {
-                        if (!handlePutHost(c, input, output))
-                            return false;
+                        loadHostValue();
+                        output.put(hostValue).put(c);
+                        state = c == '/' ? RequestLineParserState.URI_NO_HOST :
+                            RequestLineParserState.HTTP_VERSION;
+                        buffered = 0;
                     } else if (ParseUtils.isUriCharacter(c)) {
                         URIHostBuf.put(c);
+                        buffered++;
                     } else {
                         handleError();
                     }
@@ -157,32 +166,6 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
             }
         }
         return false;
-    }
-
-    // TODO esta y handlePutHost repiten código
-    private boolean handlePutMethod(byte c, ByteBuffer input, ByteBuffer output) {
-        if (output.remaining() < methodName.limit() + 1) {
-            input.position(input.position() - 1);
-            return false;
-        }
-
-        state = RequestLineParserState.URI_READ;
-        output.put(methodName).put(c);
-        return true;
-    }
-
-    private boolean handlePutHost(byte c, ByteBuffer input, ByteBuffer output) {
-        loadHostValue();
-
-        if (output.remaining() < hostValue.length + 1) {
-            input.position(input.position() - 1); // "Puts back the read byte".
-            return false;
-        }
-
-        output.put(hostValue).put(c);
-        state = c == '/' ? RequestLineParserState.URI_NO_HOST :
-            RequestLineParserState.HTTP_VERSION;
-        return true;
     }
 
     private void loadHostValue() {
