@@ -29,6 +29,9 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     private Set<Header> headersToSave;
     private Set<Header> headersToRemove;
     private Map<Header, byte[]> headersToAdd;
+    private Iterator<Map.Entry<Header, byte[]>> headersToAddIter;
+
+    private Map.Entry<Header, byte[]> nextToAdd;
 
     // Buffered bytes que todavía no se escribieron en outputBuffer
     private int buffered = 0;
@@ -41,6 +44,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
         this.headersToRemove = toRemove;
         this.headersToAdd = toAdd;
+        this.headersToAddIter = toAdd.entrySet().iterator();
         this.headersToSave = toSave;
     }
 
@@ -202,17 +206,33 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         }
     }
 
-    // TODO: y si no le entra todo a output buffer?
     private void addHeaders(ByteBuffer output) {
-        byte colon = (byte) ':';
-        for (Map.Entry<Header, byte[]> e: headersToAdd.entrySet()) {
-            output
-                .put(e.getKey().getBytes())
-                .put(colon)
-                .put(SP.getValue())
-                .put(e.getValue())
-                .put(CR.getValue()).put(LF.getValue());
+        // Si no lo pude meter antes quedó acá guardado
+        if (nextToAdd != null && headerFitsBuffer(nextToAdd, output))
+            putHeaderInBuffer(nextToAdd, output);
+
+        while (headersToAddIter.hasNext()) {
+            nextToAdd = headersToAddIter.next();
+            if (!headerFitsBuffer(nextToAdd, output)) { // 4: colon + SP + CR + LF
+                return;
+            }
+            putHeaderInBuffer(nextToAdd, output);
+            nextToAdd = null;
         }
+    }
+
+    private void putHeaderInBuffer(Map.Entry<Header, byte[]> header, ByteBuffer buffer) {
+        buffer
+            .put(header.getKey().getBytes())
+            .put((byte) ':')
+            .put(SP.getValue())
+            .put(header.getValue())
+            .put(CR.getValue()).put(LF.getValue());
+    }
+
+    private boolean headerFitsBuffer(Map.Entry<Header, byte[]> header, ByteBuffer buffer) {
+        return buffer.remaining() >= header.getKey().getBytes().length + header.getValue().length + 4;
+        // 4: colon + SP + CR + LF
     }
 
     @Override public boolean hasFinished() {
