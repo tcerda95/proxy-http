@@ -31,8 +31,8 @@ public class Gzip {
     	byte[] remainingBytes = new byte[input.remaining()];
 		input.get(remainingBytes, 0, remainingBytes.length);
 	  	  
-		ByteArrayInputStream bin = new ByteArrayInputStream(remainingBytes);
-	    GZIPInputStream gzipper = new GZIPInputStream(bin);
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(remainingBytes);
+		GZIPInputStream gzipper = new GZIPInputStream(inputStream);
 		  
 		byte[] buffer = new byte[1024];
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -47,20 +47,5 @@ public class Gzip {
 		  
 		return out.toByteArray();        
     }
-      
-//	public static byte[] decompress(ByteBuffer input) throws Exception {
-//    	 
-//		byte[] output = new byte[1024];
-//    	
-//		byte[] remainingBytes = new byte[input.remaining()];
-//		input.get(remainingBytes, 0, remainingBytes.length);
-//		
-//		GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(remainingBytes));
-//		
-//		gzip.read(output, 0, 1024);
-//		gzip.close();
-//
-//		return output;
-//     }
 
 }
