@@ -19,10 +19,12 @@ public class HttpResponseParserImpl implements HttpResponseParser {
 
     public HttpResponseParserImpl () {
         // TODO por ahora esta esto aca
-        Set<Header> toSave = Collections.emptySet();
         Set<Header> toRemove = Collections.emptySet();
         Map<Header, byte[]> toAdd = new HashMap<>();
         toAdd.put(Header.CONNECTION, "close".getBytes());
+        Set<Header> toSave = new HashSet<>();
+        toSave.add(Header.CONTENT_LENGTH);
+        toSave.add(Header.TRANSFER_ENCODING);
         //
 
         lineParser = new HttpResponseLineParserImpl();

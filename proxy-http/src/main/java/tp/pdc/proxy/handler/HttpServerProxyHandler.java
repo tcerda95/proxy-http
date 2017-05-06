@@ -35,19 +35,20 @@ public class HttpServerProxyHandler extends HttpHandler {
 	protected void processRead(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		ByteBuffer buffer = this.getReadBuffer();
-		int bytesRead;
 		
 		try {
-			bytesRead = socketChannel.read(buffer);
+			int bytesRead = socketChannel.read(buffer);
 			
 			if (bytesRead == -1) {
 				LOGGER.warn("Closing connection to server: EOF");
 				socketChannel.close();
 				responseProcessed = true;
-			}
-			else if (bytesRead > 0) {
-				LOGGER.info("Read {} bytes from server", bytesRead);
+				
+				LOGGER.debug("Registering clieng for write: client must consume EOF");
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+			}
+			else {
+				LOGGER.info("Read {} bytes from server", bytesRead);
 			}
 			
 		} catch (IOException e) {

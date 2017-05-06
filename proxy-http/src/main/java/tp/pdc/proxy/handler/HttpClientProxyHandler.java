@@ -106,8 +106,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 		ByteBuffer buffer = this.getReadBuffer();
 		
 		try {
-			if (socketChannel.read(buffer) == -1)
-				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo?
+			int bytesRead = socketChannel.read(buffer);
+			if (bytesRead == -1) {
+				LOGGER.warn("Received EOF from client");
+				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo? SI
+				closeServerChannel();
+			}
+			else
+				LOGGER.info("Read {} bytes from client", bytesRead);
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read from client: {}", e.getMessage());
 			e.printStackTrace();
@@ -125,8 +131,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 		else if (!bodyParser.hasFinished()) {
 			LOGGER.debug("Processing client's body");
 			processBody(inputBuffer, processedBuffer, key);
-		}
-		else {
 		}
 		
 		if (state == ERROR)
