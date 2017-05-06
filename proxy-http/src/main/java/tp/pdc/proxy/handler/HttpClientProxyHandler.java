@@ -5,7 +5,6 @@ import static tp.pdc.proxy.handler.ClientHandlerState.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -91,9 +90,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write to client: {}", e.getMessage());
 			e.printStackTrace();
+			closeServerChannel();
 			try {
 				socketChannel.close();
 			} catch (IOException e1) {
+				LOGGER.error("Failed to close client's channel on client's write error");
 				e1.printStackTrace();
 			}
 		}
@@ -197,9 +198,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		return getServerHandler().isResponseProcessed();
 	}
 
-	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {
-		boolean isServerChannelOpen = state != NOT_CONNECTED && this.getConnectedPeerKey().channel().isOpen();
-		
+	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {		
 		state = ERROR;
 		
 		ByteBuffer writeBuffer = this.getWriteBuffer();
@@ -208,16 +207,22 @@ public class HttpClientProxyHandler extends HttpHandler {
 		
 		key.interestOps(SelectionKey.OP_WRITE);
 		
-		if (isServerChannelOpen) {
-			Channel serverChannel = this.getConnectedPeerKey().channel();
+		closeServerChannel();
+	}
+	
+	private void closeServerChannel() {
+		if (isServerChannelOpen()) {
 			try {
-				serverChannel.close();
+				this.getConnectedPeerKey().channel().close();
 			} catch (IOException e) {
 				LOGGER.error("Failed to close server's connection on client's error");
 				e.printStackTrace();
 			}
 		}
-		
+	}
+	
+	private boolean isServerChannelOpen() {
+		return this.getConnectedPeerKey() != null && this.getConnectedPeerKey().channel().isOpen();
 	}
 	
 	private void manageNotConnected(SelectionKey key) {
