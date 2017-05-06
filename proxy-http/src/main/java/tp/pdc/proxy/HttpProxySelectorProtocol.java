@@ -8,7 +8,8 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tp.pdc.proxy.client.HttpClientProxyHandler;
+import tp.pdc.proxy.handler.HttpClientProxyHandler;
+import tp.pdc.proxy.handler.HttpHandler;
 
 public class HttpProxySelectorProtocol {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);

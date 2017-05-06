@@ -56,7 +56,7 @@ public class Pruebita {
 					protocol.handleAccept(key);
 				}
 								
-				if (key.isConnectable()) {
+				if (key.isValid() && key.isConnectable()) {
 					protocol.handleConnect(key);
 				}
 				

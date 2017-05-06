@@ -1,4 +1,4 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.handler;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -41,9 +41,7 @@ public abstract class HttpHandler {
 	
 	public void handleRead(SelectionKey key) {
 		processRead(key);
-		readBuffer.flip();    // pasa a modo lectura
-		process(readBuffer, key);
-		readBuffer.compact();  // pasa a modo escritura
+		processReadBuffer(key);
 	}
 
 	public void handleWrite(SelectionKey key) {
@@ -51,4 +49,17 @@ public abstract class HttpHandler {
 		processWrite(writeBuffer, key);
 		writeBuffer.compact();
 	}
+	
+	protected void handleProcess(SelectionKey key) {
+		processedBuffer.compact();
+		processReadBuffer(key);
+		processedBuffer.flip();
+	}
+	
+	private void processReadBuffer(SelectionKey key) {
+		readBuffer.flip();
+		process(readBuffer, key);
+		readBuffer.compact();
+	}
+	
 }

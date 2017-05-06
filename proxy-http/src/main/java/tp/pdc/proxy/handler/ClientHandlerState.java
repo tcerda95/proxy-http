@@ -1,4 +1,4 @@
-package tp.pdc.proxy.client;
+package tp.pdc.proxy.handler;
 
 public enum ClientHandlerState {
 	NOT_CONNECTED (false),

@@ -1,4 +1,4 @@
-package tp.pdc.proxy.server;
+package tp.pdc.proxy.handler;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,10 +8,7 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpResponse;
-import tp.pdc.proxy.client.ClientHandlerState;
-import tp.pdc.proxy.client.HttpClientProxyHandler;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
@@ -46,6 +43,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			if (bytesRead == -1) {
 				LOGGER.warn("Closing connection to server: EOF");
 				socketChannel.close();
+				responseProcessed = true;
 			}
 			else if (bytesRead > 0) {
 				LOGGER.info("Read {} bytes from server", bytesRead);
@@ -63,12 +61,17 @@ public class HttpServerProxyHandler extends HttpHandler {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
 		if (!responseParser.hasFinished())
-			processHeaders(inputBuffer, processedBuffer, key);
-		else
+			processResponse(inputBuffer, processedBuffer, key);
+		else if (!bodyParser.hasFinished())
 			processBody(inputBuffer, processedBuffer, key);
 		
 		if (!key.channel().isOpen())
 			responseProcessed = true;
+		
+		if (processedBuffer.position() != 0) {
+			LOGGER.debug("Registering client for write: server has written to processed buffer");
+			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+		}
 		
 		// Conexión no persistente
 		if (isResponseProcessed()) {
@@ -76,6 +79,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 				LOGGER.info("Closing connection to server: whole response processed");
 				key.channel().close();
 			} catch (IOException e) {
+				LOGGER.error("Failed to close server's socket on response processed: {}", e.getMessage());
 				e.printStackTrace();
 			}
 		}
@@ -93,12 +97,15 @@ public class HttpServerProxyHandler extends HttpHandler {
 			LOGGER.info("Sending {} bytes to server", inputBuffer.remaining());
 			socketChannel.write(inputBuffer);
 			
-			if (getClientState() != ClientHandlerState.REQUEST_PROCESSED)
+			if (getClientState() != ClientHandlerState.REQUEST_PROCESSED) {
+				LOGGER.debug("Registering client for read: whole request not processed yet");
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
-			
-			if (!inputBuffer.hasRemaining() && getClientState() != ClientHandlerState.REQUEST_PROCESSED) {
-				LOGGER.debug("Unregistering server from write: nothing left in client processed buffer");
-				key.interestOps(0);
+				getClientHandler().handleProcess(getConnectedPeerKey());  // Espacio libre en processed buffer ---> cliente puede procesar
+				
+				if (!inputBuffer.hasRemaining()) {
+					LOGGER.debug("Unregistering server from write: nothing left in client processed buffer");
+					key.interestOps(0);
+				}
 			}
 			
 			if (!inputBuffer.hasRemaining() && getClientState() == ClientHandlerState.REQUEST_PROCESSED) {
@@ -110,10 +117,16 @@ public class HttpServerProxyHandler extends HttpHandler {
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write request to server");
 			getClientHandler().setErrorState(HttpResponse.BAD_GATEWAY_502, this.getConnectedPeerKey());
+			try {
+				socketChannel.close();
+			} catch (IOException e1) {
+				LOGGER.error("Failed to close server's socket on server's write error: {}", e1.getMessage());
+				e1.printStackTrace();
+			}
 		}
 	}
 	
-	private void processHeaders(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
+	private void processResponse(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
 			responseParser.parse(inputBuffer, outputBuffer);
 			

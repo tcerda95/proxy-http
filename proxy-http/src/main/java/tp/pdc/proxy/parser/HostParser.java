@@ -1,4 +1,4 @@
-package tp.pdc.proxy.client;
+package tp.pdc.proxy.parser;
 
 import java.net.InetSocketAddress;
 

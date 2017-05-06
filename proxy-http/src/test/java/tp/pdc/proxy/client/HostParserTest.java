@@ -8,6 +8,8 @@ import java.nio.charset.Charset;
 import org.junit.Before;
 import org.junit.Test;
 
+import tp.pdc.proxy.parser.HostParser;
+
 public class HostParserTest {
 
 	private final static Charset CHARSET = Charset.forName("ASCII");

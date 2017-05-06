@@ -1,10 +1,11 @@
-package tp.pdc.proxy.client;
+package tp.pdc.proxy.handler;
 
-import static tp.pdc.proxy.client.ClientHandlerState.*;
+import static tp.pdc.proxy.handler.ClientHandlerState.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -12,15 +13,14 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tp.pdc.proxy.HttpHandler;
 import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
+import tp.pdc.proxy.parser.HostParser;
 import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
-import tp.pdc.proxy.server.HttpServerProxyHandler;
 
 public class HttpClientProxyHandler extends HttpHandler {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
@@ -72,6 +72,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			LOGGER.info("Sent {} bytes to client", bytesSent);
 			
 			if (!inputBuffer.hasRemaining()) {
+				LOGGER.debug("Unregistering client: write buffer empty");
 				key.interestOps(0);			
 				if (state == ERROR)
 					socketChannel.close();
@@ -84,6 +85,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			if (state != ERROR && !isServerResponseProcessed()) {
 				LOGGER.debug("Registering server for read: server's response not processed yet");
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
+				getServerHandler().handleProcess(getConnectedPeerKey());  // Espacio libre en processedBuffer ---> servidor puede procesar
 			}
 			
 		} catch (IOException e) {
@@ -115,10 +117,16 @@ public class HttpClientProxyHandler extends HttpHandler {
 	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
-		if (requestParser.hasFinished())
+		if (!requestParser.hasFinished()) {
+			LOGGER.debug("Processing client's headers");
+			processRequest(inputBuffer, processedBuffer, key);
+		}
+		else if (!bodyParser.hasFinished()) {
+			LOGGER.debug("Processing client's body");
 			processBody(inputBuffer, processedBuffer, key);
-		else
-			processHeaders(inputBuffer, processedBuffer, key);
+		}
+		else {
+		}
 		
 		if (state == ERROR)
 			return;
@@ -128,7 +136,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			key.interestOps(0);				
 		}
 		
-		if (state.shouldWrite()) {
+		if (state.shouldWrite() && processedBuffer.position() != 0) {
 			LOGGER.debug("Registering server for write. Must send {} bytes", processedBuffer.position());
 			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 		}
@@ -137,17 +145,16 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private void processBody(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
 			bodyParser.parse(inputBuffer, outputBuffer);
+			if (bodyParser.hasFinished())
+				setRequestProcessedState(key);
 		} catch (ParserFormatException e) {
 			LOGGER.warn("Invalid body format: {}", e.getMessage());
 			setErrorState(HttpResponse.BAD_REQUEST_400, key);
 			return;
 		}
-		
-		if (bodyParser.hasFinished())
-			setRequestProcessedState(key);		
 	}
 	
-	private void processHeaders(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
+	private void processRequest(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
 			requestParser.parse(inputBuffer, outputBuffer);
 			
@@ -173,6 +180,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 	
 	private void setRequestProcessedState(SelectionKey key) {
+		LOGGER.debug("Unregistering client from read: request processed");
 		key.interestOps(0);
 		
 		if (state == CONNECTING)
@@ -190,9 +198,26 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 
 	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {
+		boolean isServerChannelOpen = state != NOT_CONNECTED && this.getConnectedPeerKey().channel().isOpen();
+		
 		state = ERROR;
-		this.getWriteBuffer().put(errorResponse.getBytes());
+		
+		ByteBuffer writeBuffer = this.getWriteBuffer();
+		writeBuffer.clear();
+		writeBuffer.put(errorResponse.getBytes());
+		
 		key.interestOps(SelectionKey.OP_WRITE);
+		
+		if (isServerChannelOpen) {
+			Channel serverChannel = this.getConnectedPeerKey().channel();
+			try {
+				serverChannel.close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to close server's connection on client's error");
+				e.printStackTrace();
+			}
+		}
+		
 	}
 	
 	private void manageNotConnected(SelectionKey key) {
