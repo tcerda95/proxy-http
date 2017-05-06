@@ -4,8 +4,8 @@ import org.junit.Before;
 import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.factory.HttpResponseParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
-import tp.pdc.proxy.parser.mainParsers.HttpResponseParserImpl;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
@@ -33,7 +33,7 @@ public class HttpResponseParserTest {
             + "connection-no: close\r\n"
             + "transfer-size: chunked\r\n\r\n";;
 
-        parser = new HttpResponseParserImpl();
+        parser = HttpResponseParserFactory.getInstance().getResponseParser();
         output = ByteBuffer.allocate(1024);
         emptyHeadersInput = ByteBuffer.wrap((responseLine + emptyHeaders).getBytes());
         fullHeadersInput = ByteBuffer.wrap((responseLine + contentHeaders).getBytes());

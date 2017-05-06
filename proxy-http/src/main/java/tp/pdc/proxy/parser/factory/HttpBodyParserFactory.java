@@ -17,18 +17,23 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class HttpBodyParserFactory {
 	
+	private static final HttpBodyParserFactory INSTANCE = new HttpBodyParserFactory();
 	private static final HttpNullBodyParser NULL_PARSER = HttpNullBodyParser.getInstance();
 	
 	private HttpBodyParserFactory() {
 	}
 	
-	public static HttpBodyParser getClientHttpBodyParser(HttpRequestParser headersParser) throws IllegalHttpHeadersException {
-		if (headersParser.hasMethod(Method.POST))
+	public static HttpBodyParserFactory getInstance() {
+		return INSTANCE;
+	}
+	
+	public HttpBodyParser getClientHttpBodyParser(HttpRequestParser headersParser) throws IllegalHttpHeadersException {
+		if (headersParser.hasMethod() && headersParser.getMethod() == Method.POST)
 			return buildClientBodyParser(headersParser);
 		return NULL_PARSER;
 	}
 
-	private static HttpBodyParser buildClientBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
+	private HttpBodyParser buildClientBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
 		HttpBodyParser parser = buildBodyParser(headersParser);
 		
 		if (parser == null)
@@ -36,18 +41,18 @@ public class HttpBodyParserFactory {
 			
 		return parser;
 	}
-
-	public static HttpBodyParser getServerHttpBodyParser(HttpResponseParser headersParser, Method method) throws IllegalHttpHeadersException {
+	
+	public HttpBodyParser getServerHttpBodyParser(HttpResponseParser headersParser, Method method) throws IllegalHttpHeadersException {
 		if (method != Method.HEAD && isBodyStatusCode(headersParser.getStatusCode()))
 			return buildServerBodyParser(headersParser);
 		return NULL_PARSER;
 	}
 	
-	private static boolean isBodyStatusCode(int statusCode) {
+	private boolean isBodyStatusCode(int statusCode) {
 		return statusCode / 100 != 1 && statusCode != 204 && statusCode != 304;
 	}
 
-	private static HttpBodyParser buildServerBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
+	private HttpBodyParser buildServerBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
 		HttpBodyParser parser = buildBodyParser(headersParser);
 
 		if (parser == null) {
@@ -62,7 +67,7 @@ public class HttpBodyParserFactory {
 	}
 	
 	// It is imperative to prioritize Chunked over Content-Length parsing: RFC 2616 4.4.3
-	private static HttpBodyParser buildBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
+	private HttpBodyParser buildBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
 		try {
 			if (shouldL33t(headersParser)) {
 				if (hasChunked(headersParser))
@@ -84,16 +89,16 @@ public class HttpBodyParserFactory {
 		return null;
 	}
 
-	private static boolean hasContentLength(HttpHeaderParser headersParser) {
+	private boolean hasContentLength(HttpHeaderParser headersParser) {
 		return headersParser.hasHeaderValue(Header.CONTENT_LENGTH);
 	}
 	
-	private static boolean hasChunked(HttpHeaderParser headersParser) {
+	private boolean hasChunked(HttpHeaderParser headersParser) {
 		return headersParser.hasHeaderValue(Header.TRANSFER_ENCODING) && 
 				BytesUtils.equalsBytes(headersParser.getHeaderValue(Header.TRANSFER_ENCODING), HeaderValue.CHUNKED.getValue());
 	}
 	
-	private static boolean shouldL33t(HttpHeaderParser headersParser) {
+	private boolean shouldL33t(HttpHeaderParser headersParser) {
 		// TODO Auto-generated method stub
 		return false;
 	}

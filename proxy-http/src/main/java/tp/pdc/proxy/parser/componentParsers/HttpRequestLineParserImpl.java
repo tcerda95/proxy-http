@@ -52,9 +52,16 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         return hostValue;
     }
 
-    @Override public boolean hasMethod (Method method) {
-        return method == this.method;
+    @Override public boolean hasMethod () {
+        return method != null;
     }
+    
+    @Override public Method getMethod() {
+        if (!hasMethod())
+            throw new NoSuchElementException("Method not read");
+		return method;
+	}
+
 
     @Override public boolean hasHost () {
         return hostValue != null;
@@ -72,7 +79,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         methodName.put(c);
                         buffered++;
                     } else {
-                        handleError();
+                        handleError("Error while parsing method");
                     }
                     break;
 
@@ -85,7 +92,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         output.put(methodName).put(c);
                         buffered = 0;
                     } else {
-                        handleError();
+                        handleError("Error while parsing method");
                     }
                     break;
 
@@ -97,7 +104,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         output.put(c);
                         state = RequestLineParserState.HOST_PROTOCOL;
                     } else {
-                        handleError();
+                        handleError("Error while parsing URI");
                     }
                     break;
 
@@ -108,7 +115,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     } else if (ParseUtils.isUriCharacter(c)) {
                         output.put(c);
                     } else {
-                        handleError();
+                        handleError("Error while parsing relative URI");
                     }
                     break;
 
@@ -117,7 +124,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         state = c != '/' ? state : RequestLineParserState.URI_HOST_SLASH;
                         output.put(c);
                     } else {
-                        handleError();
+                        handleError("Error while parsing protocol");
                     }
                     break;
 
@@ -126,7 +133,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         state = RequestLineParserState.URI_HOST_ADDR;
                         output.put(c);
                     } else {
-                        handleError();
+                        handleError("Error while parsing relative URI");
                     }
                     break;
 
@@ -141,7 +148,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         URIHostBuf.put(c);
                         buffered++;
                     } else {
-                        handleError();
+                        handleError("Error while parsing URI address");
                     }
                     break;
 
@@ -157,12 +164,12 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                         output.put(c);
                         return true;
                     } else {
-                        handleError();
+                        handleError("Error while parsing CR first line");
                     }
                     break;
 
                 default:
-                    handleError();
+                    handleError("Error while parsing first line");
             }
         }
         return false;
@@ -188,9 +195,9 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         return method != null; // Valid method
     }
 
-    private void handleError() throws ParserFormatException {
+    private void handleError(String message) throws ParserFormatException {
         state = RequestLineParserState.ERROR;
-        throw new ParserFormatException("Error while parsing response first line");
+        throw new ParserFormatException(message);
     }
 
     @Override public boolean hasFinished () {
@@ -204,9 +211,4 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         URIHostBuf.clear();
         method = null; hostValue = null;
     }
-
-    @Override
-	public Method getMethod() {
-		return method;
-	}
 }

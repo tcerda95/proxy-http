@@ -4,26 +4,31 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.EnumSet;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 import tp.pdc.proxy.handler.HttpHandler;
+import tp.pdc.proxy.header.Method;
 
 public class HttpProxySelectorProtocol {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
-	private int bufSize;
+	private final Set<Method> acceptedMethods;
+	private final int bufSize;
 	
 	public HttpProxySelectorProtocol(int bufSize) {
 		this.bufSize = bufSize;
+		acceptedMethods = EnumSet.of(Method.GET, Method.POST, Method.HEAD);  // TODO: mover a properties
 	}
 	
 	public void handleAccept(SelectionKey key) { 
 		try {
 			SocketChannel socketChannel = ((ServerSocketChannel) key.channel()).accept();
 			socketChannel.configureBlocking(false);
-			socketChannel.register(key.selector(), SelectionKey.OP_READ, new HttpClientProxyHandler(bufSize));
+			socketChannel.register(key.selector(), SelectionKey.OP_READ, new HttpClientProxyHandler(bufSize, acceptedMethods));
 			LOGGER.info("Client connection accepted");
 		} catch (IOException e) {
 			LOGGER.warn("Failed to accept client connection: {}", e.getMessage());

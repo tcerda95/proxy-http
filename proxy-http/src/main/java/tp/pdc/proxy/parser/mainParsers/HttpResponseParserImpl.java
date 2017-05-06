@@ -14,19 +14,10 @@ import java.util.*;
 
 public class HttpResponseParserImpl implements HttpResponseParser {
 
-    HttpResponseLineParser lineParser;
-    HttpHeaderParser headerParser;
+    private HttpResponseLineParser lineParser;
+    private HttpHeaderParser headerParser;
 
-    public HttpResponseParserImpl () {
-        // TODO por ahora esta esto aca
-        Set<Header> toRemove = Collections.emptySet();
-        Map<Header, byte[]> toAdd = new HashMap<>();
-        toAdd.put(Header.CONNECTION, "close".getBytes());
-        Set<Header> toSave = new HashSet<>();
-        toSave.add(Header.CONTENT_LENGTH);
-        toSave.add(Header.TRANSFER_ENCODING);
-        //
-
+    public HttpResponseParserImpl (Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
         lineParser = new HttpResponseLineParserImpl();
         headerParser = new HttpHeadersParserImpl(toAdd, toRemove, toSave);
     }

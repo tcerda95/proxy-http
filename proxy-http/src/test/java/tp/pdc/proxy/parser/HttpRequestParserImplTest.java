@@ -10,17 +10,18 @@ import org.junit.Test;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
+import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
+import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
 public class HttpRequestParserImplTest {
 
-	private HttpRequestParserImpl parser;
+	private HttpRequestParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	
 	@Before
 	public void setUp() throws Exception {
-		parser = new HttpRequestParserImpl();
+		parser = HttpRequestParserFactory.getInstance().getRequestParser();
 		outputBuffer = ByteBuffer.allocate(4000);
 	}
 
@@ -149,13 +150,15 @@ public class HttpRequestParserImplTest {
 
 		inputBuffer = ByteBuffer.wrap((get + nomethod).getBytes());
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
-		assertTrue(parser.hasMethod(Method.GET));
+		assertTrue(parser.hasMethod());
+		assertEquals(Method.GET, parser.getMethod());
 
 		outputBuffer.clear();
 		inputBuffer = ByteBuffer.wrap((head + nomethod).getBytes());
 		parser.reset();
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
-		assertTrue(parser.hasMethod(Method.HEAD));
+		assertTrue(parser.hasMethod());
+		assertEquals(Method.HEAD, parser.getMethod());
 
 		outputBuffer.clear();
 		inputBuffer = ByteBuffer.wrap((post + nomethod).getBytes());

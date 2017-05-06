@@ -13,12 +13,14 @@ import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
+import tp.pdc.proxy.parser.factory.HttpResponseParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
-import tp.pdc.proxy.parser.mainParsers.HttpResponseParserImpl;
 
 public class HttpServerProxyHandler extends HttpHandler {
-	private final static Logger LOGGER = LoggerFactory.getLogger(HttpServerProxyHandler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(HttpServerProxyHandler.class);
+	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
+	private static final HttpResponseParserFactory RESPONSE_PARSER_FACTORY = HttpResponseParserFactory.getInstance();
 	
 	private HttpResponseParser responseParser;
 	private HttpBodyParser bodyParser;
@@ -27,7 +29,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 	
 	public HttpServerProxyHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
 		super(readBufferSize, writeBuffer, processedBuffer);
-		responseParser = new HttpResponseParserImpl();
+		this.responseParser = RESPONSE_PARSER_FACTORY.getResponseParser();
 		this.clientMethod = clientMethod;
 	}
 
@@ -132,7 +134,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			responseParser.parse(inputBuffer, outputBuffer);
 			
 			if (responseParser.hasFinished()) {
-				bodyParser = HttpBodyParserFactory.getServerHttpBodyParser(responseParser, clientMethod);
+				bodyParser = BODY_PARSER_FACTORY.getServerHttpBodyParser(responseParser, clientMethod);
 				processBody(inputBuffer, outputBuffer, key);
 			}
 			

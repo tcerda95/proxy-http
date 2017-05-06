@@ -20,6 +20,11 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     private HttpRequestLineParser requestLineParser;
     private HttpHeadersParserImpl headersParser;
     
+    public HttpRequestParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
+        headersParser = new HttpHeadersParserImpl(toAdd, toRemove, toSave);
+        requestLineParser = new HttpRequestLineParserImpl();
+    }
+    
     @Override public boolean hasHeaderValue (Header header) {
         return headersParser.hasHeaderValue(header);
     }
@@ -37,8 +42,8 @@ public class HttpRequestParserImpl implements HttpRequestParser {
             return headersParser.getHeaderValue(Header.HOST);
     }
 
-    @Override public boolean hasMethod (Method method) {
-        return requestLineParser.hasMethod(method);
+    @Override public boolean hasMethod () {
+        return requestLineParser.hasMethod();
     }
 
     @Override public boolean hasHost () {
@@ -52,21 +57,6 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     @Override public void reset () {
         headersParser.reset();
         requestLineParser.reset();
-    }
-
-    public HttpRequestParserImpl () {
-        //TODO: por ahora dejo esto acá
-        Set<Header> toRemove = Collections.emptySet();
-        Map<Header, byte[]> toAdd = new HashMap<>();
-        toAdd.put(Header.CONNECTION, "close".getBytes());
-        Set<Header> toSave = new HashSet<>();
-        toSave.add(Header.HOST);
-        toSave.add(Header.CONTENT_LENGTH);
-        toSave.add(Header.TRANSFER_ENCODING);
-        //
-
-        headersParser = new HttpHeadersParserImpl(toAdd, toRemove, toSave);
-        requestLineParser = new HttpRequestLineParserImpl();
     }
 
     public boolean parse(final ByteBuffer input, final ByteBuffer output) throws ParserFormatException {

@@ -1,6 +1,12 @@
 package tp.pdc.proxy.handler;
 
-import static tp.pdc.proxy.handler.ClientHandlerState.*;
+import static tp.pdc.proxy.handler.ClientHandlerState.CONNECTED;
+import static tp.pdc.proxy.handler.ClientHandlerState.CONNECTING;
+import static tp.pdc.proxy.handler.ClientHandlerState.ERROR;
+import static tp.pdc.proxy.handler.ClientHandlerState.NOT_CONNECTED;
+import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_PROCESSED;
+import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
+import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_SENT;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -8,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,24 +22,29 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.HttpResponse;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
+import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.HostParser;
 import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
+import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
 public class HttpClientProxyHandler extends HttpHandler {
-	private final static Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
 	private static final HostParser HOST_PARSER = new HostParser();
+	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
+	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
 	
 	private ClientHandlerState state;
 	private HttpRequestParser requestParser;
 	private HttpBodyParser bodyParser;
+	private Set<Method> acceptedMethods;
 	
-	public HttpClientProxyHandler(int bufSize) {
+	public HttpClientProxyHandler(int bufSize, Set<Method> acceptedMethods) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
-		state = NOT_CONNECTED;
-		requestParser = new HttpRequestParserImpl();
+		this.state = NOT_CONNECTED;
+		this.requestParser = REQUEST_PARSER_FACTORY.getRequestParser();
+		this.acceptedMethods = acceptedMethods;
 	}
 	
 	public void setConnectedState() {
@@ -170,7 +182,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 			
 			if (requestParser.hasFinished()) {
-				bodyParser = HttpBodyParserFactory.getClientHttpBodyParser(requestParser);
+				bodyParser = BODY_PARSER_FACTORY.getClientHttpBodyParser(requestParser);
 				processBody(inputBuffer, outputBuffer, key);
 			}
 
@@ -232,7 +244,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private void manageNotConnected(SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
-		if (requestParser.hasHost()) {
+		if (requestParser.hasMethod() && !acceptedMethods.contains(requestParser.getMethod())) {
+			LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
+			setErrorState(HttpResponse.METHOD_NOT_ALLOWED_405, key);
+		}
+		else if (requestParser.hasHost()) {
 			byte[] hostValue = requestParser.getHostValue();
 			try {
 				tryConnect(hostValue, key);
