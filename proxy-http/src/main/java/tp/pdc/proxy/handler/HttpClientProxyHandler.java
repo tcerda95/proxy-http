@@ -266,12 +266,12 @@ public class HttpClientProxyHandler extends HttpHandler {
 		
 		else if (!processedBuffer.hasRemaining()) {
 			LOGGER.warn("Client's processed buffer full and connection not established with server");
-			setErrorState(HttpResponse.BAD_REQUEST_400, key);
+			setErrorState(HttpResponse.HEADER_FIELDS_TOO_LARGE_431, key);
 		}		
 		
 		else if (requestParser.hasFinished()) {
-			LOGGER.warn("Impossible to connect: host not found in request header");
-			setErrorState(HttpResponse.BAD_REQUEST_400, key);
+			LOGGER.warn("Impossible to connect: host not found in request header nor URL");
+			setErrorState(HttpResponse.NO_HOST_400, key);
 		}
 	}
 

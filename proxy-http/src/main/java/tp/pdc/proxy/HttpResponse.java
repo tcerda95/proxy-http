@@ -4,7 +4,9 @@ import java.nio.charset.Charset;
 
 public enum HttpResponse {	
 	BAD_REQUEST_400("400 Bad Request", "Request syntax errors\r\n"),
+	NO_HOST_400("400 Bad Request", "Missing host in headers and URL\r\n"),
 	METHOD_NOT_ALLOWED_405("405 Method not allowed", "Method not allowed\r\n"),
+	HEADER_FIELDS_TOO_LARGE_431("431 Request headers fields too large", "Header fields too large and still no host\r\n"),
 	BAD_GATEWAY_502("502 Bad Gateway", "Failed to connect to server\r\n");
 	
 	private final byte[] response;
