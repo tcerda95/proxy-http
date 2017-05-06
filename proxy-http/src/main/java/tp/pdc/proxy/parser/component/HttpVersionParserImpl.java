@@ -1,4 +1,4 @@
-package tp.pdc.proxy.parser.componentParsers;
+package tp.pdc.proxy.parser.component;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;

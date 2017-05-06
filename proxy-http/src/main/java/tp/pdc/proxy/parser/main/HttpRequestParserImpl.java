@@ -1,4 +1,4 @@
-package tp.pdc.proxy.parser.mainParsers;
+package tp.pdc.proxy.parser.main;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.parser.componentParsers.HttpHeadersParserImpl;
-import tp.pdc.proxy.parser.componentParsers.HttpRequestLineParserImpl;
+import tp.pdc.proxy.parser.component.HttpHeadersParserImpl;
+import tp.pdc.proxy.parser.component.HttpRequestLineParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 

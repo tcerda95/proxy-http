@@ -2,7 +2,7 @@ package tp.pdc.proxy;
 
 import java.nio.charset.Charset;
 
-public enum HttpResponse {	
+public enum HttpErrorCode {	
 	BAD_REQUEST_400("400 Bad Request", "Request syntax errors\r\n"),
 	NO_HOST_400("400 Bad Request", "Missing host in headers and URL\r\n"),
 	METHOD_NOT_ALLOWED_405("405 Method not allowed", "Method not allowed\r\n"),
@@ -12,7 +12,7 @@ public enum HttpResponse {
 	
 	private final byte[] response;
 	
-	private HttpResponse(String errorCode, String body) {
+	private HttpErrorCode(String errorCode, String body) {
 		StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append("HTTP/1.1 ")
 					 .append(errorCode)

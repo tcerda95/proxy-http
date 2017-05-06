@@ -1,4 +1,4 @@
-package tp.pdc.proxy.parser.componentParsers;
+package tp.pdc.proxy.parser.component;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.exceptions.ParserFormatException;

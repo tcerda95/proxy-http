@@ -19,10 +19,13 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tp.pdc.proxy.HttpResponse;
+import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.metric.ClientMetricImpl;
+import tp.pdc.proxy.metric.ServerMetricImpl;
+import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.parser.HostParser;
 import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
 import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
@@ -34,17 +37,24 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private static final HostParser HOST_PARSER = new HostParser();
 	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
+	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
 	
 	private ClientHandlerState state;
 	private HttpRequestParser requestParser;
 	private HttpBodyParser bodyParser;
 	private Set<Method> acceptedMethods;
+	private boolean methodRecorded;
 	
 	public HttpClientProxyHandler(int bufSize, Set<Method> acceptedMethods) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
 		this.state = NOT_CONNECTED;
 		this.requestParser = REQUEST_PARSER_FACTORY.getRequestParser();
 		this.acceptedMethods = acceptedMethods;
+		methodRecorded = false;
+	}
+	
+	public ClientHandlerState getState() {
+		return state;
 	}
 	
 	public void setConnectedState() {
@@ -69,8 +79,16 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 	
-	public ClientHandlerState getState() {
-		return state;
+	public void setErrorState(HttpErrorCode errorResponse, SelectionKey key) {		
+		state = ERROR;
+		
+		ByteBuffer writeBuffer = this.getWriteBuffer();
+		writeBuffer.clear();
+		writeBuffer.put(errorResponse.getBytes());
+		
+		key.interestOps(SelectionKey.OP_WRITE);
+		
+		closeServerChannel();
 	}
 	
 	@Override
@@ -81,6 +99,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			int bytesSent = socketChannel.write(inputBuffer);
 			
 			LOGGER.info("Sent {} bytes to client", bytesSent);
+			CLIENT_METRICS.addBytesWritten(bytesSent);
 			
 			if (!inputBuffer.hasRemaining()) {
 				LOGGER.debug("Unregistering client: write buffer empty");
@@ -126,8 +145,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo? SI
 				closeServerChannel();
 			}
-			else
+			else {
 				LOGGER.info("Read {} bytes from client", bytesRead);
+				CLIENT_METRICS.addBytesRead(bytesRead);
+			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read from client: {}", e.getMessage());
 			e.printStackTrace();
@@ -168,7 +189,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 				setRequestProcessedState(key);
 		} catch (ParserFormatException e) {
 			LOGGER.warn("Invalid body format: {}", e.getMessage());
-			setErrorState(HttpResponse.BAD_REQUEST_400, key);
+			setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
 			return;
 		}
 	}
@@ -190,11 +211,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 
 		} catch (ParserFormatException e) {
 			LOGGER.warn("Invalid header format: {}", e.getMessage());
-			setErrorState(HttpResponse.BAD_REQUEST_400, key);
+			setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
 
 		} catch (IllegalHttpHeadersException e) {
 			LOGGER.warn("Illegal request headers: {}", e.getMessage());
-			setErrorState(HttpResponse.LENGTH_REQUIRED_411, key);
+			setErrorState(HttpErrorCode.LENGTH_REQUIRED_411, key);
 		}
 	}
 	
@@ -215,18 +236,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private boolean isServerResponseProcessed() {
 		return getServerHandler().isResponseProcessed();
 	}
-
-	public void setErrorState(HttpResponse errorResponse, SelectionKey key) {		
-		state = ERROR;
-		
-		ByteBuffer writeBuffer = this.getWriteBuffer();
-		writeBuffer.clear();
-		writeBuffer.put(errorResponse.getBytes());
-		
-		key.interestOps(SelectionKey.OP_WRITE);
-		
-		closeServerChannel();
-	}
 	
 	private void closeServerChannel() {
 		if (isServerChannelOpen()) {
@@ -246,9 +255,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private void manageNotConnected(SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
+		if (requestParser.hasMethod() && !methodRecorded) {
+			CLIENT_METRICS.addMethodCount(requestParser.getMethod());
+			methodRecorded = true;
+		}
+		
 		if (requestParser.hasMethod() && !acceptedMethods.contains(requestParser.getMethod())) {
 			LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-			setErrorState(HttpResponse.METHOD_NOT_ALLOWED_405, key);
+			setErrorState(HttpErrorCode.METHOD_NOT_ALLOWED_405, key);
 		}
 		else if (requestParser.hasHost()) {
 			byte[] hostValue = requestParser.getHostValue();
@@ -256,24 +270,24 @@ public class HttpClientProxyHandler extends HttpHandler {
 				tryConnect(hostValue, key);
 			} catch (NumberFormatException e) {
 				LOGGER.warn("Failed to parse port: {}", e.getMessage());
-				setErrorState(HttpResponse.BAD_REQUEST_400, key);
+				setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
 			} catch (IllegalArgumentException e) {
 				LOGGER.warn("{}", e.getMessage());
-				setErrorState(HttpResponse.BAD_REQUEST_400, key);
+				setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
 			} catch (IOException e) {
 				LOGGER.warn("Failed to connect to server: {}", e.getMessage());
-				setErrorState(HttpResponse.BAD_GATEWAY_502, key);
+				setErrorState(HttpErrorCode.BAD_GATEWAY_502, key);
 			}
 		}
 		
 		else if (!processedBuffer.hasRemaining()) {
 			LOGGER.warn("Client's processed buffer full and connection not established with server");
-			setErrorState(HttpResponse.HEADER_FIELDS_TOO_LARGE_431, key);
+			setErrorState(HttpErrorCode.HEADER_FIELDS_TOO_LARGE_431, key);
 		}		
 		
 		else if (requestParser.hasFinished()) {
 			LOGGER.warn("Impossible to connect: host not found in request header nor URL");
-			setErrorState(HttpResponse.NO_HOST_400, key);
+			setErrorState(HttpErrorCode.NO_HOST_400, key);
 		}
 	}
 
@@ -288,6 +302,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		
 		if (serverSocket.connect(address)) {
 			serverKey = serverSocket.register(selector, SelectionKey.OP_WRITE, buildHttpServerProxyHandler(key));
+			ServerMetricImpl.getInstance().addConnection();
 			state = CONNECTED;
 		}
 		else {

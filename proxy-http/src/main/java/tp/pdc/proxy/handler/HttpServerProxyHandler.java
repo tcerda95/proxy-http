@@ -8,10 +8,12 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tp.pdc.proxy.HttpResponse;
+import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.metric.ServerMetricImpl;
+import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
 import tp.pdc.proxy.parser.factory.HttpResponseParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
@@ -21,16 +23,20 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpServerProxyHandler.class);
 	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpResponseParserFactory RESPONSE_PARSER_FACTORY = HttpResponseParserFactory.getInstance();
+	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 	
 	private HttpResponseParser responseParser;
 	private HttpBodyParser bodyParser;
 	private Method clientMethod;
 	private boolean responseProcessed;
+	private boolean responseCodeRecorded;
 	
 	public HttpServerProxyHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
 		super(readBufferSize, writeBuffer, processedBuffer);
 		this.responseParser = RESPONSE_PARSER_FACTORY.getResponseParser();
 		this.clientMethod = clientMethod;
+		responseProcessed = false;
+		responseCodeRecorded = false;
 	}
 
 	@Override
@@ -51,11 +57,12 @@ public class HttpServerProxyHandler extends HttpHandler {
 			}
 			else {
 				LOGGER.info("Read {} bytes from server", bytesRead);
+				SERVER_METRICS.addBytesRead(bytesRead);
 			}
 			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read response from server");
-			getClientHandler().setErrorState(HttpResponse.BAD_GATEWAY_502, this.getConnectedPeerKey());
+			getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey());
 		}
 	}
 	
@@ -97,8 +104,10 @@ public class HttpServerProxyHandler extends HttpHandler {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		
 		try {
-			LOGGER.info("Sending {} bytes to server", inputBuffer.remaining());
-			socketChannel.write(inputBuffer);
+			int bytesWritten = socketChannel.write(inputBuffer);
+			
+			LOGGER.info("Sent {} bytes to server", bytesWritten);
+			SERVER_METRICS.addBytesWritten(bytesWritten);
 			
 			if (getClientState() != ClientHandlerState.REQUEST_PROCESSED) {
 				LOGGER.debug("Registering client for read: whole request not processed yet");
@@ -119,7 +128,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write request to server");
-			getClientHandler().setErrorState(HttpResponse.BAD_GATEWAY_502, this.getConnectedPeerKey());
+			getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey());
 			try {
 				socketChannel.close();
 			} catch (IOException e1) {
@@ -132,6 +141,11 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private void processResponse(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
 			responseParser.parse(inputBuffer, outputBuffer);
+			
+			if (responseParser.hasStatusCode() && !responseCodeRecorded) {
+				SERVER_METRICS.addResponseCodeCount(responseParser.getStatusCode());
+				responseCodeRecorded = true;
+			}
 			
 			if (responseParser.hasFinished()) {
 				bodyParser = BODY_PARSER_FACTORY.getServerHttpBodyParser(responseParser, clientMethod);

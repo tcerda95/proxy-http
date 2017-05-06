@@ -3,7 +3,7 @@ package tp.pdc.proxy.parser;
 import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.componentParsers.HttpVersionParserImpl;
+import tp.pdc.proxy.parser.component.HttpVersionParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 
 import java.nio.ByteBuffer;

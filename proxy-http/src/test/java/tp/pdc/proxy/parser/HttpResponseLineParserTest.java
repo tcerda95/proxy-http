@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.componentParsers.HttpResponseLineParserImpl;
+import tp.pdc.proxy.parser.component.HttpResponseLineParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpResponseLineParser;
 
 import java.nio.ByteBuffer;

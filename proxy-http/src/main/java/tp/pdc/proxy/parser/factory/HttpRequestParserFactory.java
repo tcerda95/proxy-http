@@ -8,7 +8,7 @@ import java.util.Set;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
-import tp.pdc.proxy.parser.mainParsers.HttpRequestParserImpl;
+import tp.pdc.proxy.parser.main.HttpRequestParserImpl;
 
 public class HttpRequestParserFactory {
 	private static final HttpRequestParserFactory INSTANCE = new HttpRequestParserFactory();

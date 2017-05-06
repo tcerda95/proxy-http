@@ -1,4 +1,4 @@
-package tp.pdc.proxy.parser;
+package tp.pdc.proxy.parser.body;
 
 import java.nio.ByteBuffer;
 
