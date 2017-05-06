@@ -85,8 +85,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 			if (!inputBuffer.hasRemaining()) {
 				LOGGER.debug("Unregistering client: write buffer empty");
 				key.interestOps(0);			
-				if (state == ERROR)
+				if (state == ERROR) {
 					socketChannel.close();
+					LOGGER.info("Closing connection to client: error message sent");
+				}
 				else if (isServerResponseProcessed()) {
 					LOGGER.info("Server response processed and sent: closing connection to client");
 					socketChannel.close();
@@ -192,7 +194,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 
 		} catch (IllegalHttpHeadersException e) {
 			LOGGER.warn("Illegal request headers: {}", e.getMessage());
-			setErrorState(HttpResponse.BAD_REQUEST_400, key);
+			setErrorState(HttpResponse.LENGTH_REQUIRED_411, key);
 		}
 	}
 	
