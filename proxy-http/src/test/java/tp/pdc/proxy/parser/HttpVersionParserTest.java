@@ -31,7 +31,6 @@ public class HttpVersionParserTest {
 
         ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes(charset));
 
-        assertTrue(parser1.hasFinished());
         parser.parse(b1, output);
         assertTrue(parser.hasFinished());
     }
