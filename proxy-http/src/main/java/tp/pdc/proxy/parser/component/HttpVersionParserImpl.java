@@ -123,7 +123,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
                 }
                 break;
 
-            case READ_OK:
+            default:
                 handleError(); // No debería recibir nada más
                 break;
         }

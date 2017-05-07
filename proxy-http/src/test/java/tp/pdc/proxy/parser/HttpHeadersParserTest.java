@@ -2,6 +2,7 @@ package tp.pdc.proxy.parser;
 
 import org.junit.Before;
 import org.junit.Test;
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
@@ -9,15 +10,19 @@ import tp.pdc.proxy.parser.component.HttpHeadersParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import static org.junit.Assert.*;
 
 public class HttpHeadersParserTest {
 
-    String headers1, headers2;
-    ByteBuffer inputBuffer1,inputBuffer2, outputBuffer;
-    HttpHeaderParser parser;
+    private String headers1, headers2;
+    private ByteBuffer inputBuffer1,inputBuffer2, outputBuffer;
+    private HttpHeaderParser parser;
+
+    private static final Charset charset = ProxyProperties.getInstance().getCharset();
 
     @Before
     public void init(){
@@ -30,8 +35,8 @@ public class HttpHeadersParserTest {
 
         headers2 = "host:google.com\r\n";
         outputBuffer = ByteBuffer.allocate(2000);
-        inputBuffer1 = ByteBuffer.wrap(headers1.getBytes());
-        inputBuffer2 = ByteBuffer.wrap(headers2.getBytes());
+        inputBuffer1 = ByteBuffer.wrap(headers1.getBytes(charset));
+        inputBuffer2 = ByteBuffer.wrap(headers2.getBytes(charset));
 
         Set<Header> relevant = new HashSet<>();
         relevant.add(Header.HOST);
@@ -63,9 +68,9 @@ public class HttpHeadersParserTest {
     public void CheckRelevantHeadersValueTest() throws ParserFormatException {
         parser.parse(inputBuffer1,outputBuffer);
 
-        assertArrayEquals("google.com".getBytes(), parser.getHeaderValue(Header.HOST));
-        assertArrayEquals("close".getBytes(), parser.getHeaderValue(Header.CONNECTION));
-        assertArrayEquals("chunked".getBytes(), parser.getHeaderValue(Header.TRANSFER_ENCODING));
+        assertArrayEquals("google.com".getBytes(charset), parser.getHeaderValue(Header.HOST));
+        assertArrayEquals("close".getBytes(charset), parser.getHeaderValue(Header.CONNECTION));
+        assertArrayEquals("chunked".getBytes(charset), parser.getHeaderValue(Header.TRANSFER_ENCODING));
 
     }
 
@@ -88,7 +93,7 @@ public class HttpHeadersParserTest {
 
         outputBuffer.flip();
         int len = outputBuffer.remaining();
-        assertTrue(BytesUtils.equalsBytes(expectedOutput.getBytes(), outputBuffer.array(), len));
+        assertTrue(BytesUtils.equalsBytes(expectedOutput.getBytes(charset), outputBuffer.array(), len));
     }
 
     @Test
@@ -101,7 +106,7 @@ public class HttpHeadersParserTest {
             + "transfer-size: chunked\r\n\r\n";
 
         Map<Header, byte[]> toAdd = new HashMap<>();
-        toAdd.put(Header.CONNECTION, "keep-alive".getBytes());
+        toAdd.put(Header.CONNECTION, "keep-alive".getBytes(charset));
 
         Set<Header> relevant = Collections.emptySet();
         Set<Header> remove = Collections.emptySet();
@@ -112,7 +117,7 @@ public class HttpHeadersParserTest {
 
         outputBuffer.flip();
         int len = outputBuffer.remaining();
-        assertTrue(BytesUtils.equalsBytes(expectedOutput.getBytes(), outputBuffer.array(), len));
+        assertTrue(BytesUtils.equalsBytes(expectedOutput.getBytes(charset), outputBuffer.array(), len));
     }
 
     @Test
@@ -140,7 +145,7 @@ public class HttpHeadersParserTest {
     @Test(expected = ParserFormatException.class)
     public void NoColonTest() throws ParserFormatException {
         String request = "Transfer-encoding chunked";
-        ByteBuffer wrongInput = ByteBuffer.wrap(request.getBytes());
+        ByteBuffer wrongInput = ByteBuffer.wrap(request.getBytes(charset));
 
         parser.parse(wrongInput, outputBuffer);
     }

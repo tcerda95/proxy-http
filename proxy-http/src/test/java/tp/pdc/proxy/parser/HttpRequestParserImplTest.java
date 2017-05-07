@@ -4,10 +4,12 @@ import static org.junit.Assert.*;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
@@ -18,7 +20,9 @@ public class HttpRequestParserImplTest {
 	private HttpRequestParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
-	
+
+	private static final Charset charset = ProxyProperties.getInstance().getCharset();
+
 	@Before
 	public void setUp() throws Exception {
 		parser = HttpRequestParserFactory.getInstance().getRequestParser();
@@ -31,7 +35,7 @@ public class HttpRequestParserImplTest {
 				 + "Host: localhost:8080\r\n"
 				 + "\r\n";
 		
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 		
  		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasFinished());
@@ -43,7 +47,7 @@ public class HttpRequestParserImplTest {
 				+ "Host: localhost:8080\r\n"
 				+ "X-Header: Custom\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		assertFalse(parser.parse(inputBuffer, outputBuffer));
 		assertFalse(parser.hasFinished());
@@ -55,7 +59,7 @@ public class HttpRequestParserImplTest {
 				+ "X-Header: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasFinished());
@@ -69,7 +73,7 @@ public class HttpRequestParserImplTest {
 				+ "X-Header: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasFinished());
@@ -85,11 +89,11 @@ public class HttpRequestParserImplTest {
 				+ "X-Header-2: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		parser.parse(inputBuffer, outputBuffer);
 
-		assertArrayEquals(host.getBytes(), parser.getHostValue());
+		assertArrayEquals(host.getBytes(charset), parser.getHostValue());
 	}
 
 	@Test
@@ -101,11 +105,11 @@ public class HttpRequestParserImplTest {
 				+ "X-Header-2: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		parser.parse(inputBuffer, outputBuffer);
 
-		assertArrayEquals(host.getBytes(), parser.getHostValue());
+		assertArrayEquals(host.getBytes(charset), parser.getHostValue());
 	}
 
 	@Test
@@ -118,11 +122,11 @@ public class HttpRequestParserImplTest {
 				+ "X-Header-2: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		parser.parse(inputBuffer, outputBuffer);
 
-		assertArrayEquals(host.getBytes(), parser.getHostValue());
+		assertArrayEquals(host.getBytes(charset), parser.getHostValue());
 	}
 
 
@@ -133,7 +137,7 @@ public class HttpRequestParserImplTest {
 				+ "X-Header: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasFinished());
@@ -148,20 +152,20 @@ public class HttpRequestParserImplTest {
 				+ "Host: localhost:8080\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap((get + nomethod).getBytes());
+		inputBuffer = ByteBuffer.wrap((get + nomethod).getBytes(charset));
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasMethod());
 		assertEquals(Method.GET, parser.getMethod());
 
 		outputBuffer.clear();
-		inputBuffer = ByteBuffer.wrap((head + nomethod).getBytes());
+		inputBuffer = ByteBuffer.wrap((head + nomethod).getBytes(charset));
 		parser.reset();
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasMethod());
 		assertEquals(Method.HEAD, parser.getMethod());
 
 		outputBuffer.clear();
-		inputBuffer = ByteBuffer.wrap((post + nomethod).getBytes());
+		inputBuffer = ByteBuffer.wrap((post + nomethod).getBytes(charset));
 		parser.reset();
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
 	}
@@ -172,7 +176,7 @@ public class HttpRequestParserImplTest {
 				+ "Host: localhost:8080\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		parser.parse(inputBuffer, outputBuffer);
 	}
@@ -183,7 +187,7 @@ public class HttpRequestParserImplTest {
 				+ "Host: localhost:8080\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap(request.getBytes());
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
 		parser.parse(inputBuffer, outputBuffer);
 	}

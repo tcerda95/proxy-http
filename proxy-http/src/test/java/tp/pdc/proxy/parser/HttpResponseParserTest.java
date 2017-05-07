@@ -8,6 +8,7 @@ import tp.pdc.proxy.parser.factory.HttpResponseParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -15,10 +16,12 @@ import static org.junit.Assert.assertTrue;
 
 public class HttpResponseParserTest {
 
-    String message, responseLine, emptyHeaders, contentHeaders;
-    int statusCode;
-    HttpResponseParser parser;
-    ByteBuffer output, emptyHeadersInput, fullHeadersInput;
+    private String message, responseLine, emptyHeaders, contentHeaders;
+    private int statusCode;
+    private HttpResponseParser parser;
+    private ByteBuffer output, emptyHeadersInput, fullHeadersInput;
+
+    private static final Charset charset = ProxyProperties.getInstance().getCharset();
 
     @Before
     public void init(){
@@ -35,8 +38,8 @@ public class HttpResponseParserTest {
 
         parser = HttpResponseParserFactory.getInstance().getResponseParser();
         output = ByteBuffer.allocate(1024);
-        emptyHeadersInput = ByteBuffer.wrap((responseLine + emptyHeaders).getBytes());
-        fullHeadersInput = ByteBuffer.wrap((responseLine + contentHeaders).getBytes());
+        emptyHeadersInput = ByteBuffer.wrap((responseLine + emptyHeaders).getBytes(charset));
+        fullHeadersInput = ByteBuffer.wrap((responseLine + contentHeaders).getBytes(charset));
     }
 
     @Test
@@ -54,12 +57,12 @@ public class HttpResponseParserTest {
     @Test
     public void remainingBufferTest() throws ParserFormatException {
         String remaining = "I'm remaining";
-        ByteBuffer inputWithRemaining = ByteBuffer.wrap((responseLine + contentHeaders + remaining).getBytes());
+        ByteBuffer inputWithRemaining = ByteBuffer.wrap((responseLine + contentHeaders + remaining).getBytes(charset));
 
         parser.parse(inputWithRemaining, output);
         assertEquals(remaining,
             new String(inputWithRemaining.array(), inputWithRemaining.position(),
-                inputWithRemaining.remaining(), ProxyProperties.getInstance().getCharset()));
+                inputWithRemaining.remaining(), charset));
     }
 
     //TODO: hacer mas. Falta probar mandar sin headers, y mandar cosas en pedazos.

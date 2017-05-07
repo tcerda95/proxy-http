@@ -1,8 +1,8 @@
 package tp.pdc.proxy.parser.encoders;
 
 import tp.pdc.proxy.parser.interfaces.l33tEncoder;
-
-public class l33tEncoderImpl implements l33tEncoder {
+// TODO: orientar a tablas all the things
+public class L33tEncoderImpl implements l33tEncoder {
 
     public byte encodeByte(byte c) {
         switch (c) {

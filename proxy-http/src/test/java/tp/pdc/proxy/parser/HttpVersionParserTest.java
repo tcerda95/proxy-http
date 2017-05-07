@@ -7,11 +7,14 @@ import tp.pdc.proxy.parser.component.HttpVersionParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import static org.junit.Assert.*;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.CR;
 
 public class HttpVersionParserTest {
+
+    private static final Charset charset = ProxyProperties.getInstance().getCharset();
 
     @Test
     public void endCharacterTrueTest() throws ParserFormatException {
@@ -19,7 +22,7 @@ public class HttpVersionParserTest {
 
         String s1 = "HTTP/1.1\r";
 
-        ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes());
+        ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes(charset));
 
         ByteBuffer o1 = ByteBuffer.allocate(64);
 
@@ -32,7 +35,7 @@ public class HttpVersionParserTest {
         HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/1.1\n";
 
-        ByteBuffer b = ByteBuffer.wrap(s.getBytes());
+        ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
         ByteBuffer o = ByteBuffer.allocate(64);
 
         parser.parse(b, o);
@@ -44,7 +47,7 @@ public class HttpVersionParserTest {
         HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTPP/1.1\r";
 
-        ByteBuffer b = ByteBuffer.wrap(s.getBytes());
+        ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
         ByteBuffer o = ByteBuffer.allocate(64);
 
         parser.parse(b, o);
@@ -55,7 +58,7 @@ public class HttpVersionParserTest {
         HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP?1.1\r";
 
-        ByteBuffer b = ByteBuffer.wrap(s.getBytes());
+        ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
         ByteBuffer o = ByteBuffer.allocate(64);
 
         parser.parse(b, o);
@@ -68,7 +71,7 @@ public class HttpVersionParserTest {
         HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/a.9\r";
 
-        ByteBuffer b = ByteBuffer.wrap(s.getBytes());
+        ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
         ByteBuffer o = ByteBuffer.allocate(64);
 
         parser.parse(b, o);
@@ -79,7 +82,7 @@ public class HttpVersionParserTest {
         HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/7.a\r";
 
-        ByteBuffer b = ByteBuffer.wrap(s.getBytes());
+        ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
         ByteBuffer o = ByteBuffer.allocate(64);
 
         parser.parse(b, o);
@@ -90,7 +93,7 @@ public class HttpVersionParserTest {
         HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/7.1a\r";
 
-        ByteBuffer b = ByteBuffer.wrap(s.getBytes());
+        ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
         ByteBuffer o = ByteBuffer.allocate(64);
 
         parser.parse(b, o);
@@ -104,9 +107,9 @@ public class HttpVersionParserTest {
         String s2 = "HTTP/009.001\r";
         String s3 = "HTTP/01701.0710\r";
 
-        ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes());
-        ByteBuffer b2 = ByteBuffer.wrap(s2.getBytes());
-        ByteBuffer b3 = ByteBuffer.wrap(s3.getBytes());
+        ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes(charset));
+        ByteBuffer b2 = ByteBuffer.wrap(s2.getBytes(charset));
+        ByteBuffer b3 = ByteBuffer.wrap(s3.getBytes(charset));
 
         ByteBuffer o = ByteBuffer.allocate(64);
 
@@ -133,9 +136,9 @@ public class HttpVersionParserTest {
         String s2 = "HTTP/009.007\r";
         String s3 = "HTTP/0170.0740\r";
 
-        ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes());
-        ByteBuffer b2 = ByteBuffer.wrap(s2.getBytes());
-        ByteBuffer b3 = ByteBuffer.wrap(s3.getBytes());
+        ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes(charset));
+        ByteBuffer b2 = ByteBuffer.wrap(s2.getBytes(charset));
+        ByteBuffer b3 = ByteBuffer.wrap(s3.getBytes(charset));
 
         ByteBuffer o = ByteBuffer.allocate(64);
 
@@ -162,13 +165,13 @@ public class HttpVersionParserTest {
         String remaining = "HelloWorld";
         String sum = version + remaining;
 
-        ByteBuffer input = ByteBuffer.wrap(sum.getBytes());
+        ByteBuffer input = ByteBuffer.wrap(sum.getBytes(charset));
         ByteBuffer output = ByteBuffer.allocate(64);
 
         parser.parse(input, output);
 
         assertEquals(remaining,
             // Bytes left in inputBuffer
-            new String(input.array(), input.position(), input.remaining(), ProxyProperties.getInstance().getCharset()));
+            new String(input.array(), input.position(), input.remaining(), charset));
     }
 }

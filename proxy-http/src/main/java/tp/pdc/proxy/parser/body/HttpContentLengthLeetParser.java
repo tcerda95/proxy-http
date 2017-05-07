@@ -21,7 +21,7 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
 		this.parserState = ParserState.START;
 		this.index = 1;
 		
-		l33tEncoder = new l33tEncoderImpl();
+		l33tEncoder = new L33tEncoderImpl();
 	}
 
 	private enum ParserState {
