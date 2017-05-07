@@ -210,8 +210,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 
 		} catch (ParserFormatException e) {
-			LOGGER.warn("Invalid header format: {}", e.getMessage());
-			setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+			if (requestParser.hasMethod() && !acceptedMethods.contains(requestParser.getMethod())) {
+				LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
+				setErrorState(HttpErrorCode.METHOD_NOT_ALLOWED_405, key);
+			}
+			else {
+				LOGGER.warn("Invalid header format: {}", e.getMessage());
+				setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+			}
 
 		} catch (IllegalHttpHeadersException e) {
 			LOGGER.warn("Illegal request headers: {}", e.getMessage());
