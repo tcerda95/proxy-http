@@ -38,11 +38,7 @@ public class HttpHeadersParserTest {
         inputBuffer1 = ByteBuffer.wrap(headers1.getBytes(charset));
         inputBuffer2 = ByteBuffer.wrap(headers2.getBytes(charset));
 
-        Set<Header> relevant = new HashSet<>();
-        relevant.add(Header.HOST);
-        relevant.add(Header.TRANSFER_ENCODING);
-        relevant.add(Header.CONTENT_LENGTH);
-        relevant.add(Header.CONNECTION);
+        Set<Header> relevant = EnumSet.of(Header.HOST, Header.TRANSFER_ENCODING, Header.CONTENT_LENGTH, Header.CONNECTION);
 
         Set<Header> toRemove = Collections.emptySet();
         Map<Header, byte[]> toAdd = Collections.emptyMap();

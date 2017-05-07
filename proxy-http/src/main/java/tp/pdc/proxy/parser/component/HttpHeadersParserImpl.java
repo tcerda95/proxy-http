@@ -198,7 +198,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
         outputBuffer.put(headerName).put(c);
 
-        if (headersToSave.contains(currentHeader)) {
+        if (headersToSave.contains(currentHeader) || currentHeader == Header.HOST) {
             savedHeaders.put(currentHeader, new byte[0]);
             state = HttpHeaderState.RELEVANT_COLON;
         } else {
@@ -208,30 +208,39 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     private void addHeaders(ByteBuffer output) {
         // Si no lo pude meter antes quedó acá guardado
-        if (nextToAdd != null && headerFitsBuffer(nextToAdd, output))
-            putHeaderInBuffer(nextToAdd, output);
+        if (nextToAdd != null && headerFitsBuffer(nextToAdd.getKey(), nextToAdd.getValue(), output))
+            putHeaderInBuffer(nextToAdd.getKey(), nextToAdd.getValue(), output);
 
         while (headersToAddIter.hasNext()) {
             nextToAdd = headersToAddIter.next();
-            if (!headerFitsBuffer(nextToAdd, output)) { // 4: colon + SP + CR + LF
+
+            Header header = nextToAdd.getKey();
+            byte[] value = nextToAdd.getValue();
+
+            if (headersToSave.contains(header) || header == Header.HOST) {
+                savedHeaders.put(header, value);
+            }
+
+            if (!headerFitsBuffer(header, value, output)) {
                 return;
             }
-            putHeaderInBuffer(nextToAdd, output);
+
+            putHeaderInBuffer(header, value, output);
             nextToAdd = null;
         }
     }
 
-    private void putHeaderInBuffer(Map.Entry<Header, byte[]> header, ByteBuffer buffer) {
+    private void putHeaderInBuffer(Header header, byte[] value, ByteBuffer buffer) {
         buffer
-            .put(header.getKey().getBytes())
+            .put(header.getBytes())
             .put((byte) ':')
             .put(SP.getValue())
-            .put(header.getValue())
+            .put(value)
             .put(CR.getValue()).put(LF.getValue());
     }
 
-    private boolean headerFitsBuffer(Map.Entry<Header, byte[]> header, ByteBuffer buffer) {
-        return buffer.remaining() >= header.getKey().getBytes().length + header.getValue().length + 4;
+    private boolean headerFitsBuffer(Header header, byte[] value, ByteBuffer buffer) {
+        return buffer.remaining() >= header.getBytes().length + value.length + 4;
         // 4: colon + SP + CR + LF
     }
 
@@ -243,6 +252,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         headerName.clear(); headerValue.clear();
         savedHeaders.clear();
         state = HttpHeaderState.ADD_HEADERS;
+        buffered = 0;
     }
 
     @Override public byte[] getHeaderValue(Header header) {
