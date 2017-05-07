@@ -1,5 +1,6 @@
 package tp.pdc.proxy.parser;
 
+import org.junit.Before;
 import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
@@ -15,94 +16,72 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.CR;
 public class HttpVersionParserTest {
 
     private static final Charset charset = ProxyProperties.getInstance().getCharset();
+    private ByteBuffer output;
+    private HttpVersionParser parser;
+
+    @Before
+    public void init() {
+        parser = new HttpVersionParserImpl(CR.getValue());
+        output = ByteBuffer.allocate(64);
+    }
 
     @Test
     public void endCharacterTrueTest() throws ParserFormatException {
-        HttpVersionParser parser1 = new HttpVersionParserImpl(CR.getValue());
-
         String s1 = "HTTP/1.1\r";
 
         ByteBuffer b1 = ByteBuffer.wrap(s1.getBytes(charset));
 
-        ByteBuffer o1 = ByteBuffer.allocate(64);
-
-        parser1.parse(b1, o1);
         assertTrue(parser1.hasFinished());
+        parser.parse(b1, output);
+        assertTrue(parser.hasFinished());
     }
 
     @Test(expected = ParserFormatException.class)
     public void wrongEndCharTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/1.1\n";
-
         ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
-        ByteBuffer o = ByteBuffer.allocate(64);
-
-        parser.parse(b, o);
+        parser.parse(b, output);
     }
 
 
     @Test(expected = ParserFormatException.class)
     public void wrongCharWhereHttpTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTPP/1.1\r";
-
         ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
-        ByteBuffer o = ByteBuffer.allocate(64);
-
-        parser.parse(b, o);
+        parser.parse(b, output);
     }
 
     @Test(expected = ParserFormatException.class)
     public void wrongEscapeCharTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP?1.1\r";
-
         ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
-        ByteBuffer o = ByteBuffer.allocate(64);
-
-        parser.parse(b, o);
+        parser.parse(b, output);
     }
-
-
 
     @Test(expected = ParserFormatException.class)
     public void charInMajorVersionTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/a.9\r";
-
         ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
-        ByteBuffer o = ByteBuffer.allocate(64);
-
-        parser.parse(b, o);
+        parser.parse(b, output);
     }
 
     @Test(expected = ParserFormatException.class)
     public void charInMinorVersionTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/7.a\r";
-
         ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
-        ByteBuffer o = ByteBuffer.allocate(64);
 
-        parser.parse(b, o);
+        parser.parse(b, output);
     }
 
     @Test(expected = ParserFormatException.class)
     public void charAtEndTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
         String s = "HTTP/7.1a\r";
-
         ByteBuffer b = ByteBuffer.wrap(s.getBytes(charset));
-        ByteBuffer o = ByteBuffer.allocate(64);
-
-        parser.parse(b, o);
+        parser.parse(b, output);
     }
 
     @Test
     public void majorVersionTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
-
         String s1 = "HTTP/1.2\r";
         String s2 = "HTTP/009.001\r";
         String s3 = "HTTP/01701.0710\r";
@@ -111,27 +90,23 @@ public class HttpVersionParserTest {
         ByteBuffer b2 = ByteBuffer.wrap(s2.getBytes(charset));
         ByteBuffer b3 = ByteBuffer.wrap(s3.getBytes(charset));
 
-        ByteBuffer o = ByteBuffer.allocate(64);
-
-        parser.parse(b1, o);
+        parser.parse(b1, output);
         assertEquals(1, parser.getMajorHttpVersion());
-        o.clear();
+        output.clear();
 
         parser.reset();
-        parser.parse(b2, o);
+        parser.parse(b2, output);
         assertEquals(9, parser.getMajorHttpVersion());
-        o.clear();
+        output.clear();
 
         parser.reset();
-        parser.parse(b3, o);
+        parser.parse(b3, output);
         assertEquals(1701, parser.getMajorHttpVersion());
-        o.clear();
+        output.clear();
     }
 
     @Test
     public void minorVersionTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
-
         String s1 = "HTTP/1.2\r";
         String s2 = "HTTP/009.007\r";
         String s3 = "HTTP/0170.0740\r";
@@ -140,33 +115,28 @@ public class HttpVersionParserTest {
         ByteBuffer b2 = ByteBuffer.wrap(s2.getBytes(charset));
         ByteBuffer b3 = ByteBuffer.wrap(s3.getBytes(charset));
 
-        ByteBuffer o = ByteBuffer.allocate(64);
-
-        parser.parse(b1, o);
+        parser.parse(b1, output);
         assertEquals(2, parser.getMinorHttpVersion());
-        o.clear();
+        output.clear();
 
         parser.reset();
-        parser.parse(b2, o);
+        parser.parse(b2, output);
         assertEquals(7, parser.getMinorHttpVersion());
-        o.clear();
+        output.clear();
 
         parser.reset();
-        parser.parse(b3, o);
+        parser.parse(b3, output);
         assertEquals(740, parser.getMinorHttpVersion());
-        o.clear();
+        output.clear();
     }
 
     @Test
     public void leaveUnreadDataTest() throws ParserFormatException {
-        HttpVersionParser parser = new HttpVersionParserImpl(CR.getValue());
-
         String version = "HTTP/1.2\r";
         String remaining = "HelloWorld";
         String sum = version + remaining;
 
         ByteBuffer input = ByteBuffer.wrap(sum.getBytes(charset));
-        ByteBuffer output = ByteBuffer.allocate(64);
 
         parser.parse(input, output);
 
