@@ -34,7 +34,7 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
 	@Override
 	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
 				
-		while (index < contentLength && input.hasRemaining() && output.hasRemaining()) {
+		while (index <= contentLength && input.hasRemaining() && output.hasRemaining()) {
 			
 			byte c = input.get();
 			
