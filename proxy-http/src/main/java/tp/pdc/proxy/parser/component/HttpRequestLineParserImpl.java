@@ -176,22 +176,15 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
     }
 
     private void loadHostValue() {
-        if (hostValue != null)
-            return; // already loaded
-
         URIHostBuf.flip();
         hostValue = new byte[URIHostBuf.remaining()];
         URIHostBuf.get(hostValue);
     }
 
-    private boolean processMethod () {
-        if (method != null)
-            return true; // Already loaded
-
+    private boolean processMethod() {
         int strLen = methodName.position();
         methodName.flip();
         method = Method.getByBytes(methodName, strLen);
-        LOGGER.debug("METHOD: {}", method);
         return method != null; // Valid method
     }
 

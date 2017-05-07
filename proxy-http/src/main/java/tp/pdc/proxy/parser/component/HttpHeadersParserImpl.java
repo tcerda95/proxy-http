@@ -29,7 +29,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     private Set<Header> headersToSave;
     private Set<Header> headersToRemove;
     private Map<Header, byte[]> headersToAdd;
-    private Iterator<Map.Entry<Header, byte[]>> headersToAddIter;
+    private Iterator<Map.Entry<Header, byte[]>> headersToAddIterator;
 
     private Map.Entry<Header, byte[]> nextToAdd;
 
@@ -44,11 +44,12 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
         this.headersToRemove = toRemove;
         this.headersToAdd = toAdd;
-        this.headersToAddIter = toAdd.entrySet().iterator();
+        this.headersToAddIterator = toAdd.entrySet().iterator();
         this.headersToSave = toSave;
     }
 
-    private void expectByteAndOutput(byte read, byte expected, HttpHeaderState next, ByteBuffer outputBuffer) throws ParserFormatException {
+    private void expectByteAndOutput(byte read, byte expected, HttpHeaderState next, ByteBuffer outputBuffer)
+        throws ParserFormatException {
         if (read == expected) {
             outputBuffer.put(read);
             state = next;
@@ -177,7 +178,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     expectByteAndOutput(c, LF.getValue(), HttpHeaderState.END_OK, output);
                     return true;
 
-                default: // ERROR
+                default:
                     throw new IllegalStateException();
             }
 
@@ -211,8 +212,8 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         if (nextToAdd != null && headerFitsBuffer(nextToAdd.getKey(), nextToAdd.getValue(), output))
             putHeaderInBuffer(nextToAdd.getKey(), nextToAdd.getValue(), output);
 
-        while (headersToAddIter.hasNext()) {
-            nextToAdd = headersToAddIter.next();
+        while (headersToAddIterator.hasNext()) {
+            nextToAdd = headersToAddIterator.next();
 
             Header header = nextToAdd.getKey();
             byte[] value = nextToAdd.getValue();
@@ -261,9 +262,5 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     @Override public boolean hasHeaderValue(Header header) {
         return this.savedHeaders.containsKey(header);
-    }
-
-    public Map<Header, byte[]> getSavedHeaders () {
-        return savedHeaders;
     }
 }
