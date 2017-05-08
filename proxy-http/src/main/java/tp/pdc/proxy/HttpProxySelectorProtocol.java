@@ -4,48 +4,35 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 import tp.pdc.proxy.handler.HttpHandler;
-import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.metric.ClientMetricImpl;
+import tp.pdc.proxy.handler.interfaces.Handler;
 import tp.pdc.proxy.metric.ServerMetricImpl;
-import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 
 public class HttpProxySelectorProtocol {
 	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
-	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
 
-	private final Set<Method> acceptedMethods;
-	private final int bufSize;
-	
-	public HttpProxySelectorProtocol(int bufSize) {
-		this.bufSize = bufSize;
-		acceptedMethods = EnumSet.of(Method.GET, Method.POST, Method.HEAD);  // TODO: mover a properties
-	}
-	
-	public void handleAccept(SelectionKey key) { 
+	public void handleAccept(SelectionKey key) {
+		Supplier<?> supplier = (Supplier<?>) key.attachment();
+		
 		try {
 			SocketChannel socketChannel = ((ServerSocketChannel) key.channel()).accept();
 			socketChannel.configureBlocking(false);
-			socketChannel.register(key.selector(), SelectionKey.OP_READ, new HttpClientProxyHandler(bufSize, acceptedMethods));
-			
-			LOGGER.info("Client connection accepted");
-			CLIENT_METRICS.addConnection();
+			socketChannel.register(key.selector(), SelectionKey.OP_READ, supplier.get());
 		} catch (IOException e) {
 			LOGGER.warn("Failed to accept client connection: {}", e.getMessage());
 		}
 	}
 
 	public void handleRead(SelectionKey key) {
-		HttpHandler handler = (HttpHandler) key.attachment();
+		Handler handler = (Handler) key.attachment();
 		handler.handleRead(key);
 	}
 
@@ -72,7 +59,7 @@ public class HttpProxySelectorProtocol {
 	}
 
 	public void handleWrite(SelectionKey key) {
-		HttpHandler handler = (HttpHandler) key.attachment();
+		Handler handler = (Handler) key.attachment();
 		handler.handleWrite(key);
 	}
 

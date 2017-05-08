@@ -3,7 +3,9 @@ package tp.pdc.proxy.handler;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public abstract class HttpHandler {	
+import tp.pdc.proxy.handler.interfaces.Handler;
+
+public abstract class HttpHandler implements Handler {	
 	private ByteBuffer readBuffer;
 	private ByteBuffer writeBuffer;
 	private ByteBuffer processedBuffer;

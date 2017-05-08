@@ -7,36 +7,49 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import tp.pdc.proxy.handler.interfaces.Handler;
+import tp.pdc.proxy.handler.supplier.HttpClientProxyHandlerSupplier;
 
 public class Pruebita {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
-	public void run(int port) {
-		ServerSocketChannel serverChannel;
-		Selector selector;
-		
+	private final Selector selector;
+	private final int proxyPort;
+	private final int protocolPort;
+			
+	public Pruebita(int proxyPort, int protocolPort) throws IOException {
 		LOGGER.info("Setting up proxy...");
+
+		selector = Selector.open();
+		this.proxyPort = proxyPort;
+		this.protocolPort = protocolPort;
 		
-		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol(PROPERTIES.getProxyBufferSize());
+		registerChannel(proxyPort, HttpClientProxyHandlerSupplier.getInstance());
+		registerChannel(protocolPort, () -> (null)); // TODO: Supplier del handler de nuestro protocolo
 		
-		try {
-			serverChannel = ServerSocketChannel.open();
-			serverChannel.bind(new InetSocketAddress(port));
-			serverChannel.configureBlocking(false);
-			selector = Selector.open();
-			serverChannel.register(selector, SelectionKey.OP_ACCEPT);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
+		LOGGER.info("Setup done"); 
+	}
+	
+	private void registerChannel(int port, Supplier<? extends Handler> supplier) throws IOException {
+		ServerSocketChannel serverChannel = ServerSocketChannel.open();
+		serverChannel.bind(new InetSocketAddress(port));
+		serverChannel.configureBlocking(false);
+		serverChannel.register(selector, SelectionKey.OP_ACCEPT, supplier);
+	}
+
+	public void run() {				
+		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol();
 		
-		LOGGER.info("Setup done. Accepting connections from port: {}", port);
+		LOGGER.info("Accepting proxy connections from port: {}", proxyPort);
+		LOGGER.info("COMING SOON: accepting protocol connections from port: {}", protocolPort);
+		
 		while (true) {
 			try {
 				selector.select();
@@ -71,7 +84,7 @@ public class Pruebita {
 		}
 	}
 	
-	public static void main(String[] args) {
-		new Pruebita().run(PROPERTIES.getProxyPort());
+	public static void main(String[] args) throws IOException {
+		new Pruebita(PROPERTIES.getProxyPort(), PROPERTIES.getProtocolPort()).run();
 	}
 }
