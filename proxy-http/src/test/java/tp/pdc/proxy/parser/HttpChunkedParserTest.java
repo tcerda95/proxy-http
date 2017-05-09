@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.parser.body.HttpChunkedParser;
 
 public class HttpChunkedParserTest {
 

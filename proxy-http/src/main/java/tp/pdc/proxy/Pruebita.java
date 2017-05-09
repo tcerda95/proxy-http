@@ -52,11 +52,11 @@ public class Pruebita {
 				SelectionKey key = keyIter.next();
 				keyIter.remove();
 								
-				if (key.isAcceptable()) {
+				if (key.isValid() && key.isAcceptable()) {
 					protocol.handleAccept(key);
 				}
 								
-				if (key.isConnectable()) {
+				if (key.isValid() && key.isConnectable()) {
 					protocol.handleConnect(key);
 				}
 				

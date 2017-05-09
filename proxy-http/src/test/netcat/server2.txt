@@ -1,0 +1,5 @@
+HTTP/1.1 200 OK
+Connection: close
+
+hola como te va!!!
+Mira que no te aviso cuando termino ejjej

@@ -3,7 +3,8 @@ package tp.pdc.proxy.header;
 import tp.pdc.proxy.ProxyProperties;
 
 public enum HeaderValue {
-	CHUNKED("chunked");
+	CHUNKED("chunked"),
+	CLOSE("close");
 	
 	private byte[] value;
 	

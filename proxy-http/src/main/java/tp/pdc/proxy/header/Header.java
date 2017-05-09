@@ -4,8 +4,12 @@ import java.nio.ByteBuffer;
 import tp.pdc.proxy.ProxyProperties;
 
 public enum Header {
-	HOST("host"), CONNECTION("connection"), CONTENT_LENGTH("content-length"),
-	TRANSFER_ENCODING("transfer-encoding"), USER_AGENT("user-agent");
+	HOST("host"), 
+	CONNECTION("connection"), 
+	CONTENT_LENGTH("content-length"),
+	TRANSFER_ENCODING("transfer-encoding"), 
+	USER_AGENT("user-agent"),
+	PROXY_CONNECTION("proxy-connection");
 
 	private String headerName;
 	private byte[] headerBytes;

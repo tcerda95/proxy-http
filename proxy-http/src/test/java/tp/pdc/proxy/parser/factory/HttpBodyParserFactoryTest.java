@@ -16,9 +16,9 @@ import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.parser.HttpChunkedParser;
-import tp.pdc.proxy.parser.HttpContentLengthParser;
-import tp.pdc.proxy.parser.HttpNullBodyParser;
+import tp.pdc.proxy.parser.body.HttpChunkedParser;
+import tp.pdc.proxy.parser.body.HttpContentLengthParser;
+import tp.pdc.proxy.parser.body.HttpNullBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
@@ -26,6 +26,8 @@ import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 @RunWith(MockitoJUnitRunner.class)
 public class HttpBodyParserFactoryTest {
 
+	private final HttpBodyParserFactory bodyParserFactory = HttpBodyParserFactory.getInstance();
+	
 	@Mock
 	private HttpRequestParser requestParserMock;
 
@@ -40,9 +42,10 @@ public class HttpBodyParserFactoryTest {
 	public void testClientContentLength() throws IllegalHttpHeadersException {
 		when(requestParserMock.hasHeaderValue(Header.CONTENT_LENGTH)).thenReturn(true);
 		when(requestParserMock.getHeaderValue(Header.CONTENT_LENGTH)).thenReturn("5".getBytes(Charset.forName("ASCII")));
-		when(requestParserMock.hasMethod(Method.POST)).thenReturn(true);
+		when(requestParserMock.hasMethod()).thenReturn(true);
+		when(requestParserMock.getMethod()).thenReturn(Method.POST);
 
-		HttpBodyParser parser = HttpBodyParserFactory.getClientHttpBodyParser(requestParserMock);
+		HttpBodyParser parser = bodyParserFactory.getClientHttpBodyParser(requestParserMock);
 		
 		assertNotNull(parser);
 		assertEquals(HttpContentLengthParser.class, parser.getClass());
@@ -54,7 +57,7 @@ public class HttpBodyParserFactoryTest {
 		when(responseParserMock.getHeaderValue(Header.CONTENT_LENGTH)).thenReturn("5".getBytes(Charset.forName("ASCII")));
 		when(responseParserMock.getStatusCode()).thenReturn(200);
 
-		HttpBodyParser parser = HttpBodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.POST);
+		HttpBodyParser parser = bodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.POST);
 		
 		assertNotNull(parser);
 		assertEquals(HttpContentLengthParser.class, parser.getClass());		
@@ -64,9 +67,10 @@ public class HttpBodyParserFactoryTest {
 	public void testClientChunkedParser() throws IllegalHttpHeadersException {
 		when(requestParserMock.hasHeaderValue(Header.TRANSFER_ENCODING)).thenReturn(true);
 		when(requestParserMock.getHeaderValue(Header.TRANSFER_ENCODING)).thenReturn(HeaderValue.CHUNKED.getValue());
-		when(requestParserMock.hasMethod(Method.POST)).thenReturn(true);
+		when(requestParserMock.hasMethod()).thenReturn(true);
+		when(requestParserMock.getMethod()).thenReturn(Method.POST);
 
-		HttpBodyParser parser = HttpBodyParserFactory.getClientHttpBodyParser(requestParserMock);
+		HttpBodyParser parser = bodyParserFactory.getClientHttpBodyParser(requestParserMock);
 		
 		assertNotNull(parser);
 		assertEquals(HttpChunkedParser.class, parser.getClass());		
@@ -78,7 +82,7 @@ public class HttpBodyParserFactoryTest {
 		when(responseParserMock.getHeaderValue(Header.TRANSFER_ENCODING)).thenReturn(HeaderValue.CHUNKED.getValue());
 		when(responseParserMock.getStatusCode()).thenReturn(200);
 
-		HttpBodyParser parser = HttpBodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.POST);
+		HttpBodyParser parser = bodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.POST);
 		
 		assertNotNull(parser);
 		assertEquals(HttpChunkedParser.class, parser.getClass());		
@@ -86,16 +90,17 @@ public class HttpBodyParserFactoryTest {
 	
 	@Test
 	public void testClientNullParser() throws IllegalHttpHeadersException {
-		when(requestParserMock.hasMethod(Method.POST)).thenReturn(false);
+		when(requestParserMock.hasMethod()).thenReturn(true);
+		when(requestParserMock.getMethod()).thenReturn(Method.GET);
 		
-		HttpBodyParser parser = HttpBodyParserFactory.getClientHttpBodyParser(requestParserMock);
+		HttpBodyParser parser = bodyParserFactory.getClientHttpBodyParser(requestParserMock);
 		assertNotNull(parser);
 		assertEquals(HttpNullBodyParser.getInstance(), parser);
 	}
 	
 	@Test
 	public void testServerMethodNullParser() throws IllegalHttpHeadersException {
-		HttpBodyParser parser = HttpBodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.HEAD);		
+		HttpBodyParser parser = bodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.HEAD);		
 		assertNotNull(parser);
 		assertEquals(HttpNullBodyParser.getInstance(), parser);
 	}
@@ -113,7 +118,7 @@ public class HttpBodyParserFactoryTest {
 
 	private void assertStatusCodeNullParser(int statusCode) throws IllegalHttpHeadersException {
 		when(responseParserMock.getStatusCode()).thenReturn(statusCode);
-		HttpBodyParser parser = HttpBodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.GET);
+		HttpBodyParser parser = bodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.GET);
 		assertNotNull(parser);
 		assertEquals(HttpNullBodyParser.getInstance(), parser);		
 	}
