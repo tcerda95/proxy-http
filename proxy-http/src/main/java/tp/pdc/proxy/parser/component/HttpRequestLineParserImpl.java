@@ -76,8 +76,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                 case START:
                     if (ParseUtils.isAlphabetic(c)) {
                         state = RequestLineParserState.METHOD_READ;
-                        methodName.put(c);
-                        buffered++;
+                        saveMethodByte(c);
                     } else {
                         handleError("Error while parsing method");
                     }
@@ -85,8 +84,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
                 case METHOD_READ:
                     if (ParseUtils.isAlphabetic(c)) {
-                        methodName.put(c);
-                        buffered++;
+                        saveMethodByte(c);
                     } else if (c == SP.getValue() && processMethod()) {
                         state = RequestLineParserState.URI_READ;
                         output.put(methodName).put(c);
@@ -145,8 +143,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                             RequestLineParserState.HTTP_VERSION;
                         buffered = 0;
                     } else if (ParseUtils.isUriCharacter(c)) {
-                        URIHostBuf.put(c);
-                        buffered++;
+                        saveHostByte(c);
                     } else {
                         handleError("Error while parsing URI address");
                     }
@@ -173,6 +170,20 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
             }
         }
         return false;
+    }
+
+    private void saveMethodByte(byte c) throws ParserFormatException {
+        if (!methodName.hasRemaining())
+            throw new ParserFormatException("Method name too long");
+        methodName.put(c);
+        buffered++;
+    }
+
+    private void saveHostByte(byte c) throws ParserFormatException {
+        if (!URIHostBuf.hasRemaining())
+            throw new ParserFormatException("Host too long");
+        URIHostBuf.put(c);
+        buffered++;
     }
 
     private void loadHostValue() {
