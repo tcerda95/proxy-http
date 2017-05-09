@@ -177,18 +177,41 @@ public class HttpRequestParserImplTest {
 				+ "\r\n";
 
 		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
-
 		parser.parse(inputBuffer, outputBuffer);
 	}
 
 	@Test(expected = ParserFormatException.class)
 	public void invalidMethodTest() throws UnsupportedEncodingException, ParserFormatException {
-		String request =   "GETT / HTTP/1.1\n\n"
+		String request =    "GETT / HTTP/1.1\r\n"
 				+ "Host: localhost:8080\r\n"
 				+ "\r\n";
 
 		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
+		parser.parse(inputBuffer, outputBuffer);
+	}
 
+	@Test(expected = ParserFormatException.class)
+	public void methodTooLongTest() throws UnsupportedEncodingException, ParserFormatException {
+		String request =   "GETGETGETGETGETGETGETGETGET / HTTP/1.1\r\n"
+				+ "Host: localhost:8080\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
+		parser.parse(inputBuffer, outputBuffer);
+	}
+
+	@Test(expected = ParserFormatException.class)
+	public void URIHostTooLongTest() throws UnsupportedEncodingException, ParserFormatException {
+		String longHost = "http://www.google.com.www.google.com.www.google.com.www.google.com.www.google.com"
+				+ "www.google.com.www.google.com.www.google.com.www.google.com.www.google.com.www.google.com"
+				+ "www.google.com.www.google.com.www.google.com.www.google.com.www.google.com.www.google.com";
+
+
+		String request = "GET " + longHost + " HTTP/1.1\r\n"
+				+ "Host: localhost:8080\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 		parser.parse(inputBuffer, outputBuffer);
 	}
 

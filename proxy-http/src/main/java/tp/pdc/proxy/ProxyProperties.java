@@ -63,8 +63,8 @@ public class ProxyProperties {
 		return Integer.parseInt(properties.getProperty("parser.methodBufferSize"));
 	}
 
-	public final int getURIBufferSize() {
-		return Integer.parseInt(properties.getProperty("parser.URIBufferSize"));
+	public final int getURIHostBufferSize() {
+		return Integer.parseInt(properties.getProperty("parser.URIHostBufferSize"));
 	}
 
 	public final int getHeaderNameBufferSize() {
