@@ -63,7 +63,7 @@ public class ParseUtils {
     public static boolean isHexadecimal(byte c) {
         return isHexadecimal[c];
     }
-    
+   
 	public static int parseInt(byte[] arr) {
 		return parseInt(arr, 0, arr.length);
 	}
