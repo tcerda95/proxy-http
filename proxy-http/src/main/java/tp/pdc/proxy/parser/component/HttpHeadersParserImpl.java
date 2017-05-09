@@ -91,7 +91,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                         headerName.clear();
                         headerValue.clear();
                         currentHeader = null;
-                        headerName.put((byte) Character.toLowerCase(c));
+                        saveHeaderNameByte((byte) Character.toLowerCase(c));
                         state = HttpHeaderState.NAME;
                     } else
                         handleError();
@@ -101,7 +101,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     if (c == ':') {
                         handleHeaderName(c, output);
                     } else if (ParseUtils.isHeaderNameChar(c)) {
-                        headerName.put((byte) Character.toLowerCase(c));
+                        saveHeaderNameByte((byte) Character.toLowerCase(c));
                     } else {
                         handleError();
                     }
@@ -113,7 +113,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
                 case RELEVANT_SPACE:
                     if (ParseUtils.isHeaderNameChar(c)) {
-                        headerValue.put((byte) Character.toLowerCase(c));
+                        saveHeaderContentbyte((byte) Character.toLowerCase(c));
                         state = HttpHeaderState.RELEVANT_CONTENT;
                     } else {
                         handleError();
@@ -131,7 +131,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                         if (!ignoring)
                             output.put(headerAux).put(CR.getValue());
                     } else if (ParseUtils.isHeaderContentChar(c)) {
-                        headerValue.put((byte) Character.toLowerCase(c));
+                        saveHeaderContentbyte((byte) Character.toLowerCase(c));
                     } else {
                         handleError();
                     }
@@ -177,6 +177,19 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         return false;
 
     }
+
+    private void saveHeaderNameByte(byte b) throws ParserFormatException {
+        if (!headerName.hasRemaining())
+            throw new ParserFormatException("Header name too long");
+        headerName.put(b);
+    }
+
+    private void saveHeaderContentbyte(byte b) throws ParserFormatException {
+        if (!headerValue.hasRemaining())
+            throw new ParserFormatException("Header content too long");
+        headerValue.put(b);
+    }
+
 
     private void handleHeaderName(byte c, ByteBuffer outputBuffer) {
         headerName.flip();
