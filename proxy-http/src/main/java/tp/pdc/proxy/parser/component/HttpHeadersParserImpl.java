@@ -13,6 +13,8 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     private enum HttpHeaderState {
@@ -203,7 +205,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
             outputBuffer.put(headerName).put(c);
 
         if (headersToSave.contains(currentHeader) || currentHeader == Header.HOST) {
-            savedHeaders.put(currentHeader, new byte[0]);
+            savedHeaders.put(currentHeader, ArrayUtils.EMPTY_BYTE_ARRAY);
             state = HttpHeaderState.RELEVANT_COLON;
         } else {
             state = HttpHeaderState.COLON;

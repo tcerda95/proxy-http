@@ -177,14 +177,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
-		if (!requestParser.hasFinished()) {
-			LOGGER.debug("Processing client's headers");
+		if (!requestParser.hasFinished())
 			processRequest(inputBuffer, processedBuffer, key);
-		}
-		else if (!bodyParser.hasFinished()) {
-			LOGGER.debug("Processing client's body");
+		else if (!bodyParser.hasFinished())
 			processBody(inputBuffer, processedBuffer, key);
-		}
 		
 		if (state == ERROR)
 			return;
