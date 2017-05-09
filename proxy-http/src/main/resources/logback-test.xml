@@ -12,7 +12,7 @@
 		<appender-ref ref="STDOUT" />
 	</root>
 	
-	<logger name="tp.pdc.proxy" level="DEBUG" additivity="false">
+	<logger name="tp.pdc.proxy.handler" level="INFO" additivity="false">
 		<appender-ref ref="STDOUT" />
 	</logger>
 </configuration>

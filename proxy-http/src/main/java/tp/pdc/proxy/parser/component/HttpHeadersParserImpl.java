@@ -107,7 +107,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     break;
 
                 case RELEVANT_SPACE:
-                    if (ParseUtils.isHeaderNameChar(c)) {
+                    if (ParseUtils.isHeaderContentChar(c)) {
                         headerValue.put((byte) Character.toLowerCase(c));
                         state = HttpHeaderState.RELEVANT_CONTENT;
                     } else {

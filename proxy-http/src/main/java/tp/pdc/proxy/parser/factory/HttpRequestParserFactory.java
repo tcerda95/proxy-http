@@ -1,6 +1,10 @@
 package tp.pdc.proxy.parser.factory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
@@ -15,12 +19,12 @@ public class HttpRequestParserFactory {
     private final Set<Header> toSave;
 
 	private HttpRequestParserFactory() {
-		toRemove = EnumSet.of(Header.PROXY_CONNECTION);
+		toRemove = Collections.emptySet(); // TODO Deberia ser proxy_connection
 
 		toAdd = new EnumMap<>(Header.class);
 		toAdd.put(Header.CONNECTION, HeaderValue.CLOSE.getValue());
 
-		toSave = EnumSet.of(Header.CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
+		toSave = EnumSet.of(Header.PROXY_CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
 	}
 	
 	public static HttpRequestParserFactory getInstance() {

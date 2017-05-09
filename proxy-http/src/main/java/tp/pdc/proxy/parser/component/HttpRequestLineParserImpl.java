@@ -202,7 +202,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         state = RequestLineParserState.START;
         methodName.clear();
         URIHostBuf.clear();
-        method = null; hostValue = null;
+        method = null; 
+        hostValue = null;
         buffered = 0;
     }
 }

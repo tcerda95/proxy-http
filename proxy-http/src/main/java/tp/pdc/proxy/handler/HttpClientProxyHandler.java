@@ -1,12 +1,6 @@
 package tp.pdc.proxy.handler;
 
-import static tp.pdc.proxy.handler.ClientHandlerState.CONNECTED;
-import static tp.pdc.proxy.handler.ClientHandlerState.CONNECTING;
-import static tp.pdc.proxy.handler.ClientHandlerState.ERROR;
-import static tp.pdc.proxy.handler.ClientHandlerState.NOT_CONNECTED;
-import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_PROCESSED;
-import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
-import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_SENT;
+import static tp.pdc.proxy.handler.ClientHandlerState.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -22,6 +16,9 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.BytesUtils;
+import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ClientMetricImpl;
 import tp.pdc.proxy.metric.ServerMetricImpl;
@@ -47,12 +44,19 @@ public class HttpClientProxyHandler extends HttpHandler {
 	
 	public HttpClientProxyHandler(int bufSize, Set<Method> acceptedMethods) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
+		this.acceptedMethods = acceptedMethods;
 		this.state = NOT_CONNECTED;
 		this.requestParser = REQUEST_PARSER_FACTORY.getRequestParser();
-		this.acceptedMethods = acceptedMethods;
-		methodRecorded = false;
 	}
 	
+	public void reset(SelectionKey key) {
+		this.bodyParser = null;
+		this.methodRecorded = false;
+		this.state = NOT_CONNECTED;
+		this.requestParser.reset();
+		key.interestOps(SelectionKey.OP_READ);
+	}
+		
 	public ClientHandlerState getState() {
 		return state;
 	}
@@ -109,8 +113,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 					LOGGER.info("Closing connection to client: error message sent");
 				}
 				else if (isServerResponseProcessed()) {
-					LOGGER.info("Server response processed and sent: closing connection to client");
-					socketChannel.close();
+					if (shouldKeepConnectionAlive()) {
+						LOGGER.info("Keeping alive connection: server response processed and sent");
+						reset(key);
+					}
+					else {
+						LOGGER.info("Closing connection to client: server response processed and sent");
+						socketChannel.close();
+					}
 				}
 			}
 			
@@ -133,6 +143,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 	
+	private boolean shouldKeepConnectionAlive() {
+		if (requestParser.hasHeaderValue(Header.CONNECTION))
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+		else if (requestParser.hasHeaderValue(Header.PROXY_CONNECTION))
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.PROXY_CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+		return false;
+	}
+
 	@Override
 	protected void processRead(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();

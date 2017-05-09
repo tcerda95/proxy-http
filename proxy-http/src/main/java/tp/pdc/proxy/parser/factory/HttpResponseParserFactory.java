@@ -1,11 +1,13 @@
 package tp.pdc.proxy.parser.factory;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
 import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.parser.main.HttpResponseParserImpl;
 
@@ -18,7 +20,10 @@ public class HttpResponseParserFactory {
 
 	private HttpResponseParserFactory() {
 		toRemove = Collections.emptySet();
-		toAdd = Collections.emptyMap();
+		
+		toAdd = new EnumMap<>(Header.class);
+		toAdd.put(Header.CONNECTION, HeaderValue.KEEP_ALIVE.getValue());
+		
 		toSave = EnumSet.of(Header.HOST, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
 	}
 	
