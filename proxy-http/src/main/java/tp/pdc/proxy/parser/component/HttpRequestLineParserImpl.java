@@ -69,7 +69,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     @Override public boolean parse (ByteBuffer input, ByteBuffer output)
         throws ParserFormatException {
-        while (input.hasRemaining() && output.remaining() > buffered) {
+        while (input.hasRemaining() && output.hasRemaining() && output.remaining() > buffered) {
             byte c = input.get();
 
             switch (state) {

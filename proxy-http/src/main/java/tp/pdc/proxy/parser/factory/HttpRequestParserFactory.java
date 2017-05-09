@@ -20,7 +20,7 @@ public class HttpRequestParserFactory {
 		toAdd = new EnumMap<>(Header.class);
 		toAdd.put(Header.CONNECTION, HeaderValue.CLOSE.getValue());
 
-		toSave = EnumSet.of(Header.CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING);
+		toSave = EnumSet.of(Header.CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
 	}
 	
 	public static HttpRequestParserFactory getInstance() {

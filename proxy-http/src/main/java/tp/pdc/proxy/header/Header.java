@@ -9,7 +9,8 @@ public enum Header {
 	CONTENT_LENGTH("content-length"),
 	TRANSFER_ENCODING("transfer-encoding"), 
 	USER_AGENT("user-agent"),
-	PROXY_CONNECTION("proxy-connection");
+	PROXY_CONNECTION("proxy-connection"), 
+	CONTENT_TYPE("content-type");
 
 	private String headerName;
 	private byte[] headerBytes;

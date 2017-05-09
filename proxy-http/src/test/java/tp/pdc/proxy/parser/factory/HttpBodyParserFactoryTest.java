@@ -12,11 +12,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.body.HttpChunkedParser;
+import tp.pdc.proxy.parser.body.HttpContentLengthLeetParser;
 import tp.pdc.proxy.parser.body.HttpContentLengthParser;
 import tp.pdc.proxy.parser.body.HttpNullBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
@@ -33,9 +35,12 @@ public class HttpBodyParserFactoryTest {
 
 	@Mock
 	private HttpResponseParser responseParserMock;
+	
+	private L33tFlag l33tFlag = L33tFlag.getInstance();
 
 	@Before
 	public void setUp() throws Exception {
+		l33tFlag.unset();
 	}
 
 	@Test
@@ -116,6 +121,21 @@ public class HttpBodyParserFactoryTest {
 		assertStatusCodeNullParser(304);
 	}
 
+	@Test
+	public void testClientContentLengthL33tParser() throws IllegalHttpHeadersException {
+		l33tFlag.set();
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_LENGTH)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_LENGTH)).thenReturn("5".getBytes(Charset.forName("ASCII")));
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_TYPE)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_TYPE)).thenReturn("text/plain; charset=utf8".getBytes(Charset.forName("ASCII")));
+		when(requestParserMock.hasMethod()).thenReturn(true);
+		when(requestParserMock.getMethod()).thenReturn(Method.POST);
+
+		HttpBodyParser parser = bodyParserFactory.getClientHttpBodyParser(requestParserMock);
+		assertNotNull(parser);
+		assertEquals(HttpContentLengthLeetParser.class, parser.getClass());
+	}
+	
 	private void assertStatusCodeNullParser(int statusCode) throws IllegalHttpHeadersException {
 		when(responseParserMock.getStatusCode()).thenReturn(statusCode);
 		HttpBodyParser parser = bodyParserFactory.getServerHttpBodyParser(responseParserMock, Method.GET);

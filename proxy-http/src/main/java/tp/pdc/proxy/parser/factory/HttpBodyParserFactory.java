@@ -1,5 +1,6 @@
 package tp.pdc.proxy.parser.factory;
 
+import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
@@ -7,6 +8,7 @@ import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.body.HttpChunkedParser;
 import tp.pdc.proxy.parser.body.HttpConnectionCloseParser;
+import tp.pdc.proxy.parser.body.HttpContentLengthLeetParser;
 import tp.pdc.proxy.parser.body.HttpContentLengthParser;
 import tp.pdc.proxy.parser.body.HttpNullBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
@@ -18,7 +20,9 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 public class HttpBodyParserFactory {
 	
 	private static final HttpBodyParserFactory INSTANCE = new HttpBodyParserFactory();
-	private static final HttpNullBodyParser NULL_PARSER = HttpNullBodyParser.getInstance();
+	
+	private final HttpNullBodyParser nullParser = HttpNullBodyParser.getInstance();
+	private final L33tFlag l33tFlag = L33tFlag.getInstance();
 	
 	private HttpBodyParserFactory() {
 	}
@@ -30,7 +34,7 @@ public class HttpBodyParserFactory {
 	public HttpBodyParser getClientHttpBodyParser(HttpRequestParser headersParser) throws IllegalHttpHeadersException {
 		if (headersParser.hasMethod() && headersParser.getMethod() == Method.POST)
 			return buildClientBodyParser(headersParser);
-		return NULL_PARSER;
+		return nullParser;
 	}
 
 	private HttpBodyParser buildClientBodyParser(HttpHeaderParser headersParser) throws IllegalHttpHeadersException {
@@ -45,7 +49,7 @@ public class HttpBodyParserFactory {
 	public HttpBodyParser getServerHttpBodyParser(HttpResponseParser headersParser, Method method) throws IllegalHttpHeadersException {
 		if (method != Method.HEAD && isBodyStatusCode(headersParser.getStatusCode()))
 			return buildServerBodyParser(headersParser);
-		return NULL_PARSER;
+		return nullParser;
 	}
 	
 	private boolean isBodyStatusCode(int statusCode) {
@@ -71,9 +75,9 @@ public class HttpBodyParserFactory {
 		try {
 			if (shouldL33t(headersParser)) {
 				if (hasChunked(headersParser))
-					; // TODO: Retornar ChunkedLeetParser
+					return new HttpChunkedParser(true);
 				else if (hasContentLength(headersParser))
-					; // TODO: Retornar ContentLeetParser
+					return new HttpContentLengthLeetParser(ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
 			}
 			else {
 				if (hasChunked(headersParser))
@@ -99,8 +103,9 @@ public class HttpBodyParserFactory {
 	}
 	
 	private boolean shouldL33t(HttpHeaderParser headersParser) {
-		// TODO Auto-generated method stub
-		return false;
+		byte[] textPlain = HeaderValue.TEXT_PLAIN.getValue();
+		return l33tFlag.isSet() && headersParser.hasHeaderValue(Header.CONTENT_TYPE) 
+				&& BytesUtils.equalsBytes(headersParser.getHeaderValue(Header.CONTENT_TYPE), textPlain, textPlain.length);
 	}
 	
 }

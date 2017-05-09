@@ -19,7 +19,7 @@ public class HttpResponseParserFactory {
 	private HttpResponseParserFactory() {
 		toRemove = Collections.emptySet();
 		toAdd = Collections.emptyMap();
-		toSave = EnumSet.of(Header.HOST, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING);
+		toSave = EnumSet.of(Header.HOST, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
 	}
 	
 	public static HttpResponseParserFactory getInstance() {

@@ -4,7 +4,8 @@ import tp.pdc.proxy.ProxyProperties;
 
 public enum HeaderValue {
 	CHUNKED("chunked"),
-	CLOSE("close");
+	CLOSE("close"),
+	TEXT_PLAIN("text/plain");
 	
 	private byte[] value;
 	

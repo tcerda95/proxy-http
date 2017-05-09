@@ -270,6 +270,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
 			setErrorState(HttpErrorCode.METHOD_NOT_ALLOWED_405, key);
 		}
+		
 		else if (requestParser.hasHost()) {
 			byte[] hostValue = requestParser.getHostValue();
 			try {

@@ -59,7 +59,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         requestLineParser.reset();
     }
 
-    public boolean parse(final ByteBuffer input, final ByteBuffer output) throws ParserFormatException {
+    @Override public boolean parse(final ByteBuffer input, final ByteBuffer output) throws ParserFormatException {
         while (input.hasRemaining() && output.hasRemaining()) {
             if (!requestLineParser.hasFinished()) {
                 requestLineParser.parse(input, output);
