@@ -34,6 +34,7 @@ public class HttpChunkedParserTest {
 						 + "mo te va\r\n"
 						 + "0\r\n"
 						 + "\r\n";
+		
 		inputBuffer = ByteBuffer.wrap(chunked.getBytes("ASCII"));
 		
 		parser.parse(inputBuffer, outputBuffer);
