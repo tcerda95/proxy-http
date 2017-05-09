@@ -140,9 +140,34 @@ public class HttpHeadersParserTest {
 
     @Test(expected = ParserFormatException.class)
     public void NoColonTest() throws ParserFormatException {
-        String request = "Transfer-encoding chunked";
-        ByteBuffer wrongInput = ByteBuffer.wrap(request.getBytes(charset));
+        String header = "Transfer-encoding chunked";
+        ByteBuffer wrongInput = ByteBuffer.wrap(header.getBytes(charset));
 
         parser.parse(wrongInput, outputBuffer);
     }
+
+    @Test(expected = ParserFormatException.class)
+    public void HeaderNameTooLongTest()  throws ParserFormatException {
+        String header = "Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-"
+            + "Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-"
+            + "Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-"
+            + "Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host-Host"
+            + ": http://www.google.com";
+
+        ByteBuffer longInput = ByteBuffer.wrap(header.getBytes(charset));
+        parser.parse(longInput, outputBuffer);
+    }
+
+    // TODO: puede que el buffer sea muy chico, ver cual es un tamaño apropiado
+    @Test(expected = ParserFormatException.class)
+    public void RelevantHeaderContentTooLongTest()  throws ParserFormatException {
+        String header = "Host: http://www.google.com.www.google.com.www.google.com.www.google.com."
+            + "www.google.com.www.google.com.www.google.com.www.google.com.www.google.com."
+            + "www.google.com.www.google.com.www.google.com.www.google.com.www.google.com";
+
+        ByteBuffer longInput = ByteBuffer.wrap(header.getBytes(charset));
+        parser.parse(longInput, outputBuffer);
+    }
+
+
 }

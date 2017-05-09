@@ -21,7 +21,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
     private static final int METHOD_NAME_SIZE = ProxyProperties.getInstance().getMethodBufferSize();
-    private static final int URI_SIZE = ProxyProperties.getInstance().getURIBufferSize();
+    private static final int URI_HOST_SIZE = ProxyProperties.getInstance().getURIHostBufferSize();
 
     private RequestLineParserState state;
     private Method method;
@@ -43,7 +43,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         versionParser = new HttpVersionParserImpl(CR.getValue());
         state = RequestLineParserState.START;
         methodName = ByteBuffer.allocate(METHOD_NAME_SIZE);
-        URIHostBuf = ByteBuffer.allocate(URI_SIZE);
+        URIHostBuf = ByteBuffer.allocate(URI_HOST_SIZE);
     }
 
     @Override public byte[] getHostValue () {
