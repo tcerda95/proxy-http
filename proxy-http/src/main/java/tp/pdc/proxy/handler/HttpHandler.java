@@ -32,9 +32,17 @@ public abstract class HttpHandler implements Handler {
 	public ByteBuffer getProcessedBuffer() {
 		return processedBuffer;
 	}
-		
+	
 	public SelectionKey getConnectedPeerKey() {
 		return connectedPeerKey;
+	}
+	
+	public void setWriteBuffer(ByteBuffer writeBuffer) {
+		this.writeBuffer = writeBuffer;
+	}
+	
+	public void setProcessedBuffer(ByteBuffer processedBuffer) {
+		this.processedBuffer = processedBuffer;
 	}
 	
 	public void setConnectedPeerKey(SelectionKey connectedPeerKey) {
@@ -53,10 +61,12 @@ public abstract class HttpHandler implements Handler {
 	}
 	
 	protected void handleProcess(SelectionKey key) {
-		if (key.isValid()) {
+		if (key.isValid() && readBuffer.position() != 0) {
 			processedBuffer.compact();
 			processReadBuffer(key);
-			processedBuffer.flip();
+			
+			if (processedBuffer != null)
+				processedBuffer.flip();
 		}
 	}
 	

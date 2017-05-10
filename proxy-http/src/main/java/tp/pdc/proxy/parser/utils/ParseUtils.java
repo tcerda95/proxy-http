@@ -83,5 +83,5 @@ public class ParseUtils {
 		}
 		
 		return num;
-	}
+	}	
 }

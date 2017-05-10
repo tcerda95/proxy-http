@@ -21,7 +21,7 @@ public class HttpRequestParserFactory {
 		toRemove = EnumSet.of(Header.PROXY_CONNECTION);
 
 		toAdd = new EnumMap<>(Header.class);
-		toAdd.put(Header.CONNECTION, HeaderValue.CLOSE.getValue());
+		toAdd.put(Header.CONNECTION, HeaderValue.KEEP_ALIVE.getValue());
 
 		toSave = EnumSet.of(Header.CONNECTION, Header.PROXY_CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
 	}
