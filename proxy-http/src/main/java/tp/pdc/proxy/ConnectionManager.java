@@ -2,11 +2,14 @@ package tp.pdc.proxy;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +26,7 @@ public class ConnectionManager {
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 	
-	private final Map<SocketAddress, SelectionKey> connections;
+	private final Map<SocketAddress, Queue<SelectionKey>> connections;
 	
 	private ConnectionManager() {
 		connections = new HashMap<>();
@@ -43,28 +46,47 @@ public class ConnectionManager {
 	}
 	
 	private boolean reuseConnection(Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
-		SelectionKey serverKey = connections.get(address);
-		HttpClientProxyHandler clientHandler = (HttpClientProxyHandler) clientKey.attachment();
-		HttpServerProxyHandler serverHandler = (HttpServerProxyHandler) serverKey.attachment();
-		SocketChannel serverSocket = (SocketChannel) serverKey.channel();
+		Queue<SelectionKey> connectionQueue = connections.get(address);
+		SelectionKey serverKey = retrieveValidKey(connectionQueue);
 		
-		connections.remove(address);
-		
-		// TODO: pensar mejor alternativa a la del -1
-		if (serverKey.isValid() && serverSocket.read(serverHandler.getReadBuffer()) != -1) {
+		if (serverKey == null) {
+			LOGGER.debug("Cannot reuse: server closed connection");
+			connections.remove(address);
+			return establishConnection(method, address, clientKey);
+		}
+		else {
 			LOGGER.debug("Reusing connection with server");
+			
+			HttpClientProxyHandler clientHandler = (HttpClientProxyHandler) clientKey.attachment();
+			HttpServerProxyHandler serverHandler = (HttpServerProxyHandler) serverKey.attachment();
 			
 			serverHandler.setClientMethod(method);
 			serverHandler.setConnectedPeerKey(clientKey);
 			serverHandler.setWriteBuffer(clientHandler.getProcessedBuffer());
 			serverHandler.setProcessedBuffer(clientHandler.getWriteBuffer());
 			serverKey.interestOps(SelectionKey.OP_WRITE);
+			
 			clientHandler.setConnectedPeerKey(serverKey);
 			clientHandler.setConnectedState();
 			return true;
 		}
+	}
+	
+	private SelectionKey retrieveValidKey(Queue<SelectionKey> connectionQueue) throws IOException {		
+		while (!connectionQueue.isEmpty()) {
+			SelectionKey key = connectionQueue.remove();
+			SocketChannel serverSocket = (SocketChannel) key.channel();
+			
+			if (key.isValid()) {
+				ByteBuffer serverReadBuffer = ((HttpServerProxyHandler) key.attachment()).getReadBuffer();
+				if (serverSocket.read(serverReadBuffer) != -1)
+					return key;
+				else
+					serverSocket.close();
+			}
+		}
 		
-		return establishConnection(method, address, clientKey);
+		return null;
 	}
 
 	private boolean establishConnection(Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
@@ -108,7 +130,20 @@ public class ConnectionManager {
 		
 		serverHandler.reset();
 		
-		SocketAddress address = serverChannel.getRemoteAddress();
-		connections.put(address, serverKey);
+		storeKey(serverKey, serverChannel.getRemoteAddress());
+	}
+
+	// TODO: timers y tamaño limite
+	private void storeKey(SelectionKey serverKey, SocketAddress remoteAddress) {
+		Queue<SelectionKey> connectionQueue;
+		
+		if (connections.containsKey(remoteAddress))
+			connectionQueue = connections.get(remoteAddress);
+		else {
+			connectionQueue = new LinkedList<>();  // TODO: pensar usar array circular con tamaño limite
+			connections.put(remoteAddress, connectionQueue);
+		}
+		
+		connectionQueue.add(serverKey);
 	}
 }
