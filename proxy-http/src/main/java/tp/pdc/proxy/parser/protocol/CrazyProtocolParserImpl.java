@@ -3,9 +3,9 @@ package tp.pdc.proxy.parser.protocol;
 import java.nio.ByteBuffer;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.interfaces.ProtocolParser;
+import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
-public class CrazyProtocolParser implements ProtocolParser {
+public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 
 	@Override
 	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
