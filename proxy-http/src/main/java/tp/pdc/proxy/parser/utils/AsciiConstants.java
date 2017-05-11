@@ -4,7 +4,9 @@ public enum AsciiConstants {
 	CR(13), 
 	LF(10), 
 	SP(32), 
-	HT(9);
+	HT(9),
+	US(95),
+	AS(42);
 	
 	private byte value;
 	
