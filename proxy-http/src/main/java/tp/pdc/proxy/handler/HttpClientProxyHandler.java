@@ -167,7 +167,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		try {
 			int bytesRead = socketChannel.read(buffer);
 			if (bytesRead == -1) {
-				LOGGER.warn("Received EOF from client");
+				LOGGER.info("Received EOF from client");
 				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo? SI
 				closeServerChannel();
 			}

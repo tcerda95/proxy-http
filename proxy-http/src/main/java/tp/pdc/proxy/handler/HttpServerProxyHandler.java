@@ -84,8 +84,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 			}
 			
 		} catch (IOException e) {
-			LOGGER.warn("Failed to write request to server");
-			getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey()); // TODO: revisar: usar setError
+			LOGGER.warn("Failed to write response to server");
+			setResponseError(key, e.getMessage());
 			try {
 				socketChannel.close();
 			} catch (IOException e1) {
@@ -123,8 +123,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 			}
 			
 		} catch (IOException e) {
-			LOGGER.warn("Failed to read response from server");
-			getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey());  // TODO: ver si usar setResponseError
+			LOGGER.warn("Failed to read response from server", e.getMessage());
+			setResponseError(key, e.getMessage());
 		}
 	}
 	
@@ -132,12 +132,14 @@ public class HttpServerProxyHandler extends HttpHandler {
 	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
+		if (!key.isValid())
+			return;
+		
 		if (!responseParser.hasFinished())
 			processResponse(inputBuffer, processedBuffer, key);
 		else if (!bodyParser.hasFinished())
 			processBody(inputBuffer, processedBuffer, key);
 		
-		// TODO: revisar si quitar
 		if (!key.channel().isOpen())
 			getClientHandler().setResponseProcessed();
 		
