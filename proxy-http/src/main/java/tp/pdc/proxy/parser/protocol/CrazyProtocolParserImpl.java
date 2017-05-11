@@ -90,7 +90,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     private static final int HEADER_NAME_SIZE = ProxyProperties.getInstance().getHeaderNameBufferSize();
     private static final int HEADER_CONTENT_SIZE = ProxyProperties.getInstance().getHeaderContentBufferSize();
     
-    CrazyProtocolParserImpl() {
+    public CrazyProtocolParserImpl() {
     	parserState = ParserState.READ_HEADER;
     	headerState = HeaderState.START;
     	argumentCountState = ArgumentCountState.NOT_READ_YET;
@@ -141,7 +141,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			
     		case START:
     			
-    			if (!ParseUtils.isAlphabetic(c) && c != CR.getValue() && c != US.getValue())
+    			if (!ParseUtils.isAlphaNumerical(c) && c != CR.getValue() && c != US.getValue())
     				handleParserError();
     			
     			if (c == CR.getValue())
