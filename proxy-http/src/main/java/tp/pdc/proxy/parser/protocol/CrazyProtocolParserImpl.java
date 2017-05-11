@@ -129,7 +129,6 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	    		default:
 	    			handleParserError();
     		}
-			output.put(c);
     	}
     	
     	return hasFinished();
@@ -142,7 +141,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     		case START:
     			
     			if (!ParseUtils.isAlphaNumerical(c) && c != CR.getValue() && c != US.getValue())
-    				handleParserError();
+    				handleHeaderError();
     			
     			if (c == CR.getValue())
     				headerState = HeaderState.END_LINE_CR;
@@ -263,6 +262,9 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 					
 					contentState = ContentState.END_OK;
 					headerState = HeaderState.START;
+					parserState = ParserState.READ_HEADER;
+					
+					CleanCurrentHeader();
 					
 					resetSets();
 				}
@@ -288,10 +290,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 					handleContentError();
 				
 				if (c == CR.getValue()) {						
-					methodName.flip();
-	    	        int argumentLen = methodName.remaining();
 	    	        
-	    	        if (argumentLen != HTTP_STATUSCODE_LEN)
+	    	        if (statusCodeLen != HTTP_STATUSCODE_LEN)
 	    	        	handleContentError();
 	    	        
 					if (!statusCodesFound.contains(currentStatusCode))
@@ -305,7 +305,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				else {
 					statusCodeLen++;
 					
-					currentStatusCode = currentStatusCode*DECIMAL_BASE_VALUE.getValue() - '0';
+					currentStatusCode = currentStatusCode*DECIMAL_BASE_VALUE.getValue() + c - '0';
 					
 					if (statusCodeLen == 1 && currentStatusCode > MAX_MOST_SIGNIFICATIVE_STATUSCODE_DIGIT)
 						handleContentError();
@@ -341,7 +341,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 					contentState = ContentState.END_LINE_CR;
 				}
 				else {
-					methodName.put((byte) Character.toLowerCase(c));	
+					methodName.put((byte) Character.toUpperCase(c));	
 					
 					//to avoid buffer overflow
 					if (methodName.position() > MAX_METHOD_LEN + 1)

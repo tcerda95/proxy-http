@@ -12,7 +12,7 @@ import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
-public class CrazyProtocolParserSimpleHeadersTest {
+public class CrazyProtocolParserComplexHeadersTest {
 	
 	private CrazyProtocolParser parser;
 	private ByteBuffer inputBuffer;
@@ -26,11 +26,41 @@ public class CrazyProtocolParserSimpleHeadersTest {
 
 	@Test
 	public void testFinished() throws ParserFormatException, UnsupportedEncodingException {
-		String protocolInput =  
-				"l33tenable\r\n"
+		String protocolInput =
+				"client_bytes_transferred\r\n"
+				+ "status_CoDe_count\r\n"
+				+ "*3\r\n"
+				+ "404\r\n"
+				+ "404\r\n"
+				+ "503\r\n"
+				+ "client_bytes_transferred\r\n"
 				+ "l33tEnaBle\r\n"
-				+ "CLIENT_bytes_transferred\r\n"
-				+ "ENd\r\n";
+				+ "method_count\r\n"
+				+ "*3\r\n"
+				+ "GET\r\n"
+				+ "POST\r\n"
+				+ "GET\r\n"
+				+ "method_count\r\n"
+				+ "*3\r\n"
+				+ "GET\r\n"
+				+ "POST\r\n"
+				+ "GET\r\n"
+				+ "status_CoDe_count\r\n"
+				+ "*1\r\n"
+				+ "404\r\n"
+				+ "status_CoDe_count\r\n"
+				+ "*10\r\n"
+				+ "404\r\n"
+				+ "303\r\n"
+				+ "200\r\n"
+				+ "599\r\n"
+				+ "401\r\n"
+				+ "404\r\n"
+				+ "303\r\n"
+				+ "200\r\n"
+				+ "599\r\n"
+				+ "401\r\n"
+				+ "EnD\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
 		
@@ -41,28 +71,16 @@ public class CrazyProtocolParserSimpleHeadersTest {
 	@Test
 	public void testNotFinished() throws ParserFormatException, UnsupportedEncodingException {
 		String protocolInput =  
-				"l33tenable\r\n"
-				+ "l33tEnaBle\r\n"
-				+ "CLIENT_bytes_transferred\r\n";
+				"Client_Bytes_Transferred\r\n"
+				+ "method_count\r\n"
+				+ "*3\r\n"
+				+ "GET\r\n"
+				+ "POST\r\n"
+				+ "GET\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
 		
 		parser.parse(inputBuffer, outputBuffer);
 		assertFalse(parser.hasFinished());
 	}
-	
-	@Test
-	public void testNotFinishedBis() throws ParserFormatException, UnsupportedEncodingException {
-		String protocolInput =  
-				"l33tenable\r\n"
-				+ "l33tEnaBle\r\n"
-				+ "CLIENT_bytes_transferred\r\n"
-				+ "eNd";
-		
-		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
-		
-		parser.parse(inputBuffer, outputBuffer);
-		assertFalse(parser.hasFinished());
-	}
-
 }
