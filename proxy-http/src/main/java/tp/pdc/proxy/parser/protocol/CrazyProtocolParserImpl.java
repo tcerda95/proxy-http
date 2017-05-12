@@ -63,7 +63,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	private static final int HTTP_STATUSCODE_LEN = 3;
 	private static final int MAX_MOST_SIGNIFICATIVE_STATUSCODE_DIGIT = 5;
 	private static final int MAX_METHOD_LEN = 7;
-	private static final int MAX_CRAZYPROTOCOL_HEADER_LEN = 19;
+	private static final int MAX_CRAZYPROTOCOL_HEADER_LEN = 20;
 	
     private ParserState parserState;
     private HeaderState headerState;

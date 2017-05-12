@@ -14,7 +14,7 @@ public class CrazyProtocolOutputGenerator {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
-	private static final String REPEATED = "Repeated";
+	private static final String REPEATED = "repeated";
 	
 	private ClientMetricImpl clientMetrics;
 	private ServerMetricImpl serverMetrics;
@@ -84,7 +84,7 @@ public class CrazyProtocolOutputGenerator {
 				
 				put(": ", output);
 				Long clientBytesRead = clientMetrics.getBytesRead();
-				output.put(clientBytesRead.byteValue());
+				put(clientBytesRead.toString(), output);
 				putCRLF(output);
 				break;
 				
@@ -92,7 +92,7 @@ public class CrazyProtocolOutputGenerator {
 				
 				put(": ", output);
 				Long clientBytesWritten = clientMetrics.getBytesWritten();
-				output.put(clientBytesWritten.byteValue());
+				put(clientBytesWritten.toString(), output);
 				putCRLF(output);
 				break;
 
@@ -100,31 +100,31 @@ public class CrazyProtocolOutputGenerator {
 				
 				put(": ", output);
 				Long clientConnections = (clientMetrics.getConnections());
-				output.put(clientConnections.byteValue());
+				put(clientConnections.toString(), output);
 				putCRLF(output);
 				break;
 				
 			case SERVER_BYTES_READ:
 				
 				put(": ", output);
-				Long serverBytesRead = clientMetrics.getBytesRead();
-				output.put(serverBytesRead.byteValue());
+				Long serverBytesRead = serverMetrics.getBytesRead();
+				put(serverBytesRead.toString(), output);
 				putCRLF(output);
 				break;
 				
 			case SERVER_BYTES_WRITTEN:
 				
 				put(": ", output);
-				Long serverBytesWritten = clientMetrics.getBytesWritten();
-				output.put(serverBytesWritten.byteValue());
+				Long serverBytesWritten = serverMetrics.getBytesWritten();
+				put(serverBytesWritten.toString(), output);
 				putCRLF(output);
 				break;
 
 			case SERVER_CONNECTIONS:
 				
 				put(": ", output);
-				Long serverConnections = (clientMetrics.getConnections());
-				output.put(serverConnections.byteValue());
+				Long serverConnections = serverMetrics.getConnections();
+				put(serverConnections.toString(), output);
 				putCRLF(output);
 				break;
 				
@@ -174,7 +174,10 @@ public class CrazyProtocolOutputGenerator {
 	}
 	
 	public void generateOutput(ByteBuffer output) {
+		
+		output.put((byte) '+');
 		output.put(REPEATED.getBytes(PROPERTIES.getCharset()));
+		putCRLF(output);
 	}
 	
 //	private void addAllMetrics() {
