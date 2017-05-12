@@ -5,14 +5,14 @@ import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.BytesUtils;
 
 public enum CrazyProtocolHeader {
-	L33TENABLE("l33tenable"), 
+	L33TENABLE("l33tenable"),
+	L33TDISABLE("l33tdisable"),
+	ISL33TENABLE("isl33tenable"),
 	CLIENT_BYTES_READ("client_bytes_read"),
-	CLIENT_BYTES_WRITE("client_bytes_write"), 
-	CLIENT_BYTES_TRANSFERRED("client_bytes_transferred"),
+	CLIENT_BYTES_WRITTEN("client_bytes_write"), 
 	CLIENT_CONNECTIONS("client-connections"),
 	SERVER_BYTES_READ("server_bytes_read"),
-	SERVER_BYTES_WRITE("server_bytes_write"), 
-	SERVER_BYTES_TRANSFERRED("server_bytes_transferred"),
+	SERVER_BYTES_WRITTEN("server_bytes_write"), 
 	SERVER_CONNECTIONS("server_connections"),
 	METHOD_COUNT("method_count"),
 	STATUS_CODE_COUNT("status_code_count"),

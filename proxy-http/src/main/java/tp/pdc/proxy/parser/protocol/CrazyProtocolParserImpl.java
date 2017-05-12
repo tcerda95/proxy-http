@@ -1,9 +1,6 @@
 package tp.pdc.proxy.parser.protocol;
 
-import static tp.pdc.proxy.parser.utils.AsciiConstants.AS;
-import static tp.pdc.proxy.parser.utils.AsciiConstants.CR;
-import static tp.pdc.proxy.parser.utils.AsciiConstants.LF;
-import static tp.pdc.proxy.parser.utils.AsciiConstants.US;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import static tp.pdc.proxy.parser.utils.DecimalConstants.DECIMAL_BASE_VALUE;
 
 import java.nio.ByteBuffer;
@@ -66,7 +63,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	private static final int HTTP_STATUSCODE_LEN = 3;
 	private static final int MAX_MOST_SIGNIFICATIVE_STATUSCODE_DIGIT = 5;
 	private static final int MAX_METHOD_LEN = 7;
-	private static final int MAX_CRAZYPROTOCOL_HEADER_LEN = 24;
+	private static final int MAX_CRAZYPROTOCOL_HEADER_LEN = 19;
 	
     private ParserState parserState;
     private HeaderState headerState;
@@ -79,14 +76,15 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	
 	private CrazyProtocolHeader currentHeader;
 	
-	private Set<Integer> statusCodesFound;
-	private Set<Method> methodsFound;
+	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
+	private Set<Method> HttpmethodsFound;
+	private Set<Integer> HttpstatusCodesFound;
 
 	private int argumentCount;
 	private int currentStatusCode;
 	private int statusCodeLen;
 	
-	//TODO: cambiar size que no sea el mismo máximo que el de los headers HTTP
+	//TODO: no necesariamente el mismo máximo que el de los headers HTTP
     private static final int HEADER_NAME_SIZE = ProxyProperties.getInstance().getHeaderNameBufferSize();
     private static final int HEADER_CONTENT_SIZE = ProxyProperties.getInstance().getHeaderContentBufferSize();
     
@@ -99,8 +97,9 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     	methodName = ByteBuffer.allocate(HEADER_CONTENT_SIZE);
     	
     	// creates an empty enum set
-    	methodsFound = EnumSet.noneOf(Method.class);
-    	statusCodesFound = new HashSet<Integer>();
+    	crazyProtocolheadersFound = EnumSet.noneOf(CrazyProtocolHeader.class);
+    	HttpmethodsFound = EnumSet.noneOf(Method.class);
+    	HttpstatusCodesFound = new HashSet<Integer>();
     	
     	argumentCount = 0;
     	currentStatusCode = 0;
@@ -167,6 +166,9 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     			if (currentHeader == null)
     				handleParserError();
     			
+    			if (!crazyProtocolheadersFound.contains(currentHeader))
+    				crazyProtocolheadersFound.add(currentHeader);
+
     			if (currentHeader == CrazyProtocolHeader.END)
     				parserState = ParserState.END_OK;
     				
@@ -294,8 +296,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	    	        if (statusCodeLen != HTTP_STATUSCODE_LEN)
 	    	        	handleContentError();
 	    	        
-					if (!statusCodesFound.contains(currentStatusCode))
-						statusCodesFound.add(currentStatusCode);
+					if (!HttpstatusCodesFound.contains(currentStatusCode))
+						HttpstatusCodesFound.add(currentStatusCode);
 					
 					statusCodeLen = 0;
 					currentStatusCode = 0;
@@ -333,8 +335,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	    	        if (currentMethod == null)
 	    	        	handleContentError();
 					
-	    	        if (!methodsFound.contains(currentMethod))
-						methodsFound.add(currentMethod);
+	    	        if (!HttpmethodsFound.contains(currentMethod))
+						HttpmethodsFound.add(currentMethod);
 					
 					methodName.clear();
 					
@@ -388,8 +390,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	}
 	
 	private void resetSets() {
-		statusCodesFound.clear();
-		methodsFound.clear();
+		HttpstatusCodesFound.clear();
+		HttpmethodsFound.clear();
 	}
 	
 	private void resetStates() {

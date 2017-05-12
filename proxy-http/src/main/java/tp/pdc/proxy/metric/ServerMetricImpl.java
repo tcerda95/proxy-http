@@ -2,6 +2,7 @@ package tp.pdc.proxy.metric;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 
@@ -28,5 +29,9 @@ public class ServerMetricImpl extends HostMetricImpl implements ServerMetric {
 	@Override
 	public int getResponseCodeCount(int responseCode) {
 		return responseCodeCount.getOrDefault(responseCode, 0);
+	}
+	
+	public Set<Integer> statusCodesFound() {
+		return responseCodeCount.keySet();
 	}
 }
