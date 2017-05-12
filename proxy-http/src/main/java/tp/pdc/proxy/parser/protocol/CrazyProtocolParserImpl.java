@@ -169,8 +169,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     			currentHeader = CrazyProtocolHeader.getHeaderByBytes(headerName, nameLen);
     			
     			if (currentHeader == null)
-    				handleParserError();
-
+    				handleHeaderError();
+    				
     			if (currentHeader == CrazyProtocolHeader.END) {
     				parserState = ParserState.END_OK;
     				outputGenerator.generateOutput(currentHeader, output);

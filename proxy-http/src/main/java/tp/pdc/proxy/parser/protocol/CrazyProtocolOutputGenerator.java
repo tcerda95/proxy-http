@@ -3,6 +3,7 @@ package tp.pdc.proxy.parser.protocol;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
@@ -21,7 +22,7 @@ public class CrazyProtocolOutputGenerator {
 	private ServerMetricImpl serverMetrics;
 	
 	// bytes that couldn't be put in the output buffer because it was full
-	private List<Byte> remainingBytes;
+	private Queue<Byte> remainingBytes;
 	
 //	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
 //	private Set<Integer> HttpstatusCodesFound;
@@ -192,19 +193,14 @@ public class CrazyProtocolOutputGenerator {
 		
 		if (!output.hasRemaining())
 			remainingBytes.add(c);
-		
-		output.put(c);
+		else
+			output.put(c);
 	}
 	
 	private void putRemainingBytes(ByteBuffer output) {
 		
-		for (byte c : remainingBytes) {
-			
-			if (output.hasRemaining())
-				output.put(c);
-			else
-				return;
-		}
+		while (output.hasRemaining() && !remainingBytes.isEmpty())
+				output.put(remainingBytes.poll());
 	}
 	
 	private void putCRLF(ByteBuffer output) {
