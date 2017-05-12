@@ -29,7 +29,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		String protocolInput =  
 				"l33tenable\r\n"
 				+ "l33tEnaBle\r\n"
-				+ "CLIENT_bytes_transferred\r\n"
+				+ "server_bytes_read\r\n"
 				+ "ENd\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
@@ -43,7 +43,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		String protocolInput =  
 				"l33tenable\r\n"
 				+ "l33tEnaBle\r\n"
-				+ "CLIENT_bytes_transferred\r\n";
+				+ "server_bytes_read\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
 		
@@ -56,7 +56,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		String protocolInput =  
 				"l33tenable\r\n"
 				+ "l33tEnaBle\r\n"
-				+ "CLIENT_bytes_transferred\r\n"
+				+ "server_bytes_read\r\n"
 				+ "eNd";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));

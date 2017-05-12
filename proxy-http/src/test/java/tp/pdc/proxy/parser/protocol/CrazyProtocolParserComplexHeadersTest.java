@@ -27,13 +27,13 @@ public class CrazyProtocolParserComplexHeadersTest {
 	@Test
 	public void testFinished() throws ParserFormatException, UnsupportedEncodingException {
 		String protocolInput =
-				"client_bytes_transferred\r\n"
+				"server_bytes_read\r\n"
 				+ "status_CoDe_count\r\n"
 				+ "*3\r\n"
 				+ "404\r\n"
 				+ "404\r\n"
 				+ "503\r\n"
-				+ "client_bytes_transferred\r\n"
+				+ "server_bytes_read\r\n"
 				+ "l33tEnaBle\r\n"
 				+ "method_count\r\n"
 				+ "*3\r\n"
@@ -60,6 +60,7 @@ public class CrazyProtocolParserComplexHeadersTest {
 				+ "200\r\n"
 				+ "599\r\n"
 				+ "401\r\n"
+				+ "client_bytes_read\r\n"
 				+ "EnD\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
@@ -71,7 +72,7 @@ public class CrazyProtocolParserComplexHeadersTest {
 	@Test
 	public void testNotFinished() throws ParserFormatException, UnsupportedEncodingException {
 		String protocolInput =  
-				"Client_Bytes_Transferred\r\n"
+				"server_bytes_read\r\n"
 				+ "method_count\r\n"
 				+ "*3\r\n"
 				+ "GET\r\n"
