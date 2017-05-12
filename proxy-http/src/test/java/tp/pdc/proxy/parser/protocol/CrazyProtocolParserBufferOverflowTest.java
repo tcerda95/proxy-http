@@ -23,7 +23,7 @@ public class CrazyProtocolParserBufferOverflowTest {
 	@Before
 	public void setUp() throws Exception {
 		parser = new CrazyProtocolParserImpl();
-		outputBuffer = ByteBuffer.allocate(50);
+		outputBuffer = ByteBuffer.allocate(20);
 	}
 
 	@Test
@@ -37,19 +37,21 @@ public class CrazyProtocolParserBufferOverflowTest {
 		String expectedOutput = 
 				"+server_bytes_read: 0\r\n"
 				+ "+isl33tenable: NO\r\n"
-				+ "+repeated\r\n"
+				+ "+isl33tenable: NO\r\n"
 				+ "+end\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
 		
-		parser.parse(inputBuffer, outputBuffer);
+		String inputProcessed = "";
 		
-		String inputProcessed = new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset());
+		while (!parser.parse(inputBuffer, outputBuffer))
+		{	
+			inputProcessed += new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset());
+			
+			outputBuffer.clear();
 		
-		outputBuffer.clear();
-		
-		assertFalse(parser.hasFinished());
-		
+		}
+	
 		parser.parse(inputBuffer, outputBuffer);
 		assertEquals(expectedOutput, inputProcessed + new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
 		assertTrue(parser.hasFinished());

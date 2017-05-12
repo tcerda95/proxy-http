@@ -10,7 +10,7 @@ public enum CrazyProtocolHeader {
 	ISL33TENABLE("isl33tenable"),
 	CLIENT_BYTES_READ("client_bytes_read"),
 	CLIENT_BYTES_WRITTEN("client_bytes_written"), 
-	CLIENT_CONNECTIONS("client-connections"),
+	CLIENT_CONNECTIONS("client_connections"),
 	SERVER_BYTES_READ("server_bytes_read"),
 	SERVER_BYTES_WRITTEN("server_bytes_written"), 
 	SERVER_CONNECTIONS("server_connections"),

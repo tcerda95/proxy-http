@@ -15,14 +15,13 @@ import tp.pdc.proxy.metric.ServerMetricImpl;
 public class CrazyProtocolOutputGenerator {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
-	
-	private static final String REPEATED = "repeated";
-	
+		
 	private ClientMetricImpl clientMetrics;
 	private ServerMetricImpl serverMetrics;
 	
 	// bytes that couldn't be put in the output buffer because it was full
 	private Queue<Byte> remainingBytes;
+	private ByteBuffer remainingBytess;
 	
 //	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
 //	private Set<Integer> HttpstatusCodesFound;
@@ -156,12 +155,6 @@ public class CrazyProtocolOutputGenerator {
 		Integer statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
 		putValue(statusCodeCount.toString().getBytes(PROPERTIES.getCharset()), output);
 		
-		putCRLF(output);
-	}
-	
-	public void generateOutput(ByteBuffer output) {
-		
-		putHeader(REPEATED.getBytes(PROPERTIES.getCharset()), output);
 		putCRLF(output);
 	}
 	
