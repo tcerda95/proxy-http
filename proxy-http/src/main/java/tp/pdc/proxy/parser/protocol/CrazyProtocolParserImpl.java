@@ -171,8 +171,10 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     			if (currentHeader == null)
     				handleParserError();
 
-    			if (currentHeader == CrazyProtocolHeader.END)
+    			if (currentHeader == CrazyProtocolHeader.END) {
     				parserState = ParserState.END_OK;
+    				outputGenerator.generateOutput(currentHeader, output);
+    			}
     			    				
     			else if (headerReceivesArguments(currentHeader)) {
     				headerState = HeaderState.END_OK;
@@ -195,10 +197,11 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 						if (!headerFlag(currentHeader))
 							crazyProtocolheadersProcessed.add(currentHeader);
 				
-						CleanCurrentHeader();
     				}
     				else
     					outputGenerator.generateOutput(output);
+    				
+    				clearCurrentHeader();
     			}
     			
     			
@@ -282,6 +285,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 					contentState = ContentState.END_OK;
 					headerState = HeaderState.START;
 					parserState = ParserState.READ_HEADER;
+					
+					clearCurrentHeader();
 				}
 				else
 					contentState = ContentState.START;
@@ -389,7 +394,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	public void reset() {
 		resetStates();
 		resetSets();
-		CleanCurrentHeader();
+		clearCurrentHeader();
 		methodName.clear();
 		argumentCount = 0;
 		statusCodeLen = 0;
@@ -423,11 +428,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 //	}
 	}
 	
-	private void generateOutput() {
-		
-	}
-	
-	private void CleanCurrentHeader() {
+	private void clearCurrentHeader() {
 		currentHeader = null;
 		headerName.clear();
 	}

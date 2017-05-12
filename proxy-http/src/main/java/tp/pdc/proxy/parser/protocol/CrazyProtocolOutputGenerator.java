@@ -33,6 +33,11 @@ public class CrazyProtocolOutputGenerator {
 //		this.output = output;
 //	}
 	
+	public CrazyProtocolOutputGenerator() {
+		clientMetrics = ClientMetricImpl.getInstance();
+		serverMetrics = ServerMetricImpl.getInstance();
+	}
+	
 //	public void generateOutput() {
 //		
 //		if (crazyProtocolheadersFound.contains(CrazyProtocolHeader.METRICS)) {
