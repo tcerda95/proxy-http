@@ -72,17 +72,19 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     
 	private ByteBuffer headerName;
 	private ByteBuffer methodName;
-	// stores the current argument received from METHOD_COUNT
 	
 	private CrazyProtocolHeader currentHeader;
 	
-	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
+	//stores the headers that were processed and don´t need to be process again
+	private Set<CrazyProtocolHeader> crazyProtocolheadersProcessed;
 	private Set<Method> HttpmethodsFound;
 	private Set<Integer> HttpstatusCodesFound;
 
 	private int argumentCount;
 	private int currentStatusCode;
 	private int statusCodeLen;
+	
+	private CrazyProtocolOutputGenerator outputGenerator;
 	
 	//TODO: no necesariamente el mismo máximo que el de los headers HTTP
     private static final int HEADER_NAME_SIZE = ProxyProperties.getInstance().getHeaderNameBufferSize();
@@ -97,13 +99,15 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     	methodName = ByteBuffer.allocate(HEADER_CONTENT_SIZE);
     	
     	// creates an empty enum set
-    	crazyProtocolheadersFound = EnumSet.noneOf(CrazyProtocolHeader.class);
+    	crazyProtocolheadersProcessed = EnumSet.noneOf(CrazyProtocolHeader.class);
     	HttpmethodsFound = EnumSet.noneOf(Method.class);
     	HttpstatusCodesFound = new HashSet<Integer>();
     	
     	argumentCount = 0;
     	currentStatusCode = 0;
     	statusCodeLen = 0;
+    	
+    	outputGenerator = new CrazyProtocolOutputGenerator();
     }
 
     @Override
@@ -114,15 +118,16 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     		
     		switch(parserState) {
 	    		case READ_HEADER:	    			
-	    			parseHeader(c);
+	    			parseHeader(c, output);
 	    			break;
 	    		
 	    		case READ_ARGUMENT_COUNT:
+	    			// argument count or size doesn't generate output (*n\r\n)
 	    			parseArgumentCount(c);	  
 	    			break;
 	    			
 	    		case READ_CONTENT:
-	    			parseContent(c);
+	    			parseContent(c, output);
 	    			break;
 	    			
 	    		default:
@@ -133,7 +138,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     	return hasFinished();
 	}
     
-	public void parseHeader(byte c) throws ParserFormatException {
+	public void parseHeader(byte c, ByteBuffer output) throws ParserFormatException {
     		
 		switch(headerState) {
 			
@@ -165,25 +170,37 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     			
     			if (currentHeader == null)
     				handleParserError();
-    			
-    			if (!crazyProtocolheadersFound.contains(currentHeader))
-    				crazyProtocolheadersFound.add(currentHeader);
 
     			if (currentHeader == CrazyProtocolHeader.END)
     				parserState = ParserState.END_OK;
-    				
+    			    				
     			else if (headerReceivesArguments(currentHeader)) {
     				headerState = HeaderState.END_OK;
     				argumentCountState = ArgumentCountState.START;
     				contentState = ContentState.NOT_READ_YET;
     				parserState = ParserState.READ_ARGUMENT_COUNT;
+    				
+    				outputGenerator.generateOutput(currentHeader, output);
     			}
     			else {
+    	    				
     				headerState = HeaderState.START;
-    				//generate the output
-    				generateOutput();
-    				CleanCurrentHeader();
+    				
+    				if (!crazyProtocolheadersProcessed.contains(currentHeader)) {
+    					outputGenerator.generateOutput(currentHeader, output);
+    					
+						if (currentHeader == CrazyProtocolHeader.METRICS)
+							addAllMetrics();
+							
+						if (!headerFlag(currentHeader))
+							crazyProtocolheadersProcessed.add(currentHeader);
+				
+						CleanCurrentHeader();
+    				}
+    				else
+    					outputGenerator.generateOutput(output);
     			}
+    			
     			
     			break;
     			
@@ -192,9 +209,11 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		}
 	}
 	
+	//only called by headers that receive arguments
 	public void parseArgumentCount(byte c) throws ParserFormatException {
-		// solo va a aceptar numeros decimales por ahora
+
 		switch(argumentCountState) {
+		// solo va a aceptar numeros decimales por ahora
 			
 			case START:
 				
@@ -243,12 +262,12 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	}
 		
 	//only called by headers that receive arguments
-	public void parseContent(byte c) throws ParserFormatException {
+	public void parseContent(byte c, ByteBuffer output) throws ParserFormatException {
 		
 		switch(contentState) {
 			
 			case START:
-				contentStartCase(c);
+				contentStartCase(c, output);
 				break;
 				
 			case END_LINE_CR:
@@ -258,17 +277,11 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				
 				argumentCount--;
 				
-				// we have to generate the output
 				if (argumentCount == 0) {
-					generateOutput();
 					
 					contentState = ContentState.END_OK;
 					headerState = HeaderState.START;
 					parserState = ParserState.READ_HEADER;
-					
-					CleanCurrentHeader();
-					
-					resetSets();
 				}
 				else
 					contentState = ContentState.START;
@@ -282,7 +295,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		
 	}
 	
-	private void contentStartCase(byte c) throws ParserFormatException {
+	private void contentStartCase(byte c, ByteBuffer output) throws ParserFormatException {
 		
 		switch(currentHeader) {
 		
@@ -296,8 +309,12 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	    	        if (statusCodeLen != HTTP_STATUSCODE_LEN)
 	    	        	handleContentError();
 	    	        
-					if (!HttpstatusCodesFound.contains(currentStatusCode))
+					if (!HttpstatusCodesFound.contains(currentStatusCode)) {
 						HttpstatusCodesFound.add(currentStatusCode);
+						outputGenerator.generateOutput(currentStatusCode, output);
+					}
+					else	
+						outputGenerator.generateOutput(output);
 					
 					statusCodeLen = 0;
 					currentStatusCode = 0;
@@ -335,10 +352,14 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	    	        if (currentMethod == null)
 	    	        	handleContentError();
 					
-	    	        if (!HttpmethodsFound.contains(currentMethod))
+	    	        if (!HttpmethodsFound.contains(currentMethod)) {
 						HttpmethodsFound.add(currentMethod);
-					
-					methodName.clear();
+						outputGenerator.generateOutput(currentMethod, output);
+	    	        }
+	    	        else
+	    	        	outputGenerator.generateOutput(output);
+	    	        
+	    	        methodName.clear();
 					
 					contentState = ContentState.END_LINE_CR;
 				}
@@ -380,6 +401,28 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				header == CrazyProtocolHeader.STATUS_CODE_COUNT);
 	}
 	
+	private boolean headerFlag(CrazyProtocolHeader header) {
+		return (header == CrazyProtocolHeader.L33TDISABLE ||
+				header == CrazyProtocolHeader.L33TENABLE);
+	}
+	
+	private void addAllMetrics() {
+//	for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
+//		if (!crazyProtocolheadersFound.contains(h))
+//			crazyProtocolheadersFound.add(h);
+//	}
+//	
+//	for (Method m : Method.values()) {
+//		if (!HttpmethodsFound.contains(m))
+//			HttpmethodsFound.add(m);
+//	}
+//	
+//	for (Integer statusCode : serverMetrics.statusCodesFound()) {
+//		if (!HttpstatusCodesFound.contains(statusCode))
+//			HttpstatusCodesFound.add(statusCode);
+//	}
+	}
+	
 	private void generateOutput() {
 		
 	}
@@ -390,6 +433,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	}
 	
 	private void resetSets() {
+		crazyProtocolheadersProcessed.clear();
 		HttpstatusCodesFound.clear();
 		HttpmethodsFound.clear();
 	}

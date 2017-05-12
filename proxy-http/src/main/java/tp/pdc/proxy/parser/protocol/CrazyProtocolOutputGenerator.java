@@ -14,40 +14,43 @@ public class CrazyProtocolOutputGenerator {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
+	private static final String REPEATED = "Repeated";
+	
 	private ClientMetricImpl clientMetrics;
 	private ServerMetricImpl serverMetrics;
 	
-	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
-	private Set<Integer> HttpstatusCodesFound;
-	private Set<Method> HttpmethodsFound;
+//	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
+//	private Set<Integer> HttpstatusCodesFound;
+//	private Set<Method> HttpmethodsFound;
 	
-	private ByteBuffer output;
+		
+//	public CrazyProtocolOutputGenerator(Set<CrazyProtocolHeader> headers, Set<Integer> statusCodes,
+//			Set<Method> methods, ByteBuffer output) {
+//		
+//		this.crazyProtocolheadersFound = headers;
+//		this.HttpstatusCodesFound = statusCodes;
+//		this.HttpmethodsFound = methods;
+//		this.output = output;
+//	}
 	
-	private boolean parserHasNoErros;
+//	public void generateOutput() {
+//		
+//		if (crazyProtocolheadersFound.contains(CrazyProtocolHeader.METRICS)) {
+//			addAllMetrics();
+//			crazyProtocolheadersFound.remove(CrazyProtocolHeader.METRICS);
+//		}
+//		
+//		for (CrazyProtocolHeader header : crazyProtocolheadersFound) {
+//			generateMethodOutput(header);
+//		}
+//		
+//	}
 	
-	public CrazyProtocolOutputGenerator(Set<CrazyProtocolHeader> headers, Set<Integer> statusCodes,
-			Set<Method> methods, ByteBuffer output, boolean parserHasNoErrors) {
-		
-		this.crazyProtocolheadersFound = headers;
-		this.HttpstatusCodesFound = statusCodes;
-		this.HttpmethodsFound = methods;
-		this.output = output;
-	}
-	
-	public void generateOutput() {
-		
-		if (crazyProtocolheadersFound.contains(CrazyProtocolHeader.METRICS)) {
-			addAllMetrics();
-			crazyProtocolheadersFound.remove(CrazyProtocolHeader.METRICS);
-		}
-		
-		for (CrazyProtocolHeader header : crazyProtocolheadersFound) {
-			generateMethodOutput(header);
-		}
-		
-	}
+	/*Cachear cosas que no entren todo de una en el buffer, ponerlas hasta llenarlo y la proxima
+	 * vez que se llame a esta clase la misma deberia poner el header
+	 */
 
-	public void generateMethodOutput(CrazyProtocolHeader header) {
+	public void generateOutput(CrazyProtocolHeader header, ByteBuffer output) {
 		
 		output.put((byte) '+');
 		output.put(header.getBytes());
@@ -57,130 +60,140 @@ public class CrazyProtocolOutputGenerator {
 			case L33TENABLE:
 				
 				L33tFlag.getInstance().set();
-				putCRLF();
+				putCRLF(output);
 				break;
 				
 			case L33TDISABLE:
 				
 				L33tFlag.getInstance().unset();
-				putCRLF();
+				putCRLF(output);
 				break;
 				
 			case ISL33TENABLE:
 				
-				put(L33tFlag.getInstance().isSet() ? ": YES" : ": NO");
-				putCRLF();
+				put(L33tFlag.getInstance().isSet() ? ": YES" : ": NO", output);
+				putCRLF(output);
 				break;
 				
 			case CLIENT_BYTES_READ:
 				
-				put(": ");
+				put(": ", output);
 				Long clientBytesRead = clientMetrics.getBytesRead();
 				output.put(clientBytesRead.byteValue());
-				putCRLF();
+				putCRLF(output);
 				break;
 				
 			case CLIENT_BYTES_WRITTEN:
 				
-				put(": ");
+				put(": ", output);
 				Long clientBytesWritten = clientMetrics.getBytesWritten();
 				output.put(clientBytesWritten.byteValue());
-				putCRLF();
+				putCRLF(output);
 				break;
 
 			case CLIENT_CONNECTIONS:
 				
-				put(": ");
+				put(": ", output);
 				Long clientConnections = (clientMetrics.getConnections());
 				output.put(clientConnections.byteValue());
-				putCRLF();
+				putCRLF(output);
 				break;
 				
 			case SERVER_BYTES_READ:
 				
-				put(": ");
+				put(": ", output);
 				Long serverBytesRead = clientMetrics.getBytesRead();
 				output.put(serverBytesRead.byteValue());
-				putCRLF();
+				putCRLF(output);
 				break;
 				
 			case SERVER_BYTES_WRITTEN:
 				
-				put(": ");
+				put(": ", output);
 				Long serverBytesWritten = clientMetrics.getBytesWritten();
 				output.put(serverBytesWritten.byteValue());
-				putCRLF();
+				putCRLF(output);
 				break;
 
 			case SERVER_CONNECTIONS:
 				
-				put(": ");
+				put(": ", output);
 				Long serverConnections = (clientMetrics.getConnections());
 				output.put(serverConnections.byteValue());
-				putCRLF();
+				putCRLF(output);
 				break;
 				
 			case METHOD_COUNT:
 				
-				putCRLF();
-				
-				for (Method m :HttpmethodsFound) {
-					output.put(m.getBytes());
-					put(": ");
-					Integer count = clientMetrics.getMethodCount(m);
-					output.put(count.byteValue());
-					putCRLF();
-				}
-				
+				putCRLF(output);
 				break;
 				
 			case STATUS_CODE_COUNT:
 				
-				putCRLF();
-				
-				for (Integer statusCode : HttpstatusCodesFound) {
-					output.put(statusCode.byteValue());
-					put(": ");
-					Integer count = serverMetrics.getResponseCodeCount(statusCode);
-					output.put(count.byteValue());
-					putCRLF();
-				}
-				
+				putCRLF(output);
 				break;
 				
 			case METRICS:
+				
+				putCRLF(output);
 				break;
 				
 			case END:
+				
+				putCRLF(output);
 				break;
 				
 			default:
-				put("What?");
+				put("What?", output);
 		}
 	}
 	
-	private void addAllMetrics() {
-		for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
-			if (!crazyProtocolheadersFound.contains(h))
-				crazyProtocolheadersFound.add(h);
-		}
+	public void generateOutput(Method method, ByteBuffer output) {
 		
-		for (Method m : Method.values()) {
-			if (!HttpmethodsFound.contains(m))
-				HttpmethodsFound.add(m);
-		}
+		output.put((byte) '+');
+		output.put(method.getBytes());
 		
-		for (Integer statusCode : serverMetrics.statusCodesFound()) {
-			if (!HttpstatusCodesFound.contains(statusCode))
-				HttpstatusCodesFound.add(statusCode);
-		}
+		Integer methodCount = clientMetrics.getMethodCount(method);
+		output.put(methodCount.byteValue());
+		putCRLF(output);
 	}
 	
-	private void put(String s) {
+	public void generateOutput(Integer statusCode, ByteBuffer output) {
+		
+		output.put((byte) '+');
+		output.put(statusCode.byteValue());
+		
+		Integer statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
+		output.put(statusCodeCount.byteValue());
+		putCRLF(output);
+	}
+	
+	public void generateOutput(ByteBuffer output) {
+		output.put(REPEATED.getBytes(PROPERTIES.getCharset()));
+	}
+	
+//	private void addAllMetrics() {
+//		for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
+//			if (!crazyProtocolheadersFound.contains(h))
+//				crazyProtocolheadersFound.add(h);
+//		}
+//		
+//		for (Method m : Method.values()) {
+//			if (!HttpmethodsFound.contains(m))
+//				HttpmethodsFound.add(m);
+//		}
+//		
+//		for (Integer statusCode : serverMetrics.statusCodesFound()) {
+//			if (!HttpstatusCodesFound.contains(statusCode))
+//				HttpstatusCodesFound.add(statusCode);
+//		}
+//	}
+	
+	private void put(String s, ByteBuffer output) {
 		output.put(s.getBytes(PROPERTIES.getCharset()));
 	}
 	
-	private void putCRLF() {
+	private void putCRLF(ByteBuffer output) {
 		output.put((byte) '\r');
 		output.put((byte) '\n');
 	}
