@@ -1,6 +1,6 @@
 package tp.pdc.proxy.structures;
 
-public interface RoundedQueue<T> extends SimpleQueue<T> {
+public interface CircularQueue<T> extends SimpleQueue<T> {
 
     boolean isFull();
 }

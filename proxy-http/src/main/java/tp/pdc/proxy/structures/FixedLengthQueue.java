@@ -2,7 +2,7 @@ package tp.pdc.proxy.structures;
 
 import java.lang.reflect.Array;
 
-public class FixedLengthQueue<T> implements RoundedQueue<T> {
+public class FixedLengthQueue<T> implements CircularQueue<T> {
 
     public T arr[];
     private int queueIndex, dequeueIndex;
