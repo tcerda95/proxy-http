@@ -1,7 +1,6 @@
 package tp.pdc.proxy.parser.protocol;
 
 import java.nio.ByteBuffer;
-import java.util.Set;
 
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
@@ -57,131 +56,119 @@ public class CrazyProtocolOutputGenerator {
 
 	public void generateOutput(CrazyProtocolHeader header, ByteBuffer output) {
 		
-		output.put((byte) '+');
-		output.put(header.getBytes());
+		putHeader(header.getBytes(), output);
 				
 		switch (header) {
 		
 			case L33TENABLE:
 				
 				L33tFlag.getInstance().set();
-				putCRLF(output);
 				break;
 				
 			case L33TDISABLE:
 				
 				L33tFlag.getInstance().unset();
-				putCRLF(output);
 				break;
 				
 			case ISL33TENABLE:
 				
 				put(L33tFlag.getInstance().isSet() ? ": YES" : ": NO", output);
-				putCRLF(output);
 				break;
 				
 			case CLIENT_BYTES_READ:
 				
-				put(": ", output);
 				Long clientBytesRead = clientMetrics.getBytesRead();
-				put(clientBytesRead.toString(), output);
-				putCRLF(output);
+				putValue(clientBytesRead.toString().getBytes(PROPERTIES.getCharset()), output);
 				break;
 				
 			case CLIENT_BYTES_WRITTEN:
 				
-				put(": ", output);
 				Long clientBytesWritten = clientMetrics.getBytesWritten();
-				put(clientBytesWritten.toString(), output);
-				putCRLF(output);
+				putValue(clientBytesWritten.toString().getBytes(PROPERTIES.getCharset()), output);
 				break;
 
 			case CLIENT_CONNECTIONS:
 				
-				put(": ", output);
 				Long clientConnections = (clientMetrics.getConnections());
-				put(clientConnections.toString(), output);
-				putCRLF(output);
+				putValue(clientConnections.toString().getBytes(PROPERTIES.getCharset()), output);
 				break;
 				
 			case SERVER_BYTES_READ:
 				
-				put(": ", output);
 				Long serverBytesRead = serverMetrics.getBytesRead();
-				put(serverBytesRead.toString(), output);
-				putCRLF(output);
+				putValue(serverBytesRead.toString().getBytes(PROPERTIES.getCharset()), output);
 				break;
 				
 			case SERVER_BYTES_WRITTEN:
 				
-				put(": ", output);
 				Long serverBytesWritten = serverMetrics.getBytesWritten();
-				put(serverBytesWritten.toString(), output);
-				putCRLF(output);
+				putValue(serverBytesWritten.toString().getBytes(PROPERTIES.getCharset()), output);
 				break;
 
 			case SERVER_CONNECTIONS:
 				
-				put(": ", output);
 				Long serverConnections = serverMetrics.getConnections();
-				put(serverConnections.toString(), output);
-				putCRLF(output);
+				putValue(serverConnections.toString().getBytes(PROPERTIES.getCharset()), output);
 				break;
 				
-			case METHOD_COUNT:
-				
-				putCRLF(output);
+			case METHOD_COUNT:				
 				break;
 				
-			case STATUS_CODE_COUNT:
-				
-				putCRLF(output);
+			case STATUS_CODE_COUNT:				
 				break;
 				
-			case METRICS:
-				
-				putCRLF(output);
+			case METRICS:				
 				break;
 				
-			case END:
-				
-				putCRLF(output);
+			case END:				
 				break;
 				
 			default:
 				put("What?", output);
 		}
+		
+		putCRLF(output);
+
 	}
 	
 	public void generateOutput(Method method, ByteBuffer output) {
 		
-		output.put((byte) '+');
-		output.put(method.getBytes());
-		
-		put(": ", output);
+		putHeader(method.getBytes(), output);
 		
 		Integer methodCount = clientMetrics.getMethodCount(method);
-		put(methodCount.toString(), output);
+		putValue(methodCount.toString().getBytes(PROPERTIES.getCharset()), output);
+		
 		putCRLF(output);
 	}
 	
 	public void generateOutput(Integer statusCode, ByteBuffer output) {
 		
-		output.put((byte) '+');
-		put(statusCode.toString(), output);
-		
-		put(": ", output);
-		
+		putHeader(statusCode.toString().getBytes(PROPERTIES.getCharset()), output);
+				
 		Integer statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
-		put(statusCodeCount.toString(), output);
+		putValue(statusCodeCount.toString().getBytes(PROPERTIES.getCharset()), output);
+		
 		putCRLF(output);
 	}
 	
 	public void generateOutput(ByteBuffer output) {
 		
-		output.put((byte) '+');
-		output.put(REPEATED.getBytes(PROPERTIES.getCharset()));
+		putHeader(REPEATED.getBytes(PROPERTIES.getCharset()), output);
 		putCRLF(output);
+	}
+	
+	private void putHeader(byte[] bytes, ByteBuffer output) {
+		
+		output.put((byte) '+');
+		output.put(bytes);
+	}
+	
+	private void putValue(byte[] bytes, ByteBuffer output) {
+		
+		output.put((byte) ':');
+		output.put((byte) ' ');
+		output.put(bytes);
+
 	}
 	
 //	private void addAllMetrics() {
