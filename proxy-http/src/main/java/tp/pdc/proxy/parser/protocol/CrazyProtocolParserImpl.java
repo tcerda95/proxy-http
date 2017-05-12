@@ -384,10 +384,9 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		
 	}
 	
-	
 	@Override
 	public boolean hasFinished() {
-		return parserState == ParserState.END_OK;
+		return parserState == ParserState.END_OK && outputGenerator.hasFinished();
 	}
 
 	@Override
@@ -396,6 +395,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		resetSets();
 		clearCurrentHeader();
 		methodName.clear();
+		outputGenerator.reset();
+		
 		argumentCount = 0;
 		statusCodeLen = 0;
 		currentStatusCode = 0;

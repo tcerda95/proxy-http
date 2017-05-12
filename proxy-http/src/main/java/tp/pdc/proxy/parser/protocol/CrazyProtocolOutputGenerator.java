@@ -1,6 +1,8 @@
 package tp.pdc.proxy.parser.protocol;
 
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
@@ -17,6 +19,9 @@ public class CrazyProtocolOutputGenerator {
 	
 	private ClientMetricImpl clientMetrics;
 	private ServerMetricImpl serverMetrics;
+	
+	// bytes that couldn't be put in the output buffer because it was full
+	private List<Byte> remainingBytes;
 	
 //	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
 //	private Set<Integer> HttpstatusCodesFound;
@@ -35,6 +40,7 @@ public class CrazyProtocolOutputGenerator {
 	public CrazyProtocolOutputGenerator() {
 		clientMetrics = ClientMetricImpl.getInstance();
 		serverMetrics = ServerMetricImpl.getInstance();
+		remainingBytes = new LinkedList<Byte>();
 	}
 	
 //	public void generateOutput() {
@@ -72,7 +78,8 @@ public class CrazyProtocolOutputGenerator {
 				
 			case ISL33TENABLE:
 				
-				put(L33tFlag.getInstance().isSet() ? ": YES" : ": NO", output);
+				String toPut = L33tFlag.getInstance().isSet() ? "YES" : "NO";
+				putValue(toPut.getBytes(PROPERTIES.getCharset()), output);
 				break;
 				
 			case CLIENT_BYTES_READ:
@@ -124,7 +131,7 @@ public class CrazyProtocolOutputGenerator {
 				break;
 				
 			default:
-				put("What?", output);
+				break;
 		}
 		
 		putCRLF(output);
@@ -159,18 +166,60 @@ public class CrazyProtocolOutputGenerator {
 	
 	private void putHeader(byte[] bytes, ByteBuffer output) {
 		
-		output.put((byte) '+');
-		output.put(bytes);
+		putRemainingBytes(output);
+		
+		put((byte) '+', output);
+		put(bytes, output);
 	}
 	
 	private void putValue(byte[] bytes, ByteBuffer output) {
 		
-		output.put((byte) ':');
-		output.put((byte) ' ');
-		output.put(bytes);
-
+		putRemainingBytes(output);
+		
+		put((byte) ':', output);
+		put((byte) ' ', output);
+		put(bytes, output);
 	}
 	
+	
+	private void put(byte[] bytes, ByteBuffer output) {
+		
+		for (byte c : bytes)
+			put(c, output);
+	}
+	
+	private void put(byte c, ByteBuffer output) {
+		
+		if (!output.hasRemaining())
+			remainingBytes.add(c);
+		
+		output.put(c);
+	}
+	
+	private void putRemainingBytes(ByteBuffer output) {
+		
+		for (byte c : remainingBytes) {
+			
+			if (output.hasRemaining())
+				output.put(c);
+			else
+				return;
+		}
+	}
+	
+	private void putCRLF(ByteBuffer output) {
+		put((byte) '\r', output);
+		put((byte) '\n', output);
+	}
+	
+	public void reset() {
+		remainingBytes.clear();
+	}
+	
+	public boolean hasFinished() {
+		return remainingBytes.isEmpty();
+	}
+
 //	private void addAllMetrics() {
 //		for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
 //			if (!crazyProtocolheadersFound.contains(h))
@@ -187,13 +236,4 @@ public class CrazyProtocolOutputGenerator {
 //				HttpstatusCodesFound.add(statusCode);
 //		}
 //	}
-	
-	private void put(String s, ByteBuffer output) {
-		output.put(s.getBytes(PROPERTIES.getCharset()));
-	}
-	
-	private void putCRLF(ByteBuffer output) {
-		output.put((byte) '\r');
-		output.put((byte) '\n');
-	}
 }
