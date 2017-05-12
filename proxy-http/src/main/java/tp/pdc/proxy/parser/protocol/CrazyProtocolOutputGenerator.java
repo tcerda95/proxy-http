@@ -158,18 +158,22 @@ public class CrazyProtocolOutputGenerator {
 		output.put((byte) '+');
 		output.put(method.getBytes());
 		
+		put(": ", output);
+		
 		Integer methodCount = clientMetrics.getMethodCount(method);
-		output.put(methodCount.byteValue());
+		put(methodCount.toString(), output);
 		putCRLF(output);
 	}
 	
 	public void generateOutput(Integer statusCode, ByteBuffer output) {
 		
 		output.put((byte) '+');
-		output.put(statusCode.byteValue());
+		put(statusCode.toString(), output);
+		
+		put(": ", output);
 		
 		Integer statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
-		output.put(statusCodeCount.byteValue());
+		put(statusCodeCount.toString(), output);
 		putCRLF(output);
 	}
 	

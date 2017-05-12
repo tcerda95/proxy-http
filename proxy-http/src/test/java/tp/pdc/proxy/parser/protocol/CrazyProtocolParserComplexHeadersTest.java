@@ -14,6 +14,8 @@ import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
 public class CrazyProtocolParserComplexHeadersTest {
 	
+	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	
 	private CrazyProtocolParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
@@ -31,41 +33,51 @@ public class CrazyProtocolParserComplexHeadersTest {
 				+ "status_CoDe_count\r\n"
 				+ "*3\r\n"
 				+ "404\r\n"
+				+ "500\r\n"
 				+ "404\r\n"
-				+ "503\r\n"
+				+ "status_code_count\r\n"
+				+ "*3\r\n"
+				+ "499\r\n"
+				+ "500\r\n"
+				+ "300\r\n"
 				+ "server_bytes_read\r\n"
-				+ "l33tEnaBle\r\n"
 				+ "method_count\r\n"
 				+ "*3\r\n"
 				+ "GET\r\n"
 				+ "POST\r\n"
 				+ "GET\r\n"
 				+ "method_count\r\n"
-				+ "*3\r\n"
-				+ "GET\r\n"
-				+ "POST\r\n"
-				+ "GET\r\n"
-				+ "status_CoDe_count\r\n"
 				+ "*1\r\n"
-				+ "404\r\n"
-				+ "status_CoDe_count\r\n"
-				+ "*10\r\n"
-				+ "404\r\n"
-				+ "303\r\n"
-				+ "200\r\n"
-				+ "599\r\n"
-				+ "401\r\n"
-				+ "404\r\n"
-				+ "303\r\n"
-				+ "200\r\n"
-				+ "599\r\n"
-				+ "401\r\n"
-				+ "client_bytes_read\r\n"
-				+ "EnD\r\n";
+				+ "PosT\r\n"
+				+ "ISL33TenaBle\r\n"
+				+ "isl33tenable\r\n"
+				+ "enD\r\n";
+		
+		String expectedOutput = 
+				"+server_bytes_read: 0\r\n"
+				+ "+status_code_count\r\n"
+				+ "+404: 0\r\n"
+				+ "+500: 0\r\n"
+				+ "+repeated\r\n"
+				+ "+status_code_count\r\n"
+				+ "+499: 0\r\n"
+				+ "+repeated\r\n"
+				+ "+300: 0\r\n"
+				+ "+repeated\r\n"
+				+ "+method_count\r\n"
+				+ "+GET: 0\r\n"
+				+ "+POST: 0\r\n"
+				+ "+repeated\r\n"
+				+ "+method_count\r\n"
+				+ "+repeated\r\n"
+				+ "+isl33tenable: NO\r\n"
+				+ "+repeated\r\n"
+				+ "+end\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
 		
 		parser.parse(inputBuffer, outputBuffer);
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
 		assertTrue(parser.hasFinished());
 	}
 	
