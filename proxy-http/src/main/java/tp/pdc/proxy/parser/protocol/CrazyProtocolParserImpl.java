@@ -417,5 +417,4 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
         contentState = ContentState.ERROR;
         throw new ParserFormatException("Error while parsing header content");
     }
-
 }

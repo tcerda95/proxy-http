@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedByInterruptException;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +20,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
-	private CrazyProtocolParser parser;
+	private CrazyProtocolParserImpl parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	

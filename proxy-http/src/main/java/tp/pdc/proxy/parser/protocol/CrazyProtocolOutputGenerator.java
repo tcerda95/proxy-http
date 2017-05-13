@@ -1,9 +1,6 @@
 package tp.pdc.proxy.parser.protocol;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
@@ -20,8 +17,7 @@ public class CrazyProtocolOutputGenerator {
 	private ServerMetricImpl serverMetrics;
 	
 	// bytes that couldn't be put in the output buffer because it was full
-	private Queue<Byte> remainingBytes;
-	private ByteBuffer remainingBytess;
+	private ByteBuffer remainingBytes;
 	
 //	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
 //	private Set<Integer> HttpstatusCodesFound;
@@ -40,7 +36,7 @@ public class CrazyProtocolOutputGenerator {
 	public CrazyProtocolOutputGenerator() {
 		clientMetrics = ClientMetricImpl.getInstance();
 		serverMetrics = ServerMetricImpl.getInstance();
-		remainingBytes = new LinkedList<Byte>();
+		remainingBytes = ByteBuffer.allocate(4000);
 	}
 	
 //	public void generateOutput() {
@@ -159,22 +155,23 @@ public class CrazyProtocolOutputGenerator {
 	}
 	
 	private void putHeader(byte[] bytes, ByteBuffer output) {
-		
-		putRemainingBytes(output);
-		
+				
 		put((byte) '+', output);
 		put(bytes, output);
 	}
 	
 	private void putValue(byte[] bytes, ByteBuffer output) {
-		
-		putRemainingBytes(output);
-		
+				
 		put((byte) ':', output);
 		put((byte) ' ', output);
 		put(bytes, output);
 	}
 	
+	private void putCRLF(ByteBuffer output) {
+				
+		put((byte) '\r', output);
+		put((byte) '\n', output);
+	}
 	
 	private void put(byte[] bytes, ByteBuffer output) {
 		
@@ -184,29 +181,31 @@ public class CrazyProtocolOutputGenerator {
 	
 	private void put(byte c, ByteBuffer output) {
 		
-		if (!output.hasRemaining())
-			remainingBytes.add(c);
-		else
+		putRemainingBytes(output);
+		
+		if (output.hasRemaining())
 			output.put(c);
-	}
-	
+		else
+			remainingBytes.put(c);
+	}	
+
 	private void putRemainingBytes(ByteBuffer output) {
 		
-		while (output.hasRemaining() && !remainingBytes.isEmpty())
-				output.put(remainingBytes.poll());
-	}
-	
-	private void putCRLF(ByteBuffer output) {
-		put((byte) '\r', output);
-		put((byte) '\n', output);
-	}
+		remainingBytes.flip();
+		
+		while(output.hasRemaining() && remainingBytes.hasRemaining())
+				output.put(remainingBytes.get());
+		
+		remainingBytes.compact();
+	}	
 	
 	public void reset() {
 		remainingBytes.clear();
 	}
 	
 	public boolean hasFinished() {
-		return remainingBytes.isEmpty();
+		//remainingBytes buffer is always in write mode
+		return remainingBytes.position() == 0;
 	}
 
 //	private void addAllMetrics() {
