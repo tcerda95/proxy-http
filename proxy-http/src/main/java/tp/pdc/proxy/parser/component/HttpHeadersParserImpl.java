@@ -2,15 +2,12 @@ package tp.pdc.proxy.parser.component;
 
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.*;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -74,6 +71,10 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         while(inputBuffer.hasRemaining() && outputBuffer.remaining() > buffered)
             if (parse(inputBuffer.get(), outputBuffer))
                 return true;
+        
+        if (outputBuffer.remaining() <= buffered)
+        	outputBuffer.limit(outputBuffer.position()); // Así se simula que el buffer está lleno
+        
         return false;
     }
 
