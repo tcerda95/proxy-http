@@ -4,13 +4,13 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class FixedLengthQueueTest {
+public class ArrayQueueTest {
 
-    private FixedLengthQueue<Integer> q;
+    private ArrayQueue<Integer> q;
 
     @Before
     public void init() {
-        q = new FixedLengthQueue<Integer>(Integer.class, 5);
+        q = new ArrayQueue<Integer>(Integer.class, 5);
     }
 
     @Test(expected = IllegalStateException.class)
