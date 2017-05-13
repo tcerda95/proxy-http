@@ -9,23 +9,21 @@ public class FixedLengthQueue<T> implements CircularQueue<T> {
     private int length;
     private int currentSize;
 
-    public FixedLengthQueue(Class<T> clazz, int length) {
+    @SuppressWarnings("unchecked")
+	public FixedLengthQueue(Class<T> clazz, int length) {
         arr = (T[]) Array.newInstance(clazz, length);
         this.length = length;
-
     }
 
     @Override
     public boolean isFull() {
-        if(currentSize == length)
-            return true;
-        return false;
+    	return currentSize == length;
     }
 
     @Override
     public void queue(T e) {
         if (isFull())
-            throw new IllegalStateException("Queue is full");
+        	dequeue();
 
         arr[queueIndex] = e;
         queueIndex = (queueIndex + 1) % length;
@@ -54,10 +52,15 @@ public class FixedLengthQueue<T> implements CircularQueue<T> {
     public T peek() {
         if (isEmpty())
             throw new IllegalStateException("Queue is Empty");
-        return arr[queueIndex];
+        return arr[dequeueIndex];
     }
 
     public int size(){
         return currentSize;
     }
+
+	@Override
+	public int length() {
+		return length;
+	}
 }
