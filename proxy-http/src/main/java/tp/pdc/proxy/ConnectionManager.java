@@ -7,9 +7,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +17,17 @@ import tp.pdc.proxy.handler.HttpServerProxyHandler;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
+import tp.pdc.proxy.structures.ArrayQueue;
+import tp.pdc.proxy.structures.FixedLengthQueue;
 
 public class ConnectionManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
 	private static final ConnectionManager INSTANCE = new ConnectionManager();
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
+	private static final int QUEUE_LENGTH = PROPERTIES.getConnectionQueueLength();
 	
-	private final Map<SocketAddress, Queue<SelectionKey>> connections;
+	private final Map<SocketAddress, FixedLengthQueue<SelectionKey>> connections;
 	
 	private ConnectionManager() {
 		connections = new HashMap<>();
@@ -46,7 +47,7 @@ public class ConnectionManager {
 	}
 	
 	private boolean reuseConnection(Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
-		Queue<SelectionKey> connectionQueue = connections.get(address);
+		FixedLengthQueue<SelectionKey> connectionQueue = connections.get(address);
 		SelectionKey serverKey = retrieveValidKey(connectionQueue);
 		
 		if (serverKey == null) {
@@ -72,9 +73,9 @@ public class ConnectionManager {
 		}
 	}
 	
-	private SelectionKey retrieveValidKey(Queue<SelectionKey> connectionQueue) throws IOException {		
+	private SelectionKey retrieveValidKey(FixedLengthQueue<SelectionKey> connectionQueue) throws IOException {		
 		while (!connectionQueue.isEmpty()) {
-			SelectionKey key = connectionQueue.remove();
+			SelectionKey key = connectionQueue.dequeue();
 			SocketChannel serverSocket = (SocketChannel) key.channel();
 			
 			if (key.isValid()) {
@@ -133,17 +134,17 @@ public class ConnectionManager {
 		storeKey(serverKey, serverChannel.getRemoteAddress());
 	}
 
-	// TODO: timers y tamaño limite
+	// TODO: timers
 	private void storeKey(SelectionKey serverKey, SocketAddress remoteAddress) {
-		Queue<SelectionKey> connectionQueue;
+		FixedLengthQueue<SelectionKey> connectionQueue;
 		
 		if (connections.containsKey(remoteAddress))
 			connectionQueue = connections.get(remoteAddress);
 		else {
-			connectionQueue = new LinkedList<>();  // TODO: pensar usar array circular con tamaño limite
+			connectionQueue = new ArrayQueue<>(SelectionKey.class, QUEUE_LENGTH);
 			connections.put(remoteAddress, connectionQueue);
 		}
 		
-		connectionQueue.add(serverKey);
+		connectionQueue.queue(serverKey);
 	}
 }
