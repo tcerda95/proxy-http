@@ -75,7 +75,7 @@ public class ConnectionManager {
 	
 	private SelectionKey retrieveValidKey(FixedLengthQueue<SelectionKey> connectionQueue) throws IOException {		
 		while (!connectionQueue.isEmpty()) {
-			SelectionKey key = connectionQueue.dequeue();
+			SelectionKey key = connectionQueue.remove();
 			SocketChannel serverSocket = (SocketChannel) key.channel();
 			
 			if (key.isValid()) {
@@ -145,6 +145,6 @@ public class ConnectionManager {
 			connections.put(remoteAddress, connectionQueue);
 		}
 		
-		connectionQueue.queue(serverKey);
+		connectionQueue.add(serverKey);
 	}
 }
