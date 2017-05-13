@@ -31,7 +31,8 @@ public class ServerMetricImpl extends HostMetricImpl implements ServerMetric {
 		return responseCodeCount.getOrDefault(responseCode, 0);
 	}
 	
-	public Set<Integer> statusCodesFound() {
+	@Override
+	public Set<Integer> getStatusCodes() {
 		return responseCodeCount.keySet();
 	}
 }

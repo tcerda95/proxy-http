@@ -4,10 +4,6 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import static tp.pdc.proxy.parser.utils.DecimalConstants.DECIMAL_BASE_VALUE;
 
 import java.nio.ByteBuffer;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
-
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
@@ -367,23 +363,6 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	private boolean headerReceivesArguments(CrazyProtocolHeader header) {
 		return (header == CrazyProtocolHeader.METHOD_COUNT ||
 				header == CrazyProtocolHeader.STATUS_CODE_COUNT);
-	}
-	
-	private void addAllMetrics() {
-//	for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
-//		if (!crazyProtocolheadersFound.contains(h))
-//			crazyProtocolheadersFound.add(h);
-//	}
-//	
-//	for (Method m : Method.values()) {
-//		if (!HttpmethodsFound.contains(m))
-//			HttpmethodsFound.add(m);
-//	}
-//	
-//	for (Integer statusCode : serverMetrics.statusCodesFound()) {
-//		if (!HttpstatusCodesFound.contains(statusCode))
-//			HttpstatusCodesFound.add(statusCode);
-//	}
 	}
 	
 	private void clearCurrentHeader() {

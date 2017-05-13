@@ -20,7 +20,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
-	private CrazyProtocolParserImpl parser;
+	private CrazyProtocolParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	

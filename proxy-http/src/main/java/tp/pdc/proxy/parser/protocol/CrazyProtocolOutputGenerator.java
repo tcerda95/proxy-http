@@ -1,7 +1,6 @@
 package tp.pdc.proxy.parser.protocol;
 
 import java.nio.ByteBuffer;
-
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.Method;
@@ -16,22 +15,8 @@ public class CrazyProtocolOutputGenerator {
 	private ClientMetricImpl clientMetrics;
 	private ServerMetricImpl serverMetrics;
 	
-	// bytes that couldn't be put in the output buffer because it was full
+	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
-	
-//	private Set<CrazyProtocolHeader> crazyProtocolheadersFound;
-//	private Set<Integer> HttpstatusCodesFound;
-//	private Set<Method> HttpmethodsFound;
-	
-		
-//	public CrazyProtocolOutputGenerator(Set<CrazyProtocolHeader> headers, Set<Integer> statusCodes,
-//			Set<Method> methods, ByteBuffer output) {
-//		
-//		this.crazyProtocolheadersFound = headers;
-//		this.HttpstatusCodesFound = statusCodes;
-//		this.HttpmethodsFound = methods;
-//		this.output = output;
-//	}
 	
 	public CrazyProtocolOutputGenerator() {
 		clientMetrics = ClientMetricImpl.getInstance();
@@ -39,23 +24,6 @@ public class CrazyProtocolOutputGenerator {
 		remainingBytes = ByteBuffer.allocate(4000);
 	}
 	
-//	public void generateOutput() {
-//		
-//		if (crazyProtocolheadersFound.contains(CrazyProtocolHeader.METRICS)) {
-//			addAllMetrics();
-//			crazyProtocolheadersFound.remove(CrazyProtocolHeader.METRICS);
-//		}
-//		
-//		for (CrazyProtocolHeader header : crazyProtocolheadersFound) {
-//			generateMethodOutput(header);
-//		}
-//		
-//	}
-	
-	/*Cachear cosas que no entren todo de una en el buffer, ponerlas hasta llenarlo y la proxima
-	 * vez que se llame a esta clase la misma deberia poner el header
-	 */
-
 	public void generateOutput(CrazyProtocolHeader header, ByteBuffer output) {
 		
 		putHeader(header.getBytes(), output);
@@ -120,7 +88,8 @@ public class CrazyProtocolOutputGenerator {
 			case STATUS_CODE_COUNT:				
 				break;
 				
-			case METRICS:				
+			case METRICS:
+				addAllMetrics(output);
 				break;
 				
 			case END:				
@@ -130,8 +99,8 @@ public class CrazyProtocolOutputGenerator {
 				break;
 		}
 		
-		putCRLF(output);
-
+		if (header != CrazyProtocolHeader.METRICS)
+			putCRLF(output);
 	}
 	
 	public void generateOutput(Method method, ByteBuffer output) {
@@ -199,6 +168,43 @@ public class CrazyProtocolOutputGenerator {
 		remainingBytes.compact();
 	}	
 	
+	private void addAllMetrics(ByteBuffer output) {
+		
+		putCRLF(output);
+
+		for (CrazyProtocolHeader header : CrazyProtocolHeader.values()) {
+			
+			if (header != CrazyProtocolHeader.END && header != CrazyProtocolHeader.METRICS 
+					&& !isFlag(header))
+				generateOutput(header, output);
+		
+			switch (header) {
+			
+				case METHOD_COUNT:
+					
+					for (Method method : clientMetrics.getMethods())
+						generateOutput(method, output);
+					
+					break;
+					
+				case STATUS_CODE_COUNT:
+					
+					for (Integer statusCode : serverMetrics.getStatusCodes())
+						generateOutput(statusCode, output);
+					
+					break;
+					
+				default:
+					break;
+			}
+		}
+	}
+	
+	public boolean isFlag(CrazyProtocolHeader header) {
+		return (header == CrazyProtocolHeader.L33TENABLE ||
+				header == CrazyProtocolHeader.L33TDISABLE);
+	}
+	
 	public void reset() {
 		remainingBytes.clear();
 	}
@@ -207,21 +213,4 @@ public class CrazyProtocolOutputGenerator {
 		//remainingBytes buffer is always in write mode
 		return remainingBytes.position() == 0;
 	}
-
-//	private void addAllMetrics() {
-//		for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
-//			if (!crazyProtocolheadersFound.contains(h))
-//				crazyProtocolheadersFound.add(h);
-//		}
-//		
-//		for (Method m : Method.values()) {
-//			if (!HttpmethodsFound.contains(m))
-//				HttpmethodsFound.add(m);
-//		}
-//		
-//		for (Integer statusCode : serverMetrics.statusCodesFound()) {
-//			if (!HttpstatusCodesFound.contains(statusCode))
-//				HttpstatusCodesFound.add(statusCode);
-//		}
-//	}
 }

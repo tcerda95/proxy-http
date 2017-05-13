@@ -2,6 +2,7 @@ package tp.pdc.proxy.metric;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
 
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
@@ -31,5 +32,10 @@ public class ClientMetricImpl extends HostMetricImpl implements ClientMetric {
 	@Override
 	public int getMethodCount(Method m) {
 		return methodRequests.get(m);
+	}
+	
+	@Override
+	public Set<Method> getMethods() {
+		return methodRequests.keySet();
 	}
 }
