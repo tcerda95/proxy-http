@@ -7,6 +7,7 @@ import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
 import tp.pdc.proxy.metric.ClientMetricImpl;
 import tp.pdc.proxy.metric.ServerMetricImpl;
+import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class CrazyProtocolOutputGenerator {
 	
@@ -48,38 +49,38 @@ public class CrazyProtocolOutputGenerator {
 				
 			case CLIENT_BYTES_READ:
 				
-				Long clientBytesRead = clientMetrics.getBytesRead();
-				putValue(clientBytesRead.toString().getBytes(PROPERTIES.getCharset()), output);
+				long clientBytesRead = clientMetrics.getBytesRead();
+				putValue(ParseUtils.parseLong(clientBytesRead), output);
 				break;
 				
 			case CLIENT_BYTES_WRITTEN:
 				
-				Long clientBytesWritten = clientMetrics.getBytesWritten();
-				putValue(clientBytesWritten.toString().getBytes(PROPERTIES.getCharset()), output);
+				long clientBytesWritten = clientMetrics.getBytesWritten();
+				putValue(ParseUtils.parseLong(clientBytesWritten), output);
 				break;
 
 			case CLIENT_CONNECTIONS:
 				
-				Long clientConnections = (clientMetrics.getConnections());
-				putValue(clientConnections.toString().getBytes(PROPERTIES.getCharset()), output);
+				long clientConnections = (clientMetrics.getConnections());
+				putValue(ParseUtils.parseLong(clientConnections), output);
 				break;
 				
 			case SERVER_BYTES_READ:
 				
-				Long serverBytesRead = serverMetrics.getBytesRead();
-				putValue(serverBytesRead.toString().getBytes(PROPERTIES.getCharset()), output);
+				long serverBytesRead = serverMetrics.getBytesRead();
+				putValue(ParseUtils.parseLong(serverBytesRead), output);
 				break;
 				
 			case SERVER_BYTES_WRITTEN:
 				
-				Long serverBytesWritten = serverMetrics.getBytesWritten();
-				putValue(serverBytesWritten.toString().getBytes(PROPERTIES.getCharset()), output);
+				long serverBytesWritten = serverMetrics.getBytesWritten();
+				putValue(ParseUtils.parseLong(serverBytesWritten), output);
 				break;
 
 			case SERVER_CONNECTIONS:
 				
-				Long serverConnections = serverMetrics.getConnections();
-				putValue(serverConnections.toString().getBytes(PROPERTIES.getCharset()), output);
+				long serverConnections = serverMetrics.getConnections();
+				putValue(ParseUtils.parseLong(serverConnections), output);
 				break;
 				
 			case METHOD_COUNT:				
@@ -107,18 +108,18 @@ public class CrazyProtocolOutputGenerator {
 		
 		putHeader(method.getBytes(), output);
 		
-		Integer methodCount = clientMetrics.getMethodCount(method);
-		putValue(methodCount.toString().getBytes(PROPERTIES.getCharset()), output);
+		int methodCount = clientMetrics.getMethodCount(method);
+		putValue(ParseUtils.parseInt(methodCount), output);
 		
 		putCRLF(output);
 	}
 	
 	public void generateOutput(Integer statusCode, ByteBuffer output) {
 		
-		putHeader(statusCode.toString().getBytes(PROPERTIES.getCharset()), output);
+		putHeader(ParseUtils.parseInt(statusCode), output);
 				
-		Integer statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
-		putValue(statusCodeCount.toString().getBytes(PROPERTIES.getCharset()), output);
+		int statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
+		putValue(ParseUtils.parseInt(statusCodeCount), output);
 		
 		putCRLF(output);
 	}

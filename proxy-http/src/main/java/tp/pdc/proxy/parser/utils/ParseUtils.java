@@ -2,6 +2,8 @@ package tp.pdc.proxy.parser.utils;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
+import java.nio.ByteBuffer;
+
 //TODO: tests
 public class ParseUtils {
     private static final int US_ASCII_LENGTH = 128;
@@ -90,5 +92,65 @@ public class ParseUtils {
 		}
 		
 		return num;
+	}
+	
+	public static byte[] parseInt(int value) {
+		
+		int len = intLength(value);
+		
+		ByteBuffer output = ByteBuffer.allocate(len);
+		
+		for(int j=len; j>0; j--) {
+			int digit = (int) (value/Math.pow(10,j-1));
+			output.put((byte) (digit + '0'));
+			value = (int) (value - digit * Math.pow(10,j-1));
+		}
+		
+		return output.array();
+	}
+	
+	public static int intLength(int value) {
+		
+		if (value == 0)
+			return 1;
+		
+		int length = 0;
+		
+		while(value != 0) {
+			value/=10;
+			length++;
+		}
+		
+		return length;
+	}
+	
+	public static byte[] parseLong(long value) {
+		
+		int len = longLength(value);
+		
+		ByteBuffer output = ByteBuffer.allocate(len);
+		
+		for(int j=len; j>0; j--) {
+			long digit = (long) (value/Math.pow(10,j-1));
+			output.put((byte) (digit + '0'));
+			value = (long) (value - digit * Math.pow(10,j-1));
+		}
+		
+		return output.array();
+	}
+	
+	public static int longLength(long value) {
+		
+		if (value == 0)
+			return 1;
+		
+		int length = 0;
+		
+		while(value != 0) {
+			value/=10;
+			length++;
+		}
+		
+		return length;
 	}
 }
