@@ -142,16 +142,17 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     			if (c == CR.getValue())
     				headerState = HeaderState.END_LINE_CR;
     			else {
-    				headerName.put((byte) Character.toLowerCase(c));
-    				
     				//to avoid buffer overflow
-    				if (headerName.position() > MAX_CRAZYPROTOCOL_HEADER_LEN){
-        				
+    				if (headerName.position() >= MAX_CRAZYPROTOCOL_HEADER_LEN){
+    					
     					headerName.flip();
     					outputGenerator.generateOutput(headerName, 
     							CrazyProtocolInputError.TOO_LONG, output);
     					handleHeaderError();
     				}
+
+    				headerName.put((byte) Character.toLowerCase(c));
+    				
     			}
     			
     			break;
@@ -340,15 +341,15 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				if (c == CR.getValue())					
 					contentState = ContentState.END_LINE_CR;
 				else {
-					methodName.put((byte) Character.toUpperCase(c));	
 					
 					//to avoid buffer overflow
-					if (methodName.position() > MAX_METHOD_LEN + 1) {
+					if (methodName.position() >= MAX_METHOD_LEN) {
 	    				methodName.flip();
 						outputGenerator.generateOutput(methodName, 
 	    						CrazyProtocolInputError.TOO_LONG, output);
 						handleContentError();
 					}
+					methodName.put((byte) Character.toUpperCase(c));	
 				}
 	
 				break;

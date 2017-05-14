@@ -1,7 +1,6 @@
 package tp.pdc.proxy.parser.protocol;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -11,7 +10,6 @@ import org.junit.Test;
 
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
 public class CrazyProtocolExceptionRequestsTest {
@@ -32,13 +30,13 @@ public class CrazyProtocolExceptionRequestsTest {
 	public void testTooLongHeader() throws UnsupportedEncodingException {
 				
 		String protocolInput =  
-				"lalalalalalalalalalallalalalalalalalalalalalallalalalalalalalallalalalallalalalalalalal\r\n"
+				"client_bytes_writtenn\r\n"
 				+ "comova??\r\n"
 				+ "end\r\n";
 				
 		
 		String expectedOutput =
-				"-[TOO_LONG]lalalalalalalalalalal[...]\r\n"
+				"-[TOO_LONG]client_bytes_written[...]\r\n"
 		+		"+end\r\n";
 				
 		
