@@ -22,6 +22,7 @@ public class CrazyProtocolOutputGenerator {
 	public CrazyProtocolOutputGenerator() {
 		clientMetrics = ClientMetricImpl.getInstance();
 		serverMetrics = ServerMetricImpl.getInstance();
+		//TODO: sacarlo de properties
 		remainingBytes = ByteBuffer.allocate(4000);
 	}
 	
@@ -177,12 +178,7 @@ public class CrazyProtocolOutputGenerator {
 	}
 	
 	private void putEnd(ByteBuffer output) {
-		
-		putCRLF(output);
-		
-		put(CrazyProtocolHeader.END.getBytes(), output);
-		
-		putCRLF(output);
+		generateOutput(CrazyProtocolHeader.END, output);
 	}
 	
 	private void put(byte[] input, ByteBuffer output) {

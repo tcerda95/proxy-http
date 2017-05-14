@@ -134,6 +134,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     				if (headerName.position() == 0)
     					headerName.put(c);
     				
+    				headerName.flip();
     				outputGenerator.generateOutput(headerName, CrazyProtocolInputError.NOT_VALID, output);
     				handleHeaderError();
     			}
@@ -146,6 +147,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     				//to avoid buffer overflow
     				if (headerName.position() > MAX_CRAZYPROTOCOL_HEADER_LEN){
         				
+    					headerName.flip();
     					outputGenerator.generateOutput(headerName, 
     							CrazyProtocolInputError.TOO_LONG, output);
     					handleHeaderError();
@@ -157,6 +159,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     		case END_LINE_CR:
     			
     			if (c != LF.getValue()) {
+    				headerName.flip();
     				outputGenerator.generateOutput(headerName, 
     						CrazyProtocolInputError.NOT_VALID, output);
     				handleParserError();
@@ -327,6 +330,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     				if (methodName.position() == 0)
     					methodName.put(c);
     				
+    				methodName.flip();
     				outputGenerator.generateOutput(methodName, 
     						CrazyProtocolInputError.NOT_VALID, output);
     				
@@ -340,7 +344,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 					
 					//to avoid buffer overflow
 					if (methodName.position() > MAX_METHOD_LEN + 1) {
-	    				outputGenerator.generateOutput(methodName, 
+	    				methodName.flip();
+						outputGenerator.generateOutput(methodName, 
 	    						CrazyProtocolInputError.TOO_LONG, output);
 						handleContentError();
 					}
@@ -375,15 +380,15 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			
 			case METHOD_COUNT:
 				
+				methodName.flip();
+
 				if (c != LF.getValue()) {
-					
 					outputGenerator.generateOutput(methodName, 
     						CrazyProtocolInputError.NOT_VALID, output);
 					
 					handleContentError();
 				}
 				
-				methodName.flip();
     	        int argumentLen = methodName.remaining();
     	        
     	        Method currentMethod = Method.getByBytes(methodName,

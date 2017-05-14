@@ -5,7 +5,7 @@ import tp.pdc.proxy.ProxyProperties;
 public enum CrazyProtocolInputError {
 
 	NO_MATCH("[NO_MATCH]"),
-	//if one of the following codes are generated the request is considered invalid -> Goodbye!
+	//if one of the following codes are generated the request is considered invalid
 	NOT_VALID("[NOT_VALID]"),
 	TOO_LONG("[TOO_LONG]");
 
