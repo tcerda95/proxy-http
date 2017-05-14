@@ -53,7 +53,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		
 		
 		String protocolInput =  
-				"l33tenable\r\n"
+				"\r\n"
 				+ "l33tEnaBle\r\n"
 				+ "server_bytes_read\r\n"
 				+ "server_bytes_written\r\n"
@@ -75,7 +75,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 				+ "ENd\r\n";
 		
 		String expectedOutput =
-				"+l33tenable\r\n"
+				"-[NO_MATCH]\r\n"
 				+ "+l33tenable\r\n"
 				+ "+server_bytes_read: 2\r\n"
 				+ "+server_bytes_written: 3\r\n"

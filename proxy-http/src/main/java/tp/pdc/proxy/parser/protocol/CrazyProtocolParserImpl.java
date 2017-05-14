@@ -108,8 +108,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	    			break;
 	    		
 	    		case READ_ARGUMENT_COUNT:
-	    			// argument count or size doesn't generate output (*n\r\n)
-	    			parseArgumentCount(c);	  
+	    			parseArgumentCount(c, output);	  
 	    			break;
 	    			
 	    		case READ_CONTENT:
@@ -130,8 +129,14 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			
     		case START:
     			
-    			if (!ParseUtils.isAlphaNumerical(c) && c != CR.getValue() && c != US.getValue())
+    			if (!ParseUtils.isAlphaNumerical(c) && c != CR.getValue() && c != US.getValue()) {
+    				
+    				if (headerName.position() == 0)
+    					headerName.put(c);
+    				
+    				outputGenerator.generateOutput(headerName, CrazyProtocolInputError.NOT_VALID, output);
     				handleHeaderError();
+    			}
     			
     			if (c == CR.getValue())
     				headerState = HeaderState.END_LINE_CR;
@@ -139,23 +144,27 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     				headerName.put((byte) Character.toLowerCase(c));
     				
     				//to avoid buffer overflow
-    				if (headerName.position() > MAX_CRAZYPROTOCOL_HEADER_LEN + 1)
+    				if (headerName.position() > MAX_CRAZYPROTOCOL_HEADER_LEN){
+        				
+    					outputGenerator.generateOutput(headerName, 
+    							CrazyProtocolInputError.TOO_LONG, output);
     					handleHeaderError();
+    				}
     			}
     			
     			break;
     		
     		case END_LINE_CR:
     			
-    			if (c != LF.getValue())
+    			if (c != LF.getValue()) {
+    				outputGenerator.generateOutput(headerName, 
+    						CrazyProtocolInputError.NOT_VALID, output);
     				handleParserError();
+    			}
     			
     			headerName.flip();
     	        int nameLen = headerName.remaining();
     			currentHeader = CrazyProtocolHeader.getHeaderByBytes(headerName, nameLen);
-    			
-    			if (currentHeader == null)
-    				handleHeaderError();
     				
     			if (currentHeader == CrazyProtocolHeader.END)
     				parserState = ParserState.END_OK;
@@ -169,8 +178,12 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     			else		
     				headerState = HeaderState.START;
      			
-    			outputGenerator.generateOutput(currentHeader, output);
-    			
+    			if (currentHeader != null)
+    				outputGenerator.generateOutput(currentHeader, output);
+    			else
+    				outputGenerator.generateOutput(headerName, CrazyProtocolInputError.NO_MATCH, 
+    						output);
+    				
     			if (!headerReceivesArguments(currentHeader))
     				clearCurrentHeader();
     			
@@ -182,15 +195,17 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	}
 	
 	//only called by headers that receive arguments
-	public void parseArgumentCount(byte c) throws ParserFormatException {
+	public void parseArgumentCount(byte c, ByteBuffer output) throws ParserFormatException {
 
 		switch(argumentCountState) {
 		// solo va a aceptar numeros decimales por ahora
 			
 			case START:
 				
-				if (c != AS.getValue())
+				if (c != AS.getValue()) {
+					byteOutputInputError(output, c, CrazyProtocolInputError.NOT_VALID);
 					handleArgumentCountError();
+				}
 				
 				argumentCountState = ArgumentCountState.ASTERISK;
 				
@@ -198,28 +213,35 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				
 			case ASTERISK:
 				
-				if (!ParseUtils.isDigit(c) && c != CR.getValue())
+				if (!ParseUtils.isDigit(c) && c != CR.getValue()) {
+					byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
 					handleArgumentCountError();
+				}
 				
 				if (c == CR.getValue()) {
-					if (argumentCount == 0)
+					if (argumentCount == 0) {
+						byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
 						handleArgumentCountError();
-					
+					}
 					argumentCountState = ArgumentCountState.END_LINE_CR;
 				}
 				else {
 					argumentCount = argumentCount*DECIMAL_BASE_VALUE.getValue() + c - '0';
 					
-					if (argumentCount > MAX_ARG_COUNT)
+					if (argumentCount > MAX_ARG_COUNT) {
+						byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.TOO_LONG);
 						handleArgumentCountError();
+					}
 				}
 				
 				break;
 		
 			case END_LINE_CR:
 				
-				if (c != LF.getValue())
+				if (c != LF.getValue()) {
+					byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
 					handleArgumentCountError();
+				}
 				
 				argumentCountState = ArgumentCountState.END_OK;
 				contentState = ContentState.START;
@@ -243,25 +265,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				break;
 				
 			case END_LINE_CR:
-				
-				if (c != LF.getValue())
-					handleContentError();
-				
-				argumentCount--;
-				
-				if (argumentCount == 0) {
-					
-					contentState = ContentState.END_OK;
-					headerState = HeaderState.START;
-					parserState = ParserState.READ_HEADER;
-					
-					clearCurrentHeader();
-				}
-				else
-					contentState = ContentState.START;
-				
-				break;
-					
+				contentEndLineCase(c, output);
+				break;					
 					
 			default:
 				handleContentError();
@@ -275,32 +280,41 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		
 			case STATUS_CODE_COUNT:
 				
-				if (!ParseUtils.isDigit(c) && c != CR.getValue())
+				if (!ParseUtils.isDigit(c) && c != CR.getValue()) {
+					
+					if (statusCodeLen == 0) {
+						byteOutputInputError(output, c, CrazyProtocolInputError.NOT_VALID);
+					}
+					else {
+						
+						byte[] parsedBytes = ParseUtils.parseInt(currentStatusCode);
+						outputGenerator.generateOutput(ByteBuffer.wrap(parsedBytes), 
+								CrazyProtocolInputError.NOT_VALID, output);
+					}
 					handleContentError();
-				
-				if (c == CR.getValue()) {						
-	    	        
-	    	        if (statusCodeLen != HTTP_STATUSCODE_LEN)
-	    	        	handleContentError();
-					
-					outputGenerator.generateOutput(currentStatusCode, output);
-
-					statusCodeLen = 0;
-					currentStatusCode = 0;
-					
-					contentState = ContentState.END_LINE_CR;
 				}
+				
+				if (c == CR.getValue())
+					contentState = ContentState.END_LINE_CR;
 				else {
 					statusCodeLen++;
 					
 					currentStatusCode = currentStatusCode*DECIMAL_BASE_VALUE.getValue() + c - '0';
 					
-					if (statusCodeLen == 1 && currentStatusCode > MAX_MOST_SIGNIFICATIVE_STATUSCODE_DIGIT)
+					if (statusCodeLen == 1 && currentStatusCode > MAX_MOST_SIGNIFICATIVE_STATUSCODE_DIGIT) {
+						byte[] parsedBytes = ParseUtils.parseInt(currentStatusCode);
+						outputGenerator.generateOutput(ByteBuffer.wrap(parsedBytes), 
+								CrazyProtocolInputError.NOT_VALID, output);
 						handleContentError();
+					}
 					
 					//to avoid buffer overflow
-					if (statusCodeLen > HTTP_STATUSCODE_LEN + 1)
+					if (statusCodeLen > HTTP_STATUSCODE_LEN) {
+						byte[] parsedBytes = ParseUtils.parseInt(currentStatusCode);
+						outputGenerator.generateOutput(ByteBuffer.wrap(parsedBytes), 
+								CrazyProtocolInputError.TOO_LONG, output);
 						handleContentError();
+					}	
 				}
 				
 				break;
@@ -308,31 +322,28 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			
 			case METHOD_COUNT: 
 				
-				if (!ParseUtils.isAlphabetic(c) && c != CR.getValue())
-					handleContentError();
-				
-				if (c == CR.getValue()) {						
-					methodName.flip();
-	    	        int argumentLen = methodName.remaining();
-	    	        
-	    	        Method currentMethod = Method.getByBytes(methodName,
-	    	        		argumentLen);
-	    	        
-	    	        if (currentMethod == null)
-	    	        	handleContentError();
-	    	        
-	    	        outputGenerator.generateOutput(currentMethod, output);
-	    	        
-	    	        methodName.clear();
+				if (!ParseUtils.isAlphabetic(c) && c != CR.getValue()) {
 					
-					contentState = ContentState.END_LINE_CR;
+    				if (methodName.position() == 0)
+    					methodName.put(c);
+    				
+    				outputGenerator.generateOutput(methodName, 
+    						CrazyProtocolInputError.NOT_VALID, output);
+    				
+					handleContentError();
 				}
+				
+				if (c == CR.getValue())					
+					contentState = ContentState.END_LINE_CR;
 				else {
 					methodName.put((byte) Character.toUpperCase(c));	
 					
 					//to avoid buffer overflow
-					if (methodName.position() > MAX_METHOD_LEN + 1)
+					if (methodName.position() > MAX_METHOD_LEN + 1) {
+	    				outputGenerator.generateOutput(methodName, 
+	    						CrazyProtocolInputError.TOO_LONG, output);
 						handleContentError();
+					}
 				}
 	
 				break;
@@ -341,6 +352,79 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				handleContentError();
 		}
 		
+	}
+	
+	private void contentEndLineCase(byte c, ByteBuffer output) throws ParserFormatException {
+		
+		switch (currentHeader) {
+			
+			case STATUS_CODE_COUNT:
+				
+				if (c != LF.getValue())
+					handleContentError();
+				
+    	        if (statusCodeLen != HTTP_STATUSCODE_LEN)
+    	        	handleContentError();
+				
+				outputGenerator.generateOutput(currentStatusCode, output);
+
+				statusCodeLen = 0;
+				currentStatusCode = 0;
+				
+				break;
+			
+			case METHOD_COUNT:
+				
+				if (c != LF.getValue()) {
+					
+					outputGenerator.generateOutput(methodName, 
+    						CrazyProtocolInputError.NOT_VALID, output);
+					
+					handleContentError();
+				}
+				
+				methodName.flip();
+    	        int argumentLen = methodName.remaining();
+    	        
+    	        Method currentMethod = Method.getByBytes(methodName,
+    	        		argumentLen);
+    	        
+    	        if (currentMethod == null)
+    				outputGenerator.generateOutput(methodName, 
+    						CrazyProtocolInputError.NO_MATCH, output);
+    	        
+    	        else
+    	        	outputGenerator.generateOutput(currentMethod, output);
+    	        
+    	        methodName.clear();
+			
+				break;
+				
+			default:
+				handleContentError();
+		}
+		
+		argumentCount--;
+		
+		if (argumentCount == 0) {
+			
+			contentState = ContentState.END_OK;
+			headerState = HeaderState.START;
+			parserState = ParserState.READ_HEADER;
+			
+			clearCurrentHeader();
+		}
+		else
+			contentState = ContentState.START;
+		
+		
+	}
+
+	
+	private void byteOutputInputError(ByteBuffer output, byte c, CrazyProtocolInputError error) {
+		ByteBuffer characterWrapped = ByteBuffer.allocate(1);
+		characterWrapped.put(c);
+		outputGenerator.generateOutput(characterWrapped, error, output);
 	}
 	
 	@Override

@@ -95,9 +95,6 @@ public class CrazyProtocolOutputGenerator {
 				
 			case END:				
 				break;
-				
-			default:
-				break;
 		}
 		
 		if (header != CrazyProtocolHeader.METRICS)
@@ -124,6 +121,32 @@ public class CrazyProtocolOutputGenerator {
 		putCRLF(output);
 	}
 	
+	public void generateOutput(ByteBuffer input, CrazyProtocolInputError errorCode, ByteBuffer output) {
+		
+		put((byte) '-', output);
+		
+		put(errorCode.getBytes(), output);
+		
+		put(input, output);
+		
+		switch (errorCode) {
+		
+			case NO_MATCH:
+				putCRLF(output);
+				break;
+				
+			case NOT_VALID:
+				putMightContinue(output);
+				putEnd(output);
+				break;
+				
+			case TOO_LONG:
+				putMightContinue(output);
+				putEnd(output);
+				break;
+		}
+	}
+	
 	private void putHeader(byte[] bytes, ByteBuffer output) {
 				
 		put((byte) '+', output);
@@ -143,10 +166,32 @@ public class CrazyProtocolOutputGenerator {
 		put((byte) '\n', output);
 	}
 	
-	private void put(byte[] bytes, ByteBuffer output) {
+	private void putMightContinue(ByteBuffer output) {
+		put((byte) '[', output);
+		put((byte) '.', output);
+		put((byte) '.', output);
+		put((byte) '.', output);
+		put((byte) ']', output);
 		
-		for (byte c : bytes)
-			put(c, output);
+		putCRLF(output);
+	}
+	
+	private void putEnd(ByteBuffer output) {
+		
+		putCRLF(output);
+		
+		put(CrazyProtocolHeader.END.getBytes(), output);
+		
+		putCRLF(output);
+	}
+	
+	private void put(byte[] input, ByteBuffer output) {
+		put(ByteBuffer.wrap(input), output);
+	}
+	
+	private void put(ByteBuffer input, ByteBuffer output) {
+		while (input.hasRemaining())
+			put(input.get(), output);
 	}
 	
 	private void put(byte c, ByteBuffer output) {
