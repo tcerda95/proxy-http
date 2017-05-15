@@ -277,4 +277,142 @@ public class CrazyProtocolExceptionRequestsTest {
 		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
 
 	}
+	
+	@Test
+	public void testNotValidBisStatusCount() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "status_code_count\r\n"
+				+ "*3\r\n"
+				+ "00000013\r\n"
+				+ "0000000000000404\r\n"
+				+ "606\r\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+status_code_count\r\n"
+				+ "-[NOT_VALID]13[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+
+	@Test
+	public void testNotValidArgSize() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "status_code_count\r\n"
+				+ "*0\r\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+status_code_count\r\n"
+				+ "-[NOT_VALID]*[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidArgSizeBis() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "status_code_count\r\n"
+				+ "*19\r\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+status_code_count\r\n"
+				+ "-[NOT_VALID]*[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidAsteriskNotPresent() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "status_code_count\r\n"
+				+ "\r\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+status_code_count\r\n"
+				+ "-[NOT_VALID]\r[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidArgSizeNotPresent() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "status_code_count\r\n"
+				+ "*\r\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+status_code_count\r\n"
+				+ "-[NOT_VALID]*[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
 }

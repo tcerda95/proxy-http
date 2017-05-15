@@ -237,7 +237,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 					argumentCount = argumentCount*DECIMAL_BASE_VALUE.getValue() + c - '0';
 					
 					if (argumentCount > MAX_ARG_COUNT) {
-						byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.TOO_LONG);
+						byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
 						handleArgumentCountError();
 					}
 				}
@@ -448,6 +448,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	private void byteOutputInputError(ByteBuffer output, byte c, CrazyProtocolInputError error) {
 		ByteBuffer characterWrapped = ByteBuffer.allocate(1);
 		characterWrapped.put(c);
+		characterWrapped.flip();
 		outputGenerator.generateOutput(characterWrapped, error, output);
 	}
 	
