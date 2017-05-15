@@ -78,6 +78,14 @@ public class ProxyProperties {
 	public final int getConnectionQueueLength() {
 		return Integer.parseInt(properties.getProperty("connection.queue.length"));
 	}
+	
+	public final int getConnectionTimeToLive() {
+		return Integer.parseInt(properties.getProperty("connection.ttl"));
+	}
+	
+	public final int getConnectionCleanRate() {
+		return Integer.parseInt(properties.getProperty("connection.clean.rate"));
+	}
 
 	public Set<Method> getAcceptedMethods() {
 		return ACCEPTED_METHODS;

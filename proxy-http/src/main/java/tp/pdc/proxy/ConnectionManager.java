@@ -7,7 +7,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,24 +21,30 @@ import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.structures.ArrayQueue;
 import tp.pdc.proxy.structures.FixedLengthQueue;
+import tp.pdc.proxy.time.ExpirableContainer;
 
 public class ConnectionManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
-	private static final ConnectionManager INSTANCE = new ConnectionManager();
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	private static final ConnectionManager INSTANCE = new ConnectionManager();
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 	private static final int QUEUE_LENGTH = PROPERTIES.getConnectionQueueLength();
+	private static final int CONNECTION_TTL = PROPERTIES.getConnectionTimeToLive();
 	
-	private final Map<SocketAddress, FixedLengthQueue<SelectionKey>> connections;
+	private final Map<SocketAddress, FixedLengthQueue<ExpirableContainer<SelectionKey>>> connections;
+	private final long cleanRate;
+	private long cleanTime;
 	
 	private ConnectionManager() {
 		connections = new HashMap<>();
+		cleanRate = TimeUnit.SECONDS.toMillis(PROPERTIES.getConnectionCleanRate());
+		cleanTime = System.currentTimeMillis() + cleanRate;
 	}
 	
 	public static final ConnectionManager getInstance() {
 		return INSTANCE;
 	}
-
+	
 	public boolean connect(Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
 		if (connections.containsKey(address)) {
 			LOGGER.debug("Attempting to reuse connection");
@@ -47,12 +55,11 @@ public class ConnectionManager {
 	}
 	
 	private boolean reuseConnection(Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
-		FixedLengthQueue<SelectionKey> connectionQueue = connections.get(address);
+		FixedLengthQueue<ExpirableContainer<SelectionKey>> connectionQueue = connections.get(address);
 		SelectionKey serverKey = retrieveValidKey(connectionQueue);
 		
 		if (serverKey == null) {
 			LOGGER.debug("Cannot reuse: server closed connection");
-			connections.remove(address);
 			return establishConnection(method, address, clientKey);
 		}
 		else {
@@ -73,12 +80,12 @@ public class ConnectionManager {
 		}
 	}
 	
-	private SelectionKey retrieveValidKey(FixedLengthQueue<SelectionKey> connectionQueue) throws IOException {		
+	private SelectionKey retrieveValidKey(FixedLengthQueue<ExpirableContainer<SelectionKey>> connectionQueue) throws IOException {		
 		while (!connectionQueue.isEmpty()) {
-			SelectionKey key = connectionQueue.remove();
-			SocketChannel serverSocket = (SocketChannel) key.channel();
+			SelectionKey key = connectionQueue.remove().getElement();
 			
 			if (key.isValid()) {
+				SocketChannel serverSocket = (SocketChannel) key.channel();
 				ByteBuffer serverReadBuffer = ((HttpServerProxyHandler) key.attachment()).getReadBuffer();
 				if (serverSocket.read(serverReadBuffer) != -1)
 					return key;
@@ -131,20 +138,56 @@ public class ConnectionManager {
 		
 		serverHandler.reset();
 		
-		storeKey(serverKey, serverChannel.getRemoteAddress());
+		storeKey(serverChannel.getRemoteAddress(), serverKey);
 	}
 
-	// TODO: timers
-	private void storeKey(SelectionKey serverKey, SocketAddress remoteAddress) {
-		FixedLengthQueue<SelectionKey> connectionQueue;
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void storeKey(SocketAddress remoteAddress, SelectionKey serverKey) {
+		FixedLengthQueue<ExpirableContainer<SelectionKey>> connectionQueue;
 		
 		if (connections.containsKey(remoteAddress))
 			connectionQueue = connections.get(remoteAddress);
 		else {
-			connectionQueue = new ArrayQueue<>(SelectionKey.class, QUEUE_LENGTH);
+			connectionQueue = new ArrayQueue(ExpirableContainer.class, QUEUE_LENGTH);
 			connections.put(remoteAddress, connectionQueue);
 		}
 		
-		connectionQueue.add(serverKey);
+		connectionQueue.add(new ExpirableContainer<SelectionKey>(serverKey, CONNECTION_TTL, TimeUnit.SECONDS));
+	}
+	
+	public void clean() {
+		long currentTime = System.currentTimeMillis();
+		
+		if (currentTime > cleanTime) {
+			LOGGER.debug("Clean time!");
+
+			cleanTime = currentTime + cleanRate;
+			
+			Iterator<FixedLengthQueue<ExpirableContainer<SelectionKey>>> iter = connections.values().iterator();
+			
+			while (iter.hasNext()) {
+				FixedLengthQueue<ExpirableContainer<SelectionKey>> queue = iter.next();
+				removeExpiredKeys(queue);
+				if(queue.isEmpty()) {
+					LOGGER.debug("Removed empty queue");
+					iter.remove();
+				}
+			}
+		}
+	}
+	
+	private void removeExpiredKeys(FixedLengthQueue<ExpirableContainer<SelectionKey>> queue) {
+		while (!queue.isEmpty() && queue.peek().hasExpired()) { // oldest keys are first on queue
+			LOGGER.debug("Cleaned expired key");
+			
+			SelectionKey key = queue.remove().getElement();
+			
+			try {
+				key.channel().close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to close channel during conneciton clean");
+				e.printStackTrace();
+			}
+		}
 	}
 }

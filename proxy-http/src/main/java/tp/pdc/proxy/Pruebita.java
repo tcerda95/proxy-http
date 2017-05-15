@@ -19,6 +19,7 @@ public class Pruebita {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
 	
 	private final Selector selector;
 	private final int proxyPort;
@@ -61,6 +62,7 @@ public class Pruebita {
 			
 			Set<SelectionKey> keySet = selector.selectedKeys();			
 			Iterator<SelectionKey> keyIter = keySet.iterator();
+			
 			while (keyIter.hasNext()) {
 				SelectionKey key = keyIter.next();
 				keyIter.remove();
@@ -81,6 +83,8 @@ public class Pruebita {
 					protocol.handleWrite(key);
 				}
 			}
+			
+			CONNECTION_MANAGER.clean();
 		}
 	}
 	
