@@ -174,27 +174,29 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     	        int nameLen = headerName.remaining();
     			currentHeader = CrazyProtocolHeader.getHeaderByBytes(headerName, nameLen);
     				
-    			if (currentHeader == CrazyProtocolHeader.END)
-    				parserState = ParserState.END_OK;
-    			    				
-    			else if (headerReceivesArguments(currentHeader)) {
-    				headerState = HeaderState.END_OK;
-    				argumentCountState = ArgumentCountState.START;
-    				contentState = ContentState.NOT_READ_YET;
-    				parserState = ParserState.READ_ARGUMENT_COUNT;
-    			}
-    			else		
-    				headerState = HeaderState.START;
-     			
-    			if (currentHeader != null)
+    			if (currentHeader != null) {
     				outputGenerator.generateOutput(currentHeader, output);
-    			else
+    				
+    				if (currentHeader == CrazyProtocolHeader.END)
+        				parserState = ParserState.END_OK;
+        			    				
+        			else if (headerReceivesArguments(currentHeader)) {
+        				headerState = HeaderState.END_OK;
+        				argumentCountState = ArgumentCountState.START;
+        				contentState = ContentState.NOT_READ_YET;
+        				parserState = ParserState.READ_ARGUMENT_COUNT;
+        			}
+        			else {
+        				headerState = HeaderState.START;
+        				clearCurrentHeader();
+        			}
+    			}
+    			else {
     				outputGenerator.generateOutput(headerName, CrazyProtocolInputError.NO_MATCH, 
     						output);
-    				
-    			if (!headerReceivesArguments(currentHeader))
+    				headerState = HeaderState.START;
     				clearCurrentHeader();
-    			
+    			}
     			break;
     			
     		default:
