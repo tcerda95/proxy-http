@@ -122,6 +122,13 @@ public class CrazyProtocolOutputGenerator {
 		putCRLF(output);
 	}
 	
+	public void generateOutput(byte c, CrazyProtocolInputError errorCode, ByteBuffer output) {
+		ByteBuffer characterWrapped = ByteBuffer.allocate(1);
+		characterWrapped.put(c);
+		characterWrapped.flip();
+		generateOutput(characterWrapped, errorCode, output);
+	}
+	
 	public void generateOutput(byte[] input, CrazyProtocolInputError errorCode, ByteBuffer output) {
 		generateOutput(ByteBuffer.wrap(input), errorCode, output);
 	}

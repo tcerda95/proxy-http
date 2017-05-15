@@ -211,7 +211,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			case START:
 				
 				if (c != AS.getValue()) {
-					byteOutputInputError(output, c, CrazyProtocolInputError.NOT_VALID);
+					outputGenerator.generateOutput(c, 
+							CrazyProtocolInputError.NOT_VALID, output);
 					handleArgumentCountError();
 				}
 				
@@ -222,13 +223,15 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			case ASTERISK:
 				
 				if (!ParseUtils.isDigit(c) && c != CR.getValue()) {
-					byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
+					outputGenerator.generateOutput(AS.getValue(), 
+							CrazyProtocolInputError.NOT_VALID, output);
 					handleArgumentCountError();
 				}
 				
 				if (c == CR.getValue()) {
 					if (argumentCount == 0) {
-						byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
+						outputGenerator.generateOutput(AS.getValue(), 
+								CrazyProtocolInputError.NOT_VALID, output);
 						handleArgumentCountError();
 					}
 					argumentCountState = ArgumentCountState.END_LINE_CR;
@@ -237,7 +240,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 					argumentCount = argumentCount*DECIMAL_BASE_VALUE.getValue() + c - '0';
 					
 					if (argumentCount > MAX_ARG_COUNT) {
-						byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
+						outputGenerator.generateOutput(AS.getValue(), 
+								CrazyProtocolInputError.NOT_VALID, output);
 						handleArgumentCountError();
 					}
 				}
@@ -247,7 +251,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			case END_LINE_CR:
 				
 				if (c != LF.getValue()) {
-					byteOutputInputError(output, AS.getValue(), CrazyProtocolInputError.NOT_VALID);
+					outputGenerator.generateOutput(AS.getValue(), 
+							CrazyProtocolInputError.NOT_VALID, output);
 					handleArgumentCountError();
 				}
 				
@@ -291,7 +296,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				if (!ParseUtils.isDigit(c) && c != CR.getValue()) {
 					
 					if (statusCodeLen == 0) {
-						byteOutputInputError(output, c, CrazyProtocolInputError.NOT_VALID);
+						outputGenerator.generateOutput(c,
+								CrazyProtocolInputError.NOT_VALID, output);
 					}
 					else {
 						outputGenerator.generateOutput(ParseUtils.parseInt(currentStatusCode), 
@@ -442,14 +448,6 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			contentState = ContentState.START;
 		
 		
-	}
-
-	
-	private void byteOutputInputError(ByteBuffer output, byte c, CrazyProtocolInputError error) {
-		ByteBuffer characterWrapped = ByteBuffer.allocate(1);
-		characterWrapped.put(c);
-		characterWrapped.flip();
-		outputGenerator.generateOutput(characterWrapped, error, output);
 	}
 	
 	@Override
