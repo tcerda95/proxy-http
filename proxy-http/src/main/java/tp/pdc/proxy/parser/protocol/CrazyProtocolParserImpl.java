@@ -77,6 +77,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	
 	private CrazyProtocolOutputGenerator outputGenerator;
 	
+	private boolean significativeZero;
+	
 	//TODO: no necesariamente el mismo máximo que el de los headers HTTP
     private static final int HEADER_NAME_SIZE = ProxyProperties.getInstance().getHeaderNameBufferSize();
     private static final int HEADER_CONTENT_SIZE = ProxyProperties.getInstance().getHeaderContentBufferSize();
@@ -94,6 +96,8 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     	statusCodeLen = 0;
     	
     	outputGenerator = new CrazyProtocolOutputGenerator();
+    	
+    	significativeZero = false;
     }
 
     @Override
@@ -290,9 +294,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 						byteOutputInputError(output, c, CrazyProtocolInputError.NOT_VALID);
 					}
 					else {
-						
-						byte[] parsedBytes = ParseUtils.parseInt(currentStatusCode);
-						outputGenerator.generateOutput(ByteBuffer.wrap(parsedBytes), 
+						outputGenerator.generateOutput(ParseUtils.parseInt(currentStatusCode), 
 								CrazyProtocolInputError.NOT_VALID, output);
 					}
 					handleContentError();
@@ -301,24 +303,28 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				if (c == CR.getValue())
 					contentState = ContentState.END_LINE_CR;
 				else {
-					statusCodeLen++;
 					
-					currentStatusCode = currentStatusCode*DECIMAL_BASE_VALUE.getValue() + c - '0';
+					int digit = c - '0';
 					
-					if (statusCodeLen == 1 && currentStatusCode > MAX_MOST_SIGNIFICATIVE_STATUSCODE_DIGIT) {
-						byte[] parsedBytes = ParseUtils.parseInt(currentStatusCode);
-						outputGenerator.generateOutput(ByteBuffer.wrap(parsedBytes), 
-								CrazyProtocolInputError.NOT_VALID, output);
+					if (digit != 0)
+						significativeZero = true;
+						
+					if (significativeZero)
+						statusCodeLen++;
+					
+					if (statusCodeLen > HTTP_STATUSCODE_LEN) {
+						outputGenerator.generateOutput(ParseUtils.parseInt(currentStatusCode), 
+								CrazyProtocolInputError.TOO_LONG, output);
 						handleContentError();
 					}
 					
-					//to avoid buffer overflow
-					if (statusCodeLen > HTTP_STATUSCODE_LEN) {
-						byte[] parsedBytes = ParseUtils.parseInt(currentStatusCode);
-						outputGenerator.generateOutput(ByteBuffer.wrap(parsedBytes), 
-								CrazyProtocolInputError.TOO_LONG, output);
+					currentStatusCode = currentStatusCode*DECIMAL_BASE_VALUE.getValue() + digit;
+					
+					if (statusCodeLen == 1 && currentStatusCode > MAX_MOST_SIGNIFICATIVE_STATUSCODE_DIGIT) {
+						outputGenerator.generateOutput(ParseUtils.parseInt(currentStatusCode), 
+								CrazyProtocolInputError.NOT_VALID, output);
 						handleContentError();
-					}	
+					}
 				}
 				
 				break;
@@ -366,15 +372,27 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			
 			case STATUS_CODE_COUNT:
 				
-				if (c != LF.getValue())
+				if (c != LF.getValue()) {
+					outputGenerator.generateOutput(ParseUtils.parseInt(currentStatusCode), 
+							CrazyProtocolInputError.NOT_VALID, output);
 					handleContentError();
+				}
 				
-    	        if (statusCodeLen != HTTP_STATUSCODE_LEN)
-    	        	handleContentError();
-				
-				outputGenerator.generateOutput(currentStatusCode, output);
+    	        if (statusCodeLen != HTTP_STATUSCODE_LEN) {
+    	        	
+    	        	if (statusCodeLen == 0)
+    	        		outputGenerator.generateOutput(CrazyProtocolInputError.NO_MATCH, output);
+    	        	else {
+    	        		outputGenerator.generateOutput(ParseUtils.parseInt(currentStatusCode), 
+							CrazyProtocolInputError.NOT_VALID, output);
+    	        		handleContentError();
+    	        	}
+    	        }
+    	        else
+    	        	outputGenerator.generateOutput(currentStatusCode, output);
 
-				statusCodeLen = 0;
+				significativeZero = false;
+    	        statusCodeLen = 0;
 				currentStatusCode = 0;
 				
 				break;
@@ -448,6 +466,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		argumentCount = 0;
 		statusCodeLen = 0;
 		currentStatusCode = 0;
+		significativeZero = false;
 	}
 	
 	private boolean headerReceivesArguments(CrazyProtocolHeader header) {

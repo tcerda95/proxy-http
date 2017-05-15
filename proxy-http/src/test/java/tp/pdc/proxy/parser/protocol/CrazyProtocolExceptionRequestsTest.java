@@ -104,21 +104,29 @@ public class CrazyProtocolExceptionRequestsTest {
 	
 	@Test
 	public void testTooLongMethod() throws UnsupportedEncodingException {
-				
+		
 		String protocolInput =  
-				"lalala\r\n"
+				"lala8\r\n"
 				+ "method_count\r\n"
-				+ "*2\r\n"
-				+ "LOLOLOLOLOLOL\r\n"
-				+ "GEt\r\n"
+				+ "*6\r\n"
+				+ "GE\r\n"
+				+ "GET\r\n"
+				+ "\r\n"
+				+ "oPTIONs\r\n"
+				+ "OPCIONES\r\n"
+				+ "GET\r\n"
 				+ "end\r\n";
 				
 		
 		String expectedOutput =
-				"-[NO_MATCH]lalala\r\n"
+				"-[NO_MATCH]lala8\r\n"
 				+ "+method_count\r\n"
-				+ "-[TOO_LONG]LOLOLOL[...]\r\n"
-		+		"+end\r\n";
+				+ "-[NO_MATCH]GE\r\n"
+				+ "+GET: 0\r\n"
+				+ "-[NO_MATCH]\r\n"
+				+ "+OPTIONS: 0\r\n"
+				+ "-[TOO_LONG]OPCIONE[...]\r\n"
+				+ "+end\r\n";
 				
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
@@ -128,5 +136,145 @@ public class CrazyProtocolExceptionRequestsTest {
 		} catch (ParserFormatException e) {
 		}
 		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidMethod() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "method_count\r\n"
+				+ "*4\r\n"
+				+ "GE\r\n"
+				+ "GET\r\n"
+				+ "\r\n"
+				+ "GET\n\r"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+method_count\r\n"
+				+ "-[NO_MATCH]GE\r\n"
+				+ "+GET: 0\r\n"
+				+ "-[NO_MATCH]\r\n"
+				+ "-[NOT_VALID]GET[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidMethodBis() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "method_count\r\n"
+				+ "*4\r\n"
+				+ "GE\r\n"
+				+ "GET\r\n"
+				+ "\r\n"
+				+ "POS\rT\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+method_count\r\n"
+				+ "-[NO_MATCH]GE\r\n"
+				+ "+GET: 0\r\n"
+				+ "-[NO_MATCH]\r\n"
+				+ "-[NOT_VALID]POS[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testTooLongStatusCount() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "status_code_count\r\n"
+				+ "*6\r\n"
+				+ "100\r\n"
+				+ "101\r\n"
+				+ "\r\n"
+				+ "0\r\n"
+				+ "404\r\n"
+				+ "4040\r\n"
+				+ "server_bytes_written\r\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+status_code_count\r\n"
+				+ "+100: 0\r\n"
+				+ "+101: 0\r\n"
+				+ "-[NO_MATCH]\r\n"
+				+ "-[NO_MATCH]\r\n"
+				+ "+404: 0\r\n"
+				+ "-[TOO_LONG]404[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidStatusCount() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"lala8\r\n"
+				+ "status_code_count\r\n"
+				+ "*3\r\n"
+				+ "100\r\n"
+				+ "0000000000000404\r\n"
+				+ "606\r\n"
+				+ "end\r\n";
+				
+		
+		String expectedOutput =
+				"-[NO_MATCH]lala8\r\n"
+				+ "+status_code_count\r\n"
+				+ "+100: 0\r\n"
+				+ "+404: 0\r\n"
+				+ "-[NOT_VALID]6[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
 	}
 }
