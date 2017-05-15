@@ -108,13 +108,15 @@ public class HttpServerProxyHandler extends HttpHandler {
 				
 				socketChannel.close();
 				
-				if (bodyParser != null && bodyParser.hasFinished()) {
+				if (bodyParser != null && !shouldKeepAlive()) {
 					getClientHandler().setResponseProcessed();
 					LOGGER.debug("Registering client for write: client must consume EOF");
 					this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 				}
-				else
+				else if (bodyParser != null && shouldKeepAlive())
 					setResponseError(key, "Server EOF when should keep alive");
+				else
+					setResponseError(key, "Server EOF when headers not finished");
 				
 			}
 			else {
@@ -212,7 +214,6 @@ public class HttpServerProxyHandler extends HttpHandler {
 		
 		// TODO: en realidad solo hay q settear estado de error sin responder ningun codigo de error
 		getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey());
-		this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 	}
 	
 	private ClientHandlerState getClientState() {
