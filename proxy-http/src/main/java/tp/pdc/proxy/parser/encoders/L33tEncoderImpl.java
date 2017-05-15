@@ -1,51 +1,64 @@
 package tp.pdc.proxy.parser.encoders;
 
 import tp.pdc.proxy.parser.interfaces.l33tEncoder;
-// TODO: orientar a tablas all the things
+
 public class L33tEncoderImpl implements l33tEncoder {
+    private static final int US_ASCII_LENGTH = 128;
 
-    public byte encodeByte(byte c) {
-        switch (c) {
-            case 'a':
-                return '4';
+    private static byte[] encode;
+    private static byte[] decode;
 
-            case 'e':
-                return '3';
+    static {
+        encode = new byte[US_ASCII_LENGTH]; decode = new byte[US_ASCII_LENGTH];
+        for (int c = 0; c < 256; c++) {
+            switch (c) {
+                case 'a':
+                    encode[c] = '4';
+                    break;
+                case 'e':
+                    encode[c] = '3';
+                    break;
+                case 'i':
+                    encode[c] = '1';
+                    break;
+                case 'o':
+                    encode[c] = '0';
+                    break;
+                case 'c':
+                    encode[c] = '<';
+                    break;
+                default:
+                    encode[c] = (byte) c;
+            }
 
-            case 'i':
-                return '1';
-
-            case 'o':
-                return '0';
-
-            case 'c':
-                return '<';
-
-            default:
-                return c;
+            switch(c) {
+                case '4':
+                    decode[c] = 'a';
+                    break;
+                case '3':
+                    decode[c] = 'e';
+                    break;
+                case '1':
+                    decode[c] = 'i';
+                    break;
+                case '0':
+                    decode[c] = 'o';
+                    break;
+                case '<':
+                    decode[c] = 'c';
+                    break;
+                default:
+                    decode[c] = (byte) c;
+            }
         }
     }
 
+    public byte encodeByte(byte c) {
+        return encode[c];
+    }
+
     public byte decodeByte(byte c) {
-        switch(c){
-            case '4':
-                return 'a';
-
-            case '3':
-                return 'e';
-
-            case '1':
-                return 'i';
-
-            case '0':
-                return 'o';
-
-            case '<':
-                return 'c';
-
-            default:
-                return c;
-        }
+        return decode[c];
     }
 }
 

@@ -2,7 +2,6 @@ package tp.pdc.proxy.parser.utils;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
-//TODO: tests
 public class ParseUtils {
     private static final int US_ASCII_LENGTH = 128;
 
@@ -11,7 +10,6 @@ public class ParseUtils {
     private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
         '"', '/', '[', ']', '?', '=', '{', '}', SP.getValue(), HT.getValue()};
 
-    // Cargo tablas estáticas para hacer los chequeos más rápido.
     static {
         isToken = new boolean[US_ASCII_LENGTH]; isSeparator = new boolean[US_ASCII_LENGTH];
         isLWS = new boolean[US_ASCII_LENGTH]; isDigit = new boolean[US_ASCII_LENGTH];
