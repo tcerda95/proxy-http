@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
-import tp.pdc.proxy.parser.interfaces.l33tEncoder;
 import tp.pdc.proxy.parser.encoders.*;
 
 public class HttpContentLengthLeetParser implements HttpBodyParser{
@@ -13,15 +12,11 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
 	private int index;
 	
 	private ParserState parserState;
-	
-    private l33tEncoder l33tEncoder;
-	
+
 	public HttpContentLengthLeetParser(int contentLength) {
 		this.contentLength = contentLength;
 		this.parserState = ParserState.START;
 		this.index = 1;
-		
-		l33tEncoder = new L33tEncoderImpl();
 	}
 
 	private enum ParserState {
@@ -38,7 +33,7 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
 			
 			byte c = input.get();
 			
-			output.put(l33tEncoder.encodeByte(c));
+			output.put(StaticL33tEncoder.encodeByte(c));
     		
 			switch (parserState) {
 			

@@ -2,14 +2,12 @@ package tp.pdc.proxy.parser.encoders;
 
 import tp.pdc.proxy.parser.interfaces.l33tEncoder;
 
-public class L33tEncoderImpl implements l33tEncoder {
-    private static final int US_ASCII_LENGTH = 128;
-
+public class StaticL33tEncoder implements l33tEncoder {
     private static byte[] encode;
     private static byte[] decode;
 
     static {
-        encode = new byte[US_ASCII_LENGTH]; decode = new byte[US_ASCII_LENGTH];
+        encode = new byte[256]; decode = new byte[256];
         for (int c = 0; c < 256; c++) {
             switch (c) {
                 case 'a':
@@ -53,11 +51,11 @@ public class L33tEncoderImpl implements l33tEncoder {
         }
     }
 
-    public byte encodeByte(byte c) {
+    public static byte encodeByte(byte c) {
         return encode[c];
     }
 
-    public byte decodeByte(byte c) {
+    public static byte decodeByte(byte c) {
         return decode[c];
     }
 }
