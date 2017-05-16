@@ -9,6 +9,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -20,7 +21,6 @@ import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.structures.ArrayQueue;
-import tp.pdc.proxy.structures.FixedLengthQueue;
 import tp.pdc.proxy.time.ExpirableContainer;
 
 public class ConnectionManager {
@@ -31,7 +31,7 @@ public class ConnectionManager {
 	private static final int QUEUE_LENGTH = PROPERTIES.getConnectionQueueLength();
 	private static final int CONNECTION_TTL = PROPERTIES.getConnectionTimeToLive();
 	
-	private final Map<SocketAddress, FixedLengthQueue<ExpirableContainer<SelectionKey>>> connections;
+	private final Map<SocketAddress, Queue<ExpirableContainer<SelectionKey>>> connections;
 	private final long cleanRate;
 	private long cleanTime;
 	
@@ -55,7 +55,7 @@ public class ConnectionManager {
 	}
 	
 	private boolean reuseConnection(Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
-		FixedLengthQueue<ExpirableContainer<SelectionKey>> connectionQueue = connections.get(address);
+		Queue<ExpirableContainer<SelectionKey>> connectionQueue = connections.get(address);
 		SelectionKey serverKey = retrieveValidKey(connectionQueue);
 		
 		if (serverKey == null) {
@@ -80,7 +80,7 @@ public class ConnectionManager {
 		}
 	}
 	
-	private SelectionKey retrieveValidKey(FixedLengthQueue<ExpirableContainer<SelectionKey>> connectionQueue) throws IOException {		
+	private SelectionKey retrieveValidKey(Queue<ExpirableContainer<SelectionKey>> connectionQueue) throws IOException {		
 		while (!connectionQueue.isEmpty()) {
 			SelectionKey key = connectionQueue.remove().getElement();
 			
@@ -143,7 +143,7 @@ public class ConnectionManager {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void storeKey(SocketAddress remoteAddress, SelectionKey serverKey) {
-		FixedLengthQueue<ExpirableContainer<SelectionKey>> connectionQueue;
+		Queue<ExpirableContainer<SelectionKey>> connectionQueue;
 		
 		if (connections.containsKey(remoteAddress))
 			connectionQueue = connections.get(remoteAddress);
@@ -163,10 +163,10 @@ public class ConnectionManager {
 
 			cleanTime = currentTime + cleanRate;
 			
-			Iterator<FixedLengthQueue<ExpirableContainer<SelectionKey>>> iter = connections.values().iterator();
+			Iterator<Queue<ExpirableContainer<SelectionKey>>> iter = connections.values().iterator();
 			
 			while (iter.hasNext()) {
-				FixedLengthQueue<ExpirableContainer<SelectionKey>> queue = iter.next();
+				Queue<ExpirableContainer<SelectionKey>> queue = iter.next();
 				removeExpiredKeys(queue);
 				if(queue.isEmpty()) {
 					LOGGER.debug("Removed empty queue");
@@ -176,7 +176,7 @@ public class ConnectionManager {
 		}
 	}
 	
-	private void removeExpiredKeys(FixedLengthQueue<ExpirableContainer<SelectionKey>> queue) {
+	private void removeExpiredKeys(Queue<ExpirableContainer<SelectionKey>> queue) {
 		while (!queue.isEmpty() && queue.peek().hasExpired()) { // oldest keys are first on queue
 			LOGGER.debug("Cleaned expired key");
 			
