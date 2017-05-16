@@ -1,27 +1,28 @@
 package tp.pdc.proxy.parser.protocol;
 
 import java.nio.ByteBuffer;
+
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
-import tp.pdc.proxy.metric.ClientMetricImpl;
-import tp.pdc.proxy.metric.ServerMetricImpl;
+import tp.pdc.proxy.metric.interfaces.ClientMetric;
+import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class CrazyProtocolOutputGenerator {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 		
-	private ClientMetricImpl clientMetrics;
-	private ServerMetricImpl serverMetrics;
+	private final ClientMetric clientMetrics;
+	private final ServerMetric serverMetrics;
 	
 	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
 	
-	public CrazyProtocolOutputGenerator() {
-		clientMetrics = ClientMetricImpl.getInstance();
-		serverMetrics = ServerMetricImpl.getInstance();
+	public CrazyProtocolOutputGenerator(ClientMetric clientMetrics, ServerMetric serverMetrics) {
+		this.clientMetrics = clientMetrics;
+		this.serverMetrics = serverMetrics;
 		//TODO: sacarlo de properties
 		remainingBytes = ByteBuffer.allocate(4000);
 	}

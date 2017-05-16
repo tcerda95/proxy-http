@@ -1,19 +1,22 @@
 package tp.pdc.proxy.parser.protocol;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.metric.ClientMetricImpl;
-import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
+import tp.pdc.proxy.metric.stub.ClientMetricStub;
+import tp.pdc.proxy.metric.stub.ServerMetricStub;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
 public class CrazyProtocolParserSimpleHeadersTest {
@@ -24,13 +27,15 @@ public class CrazyProtocolParserSimpleHeadersTest {
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	
-	private ServerMetric serverMetric = ServerMetricImpl.getInstance();
-	private ClientMetric clientMetric = ClientMetricImpl.getInstance();
+	private ServerMetric serverMetric;
+	private ClientMetric clientMetric;
 	
 	@Before
 	public void setUp() throws Exception {
-		parser = new CrazyProtocolParserImpl();
+		clientMetric = new ClientMetricStub();
+		serverMetric = new ServerMetricStub();
 		outputBuffer = ByteBuffer.allocate(4000);
+		parser = new CrazyProtocolParserImpl(clientMetric, serverMetric);
 	}
 
 	@Test
@@ -51,6 +56,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		clientMetric.addMethodCount(Method.GET);
 		clientMetric.addMethodCount(Method.POST);
 		
+		System.out.println(clientMetric.getMethodCount(Method.GET));
 		
 		String protocolInput =  
 				"\r\n"

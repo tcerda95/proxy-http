@@ -1,6 +1,7 @@
 package tp.pdc.proxy.parser.protocol;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -10,6 +11,8 @@ import org.junit.Test;
 
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.metric.stub.ClientMetricStub;
+import tp.pdc.proxy.metric.stub.ServerMetricStub;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
 public class CrazyProtocolParserBufferOverflowTest {
@@ -22,7 +25,7 @@ public class CrazyProtocolParserBufferOverflowTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		parser = new CrazyProtocolParserImpl();
+		parser = new CrazyProtocolParserImpl(new ClientMetricStub(), new ServerMetricStub());
 		outputBuffer = ByteBuffer.allocate(20);
 	}
 
