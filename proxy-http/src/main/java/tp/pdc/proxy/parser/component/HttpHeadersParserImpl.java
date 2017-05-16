@@ -71,10 +71,12 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         while(inputBuffer.hasRemaining() && outputBuffer.remaining() > buffered)
             if (parse(inputBuffer.get(), outputBuffer))
                 return true;
-        
+
         if (outputBuffer.remaining() <= buffered)
         	outputBuffer.limit(outputBuffer.position()); // Así se simula que el buffer está lleno
-        
+
+        assertBufferCapacity(outputBuffer);
+
         return false;
     }
 
@@ -178,7 +180,6 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
         buffered = headerName.position() + headerValue.position();
         return false;
-
     }
 
     private void saveHeaderNameByte(byte b) throws ParserFormatException {
@@ -211,6 +212,11 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         } else {
             state = HttpHeaderState.COLON;
         }
+    }
+
+    private void assertBufferCapacity(ByteBuffer buffer) {
+        if (buffer.capacity() < buffered)
+            throw new IllegalArgumentException("Output buffer too small");
     }
 
     private void addHeaders(ByteBuffer output) {

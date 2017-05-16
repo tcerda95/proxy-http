@@ -7,6 +7,7 @@ import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
+import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
@@ -163,7 +164,18 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     handleError("Error while parsing first line");
             }
         }
+
+        if (output.remaining() <= buffered)
+            output.limit(output.position()); // Así se simula que el buffer está lleno
+
+        assertBufferCapacity(output);
+
         return false;
+    }
+
+    private void assertBufferCapacity(ByteBuffer buffer) {
+        if (buffer.capacity() <= buffered)
+            throw new IllegalArgumentException("Output buffer too small");
     }
 
     private void saveMethodByte(byte c) throws ParserFormatException {
