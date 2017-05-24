@@ -1,7 +1,11 @@
 package tp.pdc.proxy.parser.interfaces;
 
 public interface Encoder {
-	
-	byte encodeByte(byte c);
-	byte decodeByte(byte c);
+	static byte encodeByte (byte c) {
+		return c;
+	}
+
+	static byte decodeByte (byte c) {
+		return c;
+	}
 }

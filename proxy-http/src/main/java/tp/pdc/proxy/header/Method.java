@@ -27,6 +27,10 @@ public enum Method {
     public String toString() {
     	return methodName;
     }
+    
+    public byte[] getBytes() {
+    	return methodBytes;
+    }
 
     public static void main (String[] args) {
         ByteBuffer b = ByteBuffer.allocate(10);

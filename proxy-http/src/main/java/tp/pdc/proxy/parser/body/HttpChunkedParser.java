@@ -19,7 +19,6 @@ public class HttpChunkedParser implements HttpBodyParser {
     private int chunkSize;
     private boolean chunkSizeFound;
     
-    private l33tEncoder l33tEncoder;
     private boolean l33tFlag;
     
     public HttpChunkedParser(boolean l33tFlag) {
@@ -30,7 +29,6 @@ public class HttpChunkedParser implements HttpBodyParser {
     	chunkSize = 0;
     	chunkSizeFound = false;
     	this.l33tFlag = l33tFlag;
-    	l33tEncoder = new L33tEncoderImpl();
     }
 	
     private enum ParserState {
@@ -72,7 +70,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 	    			parseChunk(c);
 	    			
 	    			if (l33tFlag)
-	    				c = l33tEncoder.encodeByte(c);
+	    				c = StaticL33tEncoder.encodeByte(c);
 	  
 	    			break;
 	    			

@@ -1,17 +1,13 @@
 package tp.pdc.proxy.parser.component;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
-import tp.pdc.proxy.parser.main.HttpRequestParserImpl;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
-import java.net.URI;
+import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
@@ -19,9 +15,8 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
     private static final int METHOD_NAME_SIZE = ProxyProperties.getInstance().getMethodBufferSize();
-    private static final int URI_SIZE = ProxyProperties.getInstance().getURIBufferSize();
+    private static final int URI_HOST_SIZE = ProxyProperties.getInstance().getURIHostBufferSize();
 
     private RequestLineParserState state;
     private Method method;
@@ -43,7 +38,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         versionParser = new HttpVersionParserImpl(CR.getValue());
         state = RequestLineParserState.START;
         methodName = ByteBuffer.allocate(METHOD_NAME_SIZE);
-        URIHostBuf = ByteBuffer.allocate(URI_SIZE);
+        URIHostBuf = ByteBuffer.allocate(URI_HOST_SIZE);
     }
 
     @Override public byte[] getHostValue () {
@@ -76,8 +71,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                 case START:
                     if (ParseUtils.isAlphabetic(c)) {
                         state = RequestLineParserState.METHOD_READ;
-                        methodName.put(c);
-                        buffered++;
+                        saveMethodByte(c);
                     } else {
                         handleError("Error while parsing method");
                     }
@@ -85,8 +79,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
                 case METHOD_READ:
                     if (ParseUtils.isAlphabetic(c)) {
-                        methodName.put(c);
-                        buffered++;
+                        saveMethodByte(c);
                     } else if (c == SP.getValue() && processMethod()) {
                         state = RequestLineParserState.URI_READ;
                         output.put(methodName).put(c);
@@ -145,8 +138,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                             RequestLineParserState.HTTP_VERSION;
                         buffered = 0;
                     } else if (ParseUtils.isUriCharacter(c)) {
-                        URIHostBuf.put(c);
-                        buffered++;
+                        saveHostByte(c);
                     } else {
                         handleError("Error while parsing URI address");
                     }
@@ -172,7 +164,32 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     handleError("Error while parsing first line");
             }
         }
+
+        if (output.remaining() <= buffered)
+            output.limit(output.position()); // Así se simula que el buffer está lleno
+
+        assertBufferCapacity(output);
+
         return false;
+    }
+
+    private void assertBufferCapacity(ByteBuffer buffer) {
+        if (buffer.capacity() <= buffered)
+            throw new IllegalArgumentException("Output buffer too small");
+    }
+
+    private void saveMethodByte(byte c) throws ParserFormatException {
+        if (!methodName.hasRemaining())
+            throw new ParserFormatException("Method name too long");
+        methodName.put(c);
+        buffered++;
+    }
+
+    private void saveHostByte(byte c) throws ParserFormatException {
+        if (!URIHostBuf.hasRemaining())
+            throw new ParserFormatException("Host too long");
+        URIHostBuf.put(c);
+        buffered++;
     }
 
     private void loadHostValue() {
@@ -202,7 +219,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         state = RequestLineParserState.START;
         methodName.clear();
         URIHostBuf.clear();
-        method = null; hostValue = null;
+        method = null; 
+        hostValue = null;
         buffered = 0;
     }
 }

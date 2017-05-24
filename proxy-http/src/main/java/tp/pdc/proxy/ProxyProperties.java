@@ -63,8 +63,8 @@ public class ProxyProperties {
 		return Integer.parseInt(properties.getProperty("parser.methodBufferSize"));
 	}
 
-	public final int getURIBufferSize() {
-		return Integer.parseInt(properties.getProperty("parser.URIBufferSize"));
+	public final int getURIHostBufferSize() {
+		return Integer.parseInt(properties.getProperty("parser.URIHostBufferSize"));
 	}
 
 	public final int getHeaderNameBufferSize() {
@@ -73,6 +73,18 @@ public class ProxyProperties {
 
 	public final int getHeaderContentBufferSize() {
 		return Integer.parseInt(properties.getProperty("parser.headerContentBufferSize"));
+	}
+	
+	public final int getConnectionQueueLength() {
+		return Integer.parseInt(properties.getProperty("connection.queue.length"));
+	}
+	
+	public final int getConnectionTimeToLive() {
+		return Integer.parseInt(properties.getProperty("connection.ttl"));
+	}
+	
+	public final int getConnectionCleanRate() {
+		return Integer.parseInt(properties.getProperty("connection.clean.rate"));
 	}
 
 	public Set<Method> getAcceptedMethods() {

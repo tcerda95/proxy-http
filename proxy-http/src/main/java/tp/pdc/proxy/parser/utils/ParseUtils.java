@@ -2,20 +2,23 @@ package tp.pdc.proxy.parser.utils;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
+import java.nio.ByteBuffer;
+
 //TODO: tests
 public class ParseUtils {
     private static final int US_ASCII_LENGTH = 128;
 
-    private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit, isHexadecimal;
+    private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit, isHexadecimal,
+    isAlphaNumerical;
 
     private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
         '"', '/', '[', ']', '?', '=', '{', '}', SP.getValue(), HT.getValue()};
 
-    // Cargo tablas estáticas para hacer los chequeos más rápido.
     static {
         isToken = new boolean[US_ASCII_LENGTH]; isSeparator = new boolean[US_ASCII_LENGTH];
         isLWS = new boolean[US_ASCII_LENGTH]; isDigit = new boolean[US_ASCII_LENGTH];
         isAlphabetic = new boolean[US_ASCII_LENGTH]; isHexadecimal = new boolean[US_ASCII_LENGTH];
+        isAlphaNumerical = new boolean[US_ASCII_LENGTH];
 
         for (int c = 0; c < US_ASCII_LENGTH; c++) {
             isSeparator[c] = contains(separator, (byte) c);
@@ -23,6 +26,7 @@ public class ParseUtils {
             isLWS[c] = (c == CR.getValue() || c == LF.getValue() || c == SP.getValue() || c == HT.getValue());
             isDigit[c] = ('0' <= c && c <= '9');
             isAlphabetic[c] = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+            isAlphaNumerical[c] = (isAlphabetic[c] || isDigit[c]);
             isHexadecimal[c] = isDigit[c] || ('A' <= c && c <= 'F') || ('a' <= c && c <='f');
         }
     }
@@ -60,6 +64,10 @@ public class ParseUtils {
         return isAlphabetic[c];
     }
     
+    public static boolean isAlphaNumerical(byte c) {
+    	return isAlphaNumerical[c];
+    }
+    
     public static boolean isHexadecimal(byte c) {
         return isHexadecimal[c];
     }
@@ -83,5 +91,65 @@ public class ParseUtils {
 		}
 		
 		return num;
+	}
+	
+	public static byte[] parseInt(int value) {
+		
+		int len = intLength(value);
+		
+		ByteBuffer output = ByteBuffer.allocate(len);
+		
+		for(int j=len; j>0; j--) {
+			int digit = (int) (value/Math.pow(10,j-1));
+			output.put((byte) (digit + '0'));
+			value = (int) (value - digit * Math.pow(10,j-1));
+		}
+		
+		return output.array();
+	}
+	
+	public static int intLength(int value) {
+		
+		if (value == 0)
+			return 1;
+		
+		int length = 0;
+		
+		while(value != 0) {
+			value/=10;
+			length++;
+		}
+		
+		return length;
+	}
+	
+	public static byte[] parseLong(long value) {
+		
+		int len = longLength(value);
+		
+		ByteBuffer output = ByteBuffer.allocate(len);
+		
+		for(int j=len; j>0; j--) {
+			long digit = (long) (value/Math.pow(10,j-1));
+			output.put((byte) (digit + '0'));
+			value = (long) (value - digit * Math.pow(10,j-1));
+		}
+		
+		return output.array();
+	}
+	
+	public static int longLength(long value) {
+		
+		if (value == 0)
+			return 1;
+		
+		int length = 0;
+		
+		while(value != 0) {
+			value/=10;
+			length++;
+		}
+		
+		return length;
 	}
 }

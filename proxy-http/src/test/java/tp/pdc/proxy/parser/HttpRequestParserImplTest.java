@@ -14,12 +14,12 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
+import tp.pdc.proxy.parser.interfaces.Parser;
 
 public class HttpRequestParserImplTest {
 
 	private HttpRequestParser parser;
-	private ByteBuffer inputBuffer;
-	private ByteBuffer outputBuffer;
+	private ByteBuffer inputBuffer, outputBuffer, smallOut;
 
 	private static final Charset charset = ProxyProperties.getInstance().getCharset();
 
@@ -27,6 +27,7 @@ public class HttpRequestParserImplTest {
 	public void setUp() throws Exception {
 		parser = HttpRequestParserFactory.getInstance().getRequestParser();
 		outputBuffer = ByteBuffer.allocate(4000);
+		smallOut = ByteBuffer.allocate(32);
 	}
 
 	@Test
@@ -91,7 +92,8 @@ public class HttpRequestParserImplTest {
 
 		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
-		parser.parse(inputBuffer, outputBuffer);
+		parseWithSmallOutput(parser, inputBuffer, outputBuffer);
+
 
 		assertArrayEquals(host.getBytes(charset), parser.getHostValue());
 	}
@@ -107,7 +109,7 @@ public class HttpRequestParserImplTest {
 
 		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
-		parser.parse(inputBuffer, outputBuffer);
+		parseWithSmallOutput(parser, inputBuffer, outputBuffer);
 
 		assertArrayEquals(host.getBytes(charset), parser.getHostValue());
 	}
@@ -124,7 +126,7 @@ public class HttpRequestParserImplTest {
 
 		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
-		parser.parse(inputBuffer, outputBuffer);
+		parseWithSmallOutput(parser, inputBuffer, outputBuffer);
 
 		assertArrayEquals(host.getBytes(charset), parser.getHostValue());
 	}
@@ -177,19 +179,63 @@ public class HttpRequestParserImplTest {
 				+ "\r\n";
 
 		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
-
-		parser.parse(inputBuffer, outputBuffer);
+		parseWithSmallOutput(parser, inputBuffer, outputBuffer);
 	}
 
 	@Test(expected = ParserFormatException.class)
 	public void invalidMethodTest() throws UnsupportedEncodingException, ParserFormatException {
-		String request =   "GETT / HTTP/1.1\n\n"
+		String request =    "GETT / HTTP/1.1\r\n"
+				+ "Host: localhost:8080\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
+		parseWithSmallOutput(parser, inputBuffer, outputBuffer);
+	}
+
+	@Test(expected = ParserFormatException.class)
+	public void methodTooLongTest() throws UnsupportedEncodingException, ParserFormatException {
+		String request =   "GETGETGETGET / HTTP/1.1\r\n"
 				+ "Host: localhost:8080\r\n"
 				+ "\r\n";
 
 		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 
+		parseWithSmallOutput(parser, inputBuffer, outputBuffer);
+	}
+
+	@Test(expected = ParserFormatException.class)
+	public void URIHostTooLongTest() throws UnsupportedEncodingException, ParserFormatException {
+		String longHost = "http://www.google.com.www.google.com.www.google.com.www.google.com.www.google.com"
+				+ "www.google.com.www.google.com.www.google.com.www.google.com.www.google.com.www.google.com";
+
+
+		String request = "GET " + longHost + " HTTP/1.1\r\n"
+				+ "Host: localhost:8080\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
 		parser.parse(inputBuffer, outputBuffer);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void OutputBufferTooSmallTest() throws UnsupportedEncodingException, ParserFormatException {
+		String longHost = "http://www.google.com.www.google.com.www.google.com.www.google.com.www.google.com";
+
+
+		String request = "GET " + longHost + " HTTP/1.1\r\n"
+				+ "Host: localhost:8080\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
+		parseWithSmallOutput(parser, inputBuffer, outputBuffer);
+	}
+
+	private void parseWithSmallOutput(Parser parser, ByteBuffer inputBuffer, ByteBuffer outputBuffer)
+			throws ParserFormatException {
+		while (!parser.parse(inputBuffer, smallOut)) {
+			outputBuffer.put(smallOut);
+			smallOut.clear();
+		}
 	}
 
 }

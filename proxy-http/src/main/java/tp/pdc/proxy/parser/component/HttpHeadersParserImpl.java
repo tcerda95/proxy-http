@@ -10,12 +10,14 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     private enum HttpHeaderState {
         ADD_HEADERS, LINE_START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
         NAME, RELEVANT_COLON, RELEVANT_SPACE, RELEVANT_CONTENT,
-        COLON, SPACE, CONTENT, IGNORED_CONTENT, IGNORED_CR,
+        COLON, SPACE, CONTENT,
     }
 
     private static final int HEADER_NAME_SIZE = ProxyProperties.getInstance().getHeaderNameBufferSize();
@@ -33,6 +35,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     private Map.Entry<Header, byte[]> nextToAdd;
 
+    private boolean ignoring;
     // Buffered bytes que todavía no se escribieron en outputBuffer
     private int buffered = 0;
 
@@ -51,7 +54,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     private void expectByteAndOutput(byte read, byte expected, HttpHeaderState next, ByteBuffer outputBuffer)
         throws ParserFormatException {
         if (read == expected) {
-            outputBuffer.put(read);
+            putIfNotIgnored(read, outputBuffer);
             state = next;
         } else {
             handleError();
@@ -68,6 +71,12 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         while(inputBuffer.hasRemaining() && outputBuffer.remaining() > buffered)
             if (parse(inputBuffer.get(), outputBuffer))
                 return true;
+
+        if (outputBuffer.remaining() <= buffered)
+        	outputBuffer.limit(outputBuffer.position()); // Así se simula que el buffer está lleno
+
+        assertBufferCapacity(outputBuffer);
+
         return false;
     }
 
@@ -78,6 +87,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     // Fallthrough
 
                 case LINE_START:
+                    ignoring = false;
                     if (c == CR.getValue()) {
                         state = HttpHeaderState.SECTION_END_CR;
                         output.put(c);
@@ -86,7 +96,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                         headerName.clear();
                         headerValue.clear();
                         currentHeader = null;
-                        headerName.put((byte) Character.toLowerCase(c));
+                        saveHeaderNameByte((byte) Character.toLowerCase(c));
                         state = HttpHeaderState.NAME;
                     } else
                         handleError();
@@ -96,7 +106,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     if (c == ':') {
                         handleHeaderName(c, output);
                     } else if (ParseUtils.isHeaderNameChar(c)) {
-                        headerName.put((byte) Character.toLowerCase(c));
+                        saveHeaderNameByte((byte) Character.toLowerCase(c));
                     } else {
                         handleError();
                     }
@@ -107,8 +117,8 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     break;
 
                 case RELEVANT_SPACE:
-                    if (ParseUtils.isHeaderNameChar(c)) {
-                        headerValue.put((byte) Character.toLowerCase(c));
+                    if (ParseUtils.isHeaderContentChar(c)) {
+                        saveHeaderContentbyte((byte) Character.toLowerCase(c));
                         state = HttpHeaderState.RELEVANT_CONTENT;
                     } else {
                         handleError();
@@ -117,30 +127,16 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
                 case RELEVANT_CONTENT:
                     if (c == CR.getValue()) {
-                        state = HttpHeaderState.END_LINE_CR;
                         headerValue.flip();
                         byte[] headerAux = new byte[headerValue.remaining()];
                         headerValue.get(headerAux);
-                        output.put(headerAux).put(CR.getValue());
                         savedHeaders.put(currentHeader, headerAux);
+
+                        state = HttpHeaderState.END_LINE_CR;
+                        if (!ignoring)
+                            output.put(headerAux).put(CR.getValue());
                     } else if (ParseUtils.isHeaderContentChar(c)) {
-                        headerValue.put((byte) Character.toLowerCase(c));
-                    } else {
-                        handleError();
-                    }
-                    break;
-
-                case IGNORED_CONTENT:
-                    if (c == CR.getValue()) {
-                        state = HttpHeaderState.IGNORED_CR;
-                    } else if (!ParseUtils.isHeaderContentChar(c)) {
-                        handleError();
-                    }
-                    break;
-
-                case IGNORED_CR:
-                    if (c == LF.getValue()) {
-                        state = HttpHeaderState.LINE_START;
+                        saveHeaderContentbyte((byte) Character.toLowerCase(c));
                     } else {
                         handleError();
                     }
@@ -153,7 +149,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                 case SPACE:
                     if (ParseUtils.isHeaderContentChar(c)) {
                         state = HttpHeaderState.CONTENT;
-                        output.put(c);
+                        putIfNotIgnored(c, output);
                     } else {
                         handleError();
                     }
@@ -162,9 +158,9 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                 case CONTENT:
                     if (c == CR.getValue()) {
                         state = HttpHeaderState.END_LINE_CR;
-                        output.put(c);
+                        putIfNotIgnored(c, output);
                     } else if (ParseUtils.isHeaderContentChar(c)) {
-                        output.put(c);
+                        putIfNotIgnored(c, output);
                     } else {
                         handleError();
                     }
@@ -184,27 +180,43 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
         buffered = headerName.position() + headerValue.position();
         return false;
-
     }
+
+    private void saveHeaderNameByte(byte b) throws ParserFormatException {
+        if (!headerName.hasRemaining())
+            throw new ParserFormatException("Header name too long");
+        headerName.put(b);
+    }
+
+    private void saveHeaderContentbyte(byte b) throws ParserFormatException {
+        if (!headerValue.hasRemaining())
+            throw new ParserFormatException("Header content too long");
+        headerValue.put(b);
+    }
+
 
     private void handleHeaderName(byte c, ByteBuffer outputBuffer) {
         headerName.flip();
         int nameLen = headerName.remaining();
         currentHeader = Header.getHeaderByBytes(headerName, nameLen); //TODO: podría ser más optimo, pero no es determinante
 
-        if (headersToRemove.contains(currentHeader) || headersToAdd.containsKey(currentHeader) /* gets changed */) {
-            state = HttpHeaderState.IGNORED_CONTENT;
-            return;
-        }
+        if (headersToRemove.contains(currentHeader) || headersToAdd.containsKey(currentHeader) /* gets changed */)
+            ignoring = true;
 
-        outputBuffer.put(headerName).put(c);
+        if (!ignoring)
+            outputBuffer.put(headerName).put(c);
 
         if (headersToSave.contains(currentHeader) || currentHeader == Header.HOST) {
-            savedHeaders.put(currentHeader, new byte[0]);
+            savedHeaders.put(currentHeader, ArrayUtils.EMPTY_BYTE_ARRAY);
             state = HttpHeaderState.RELEVANT_COLON;
         } else {
             state = HttpHeaderState.COLON;
         }
+    }
+
+    private void assertBufferCapacity(ByteBuffer buffer) {
+        if (buffer.capacity() < buffered)
+            throw new IllegalArgumentException("Output buffer too small");
     }
 
     private void addHeaders(ByteBuffer output) {
@@ -217,10 +229,6 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
             Header header = nextToAdd.getKey();
             byte[] value = nextToAdd.getValue();
-
-            if (headersToSave.contains(header) || header == Header.HOST) {
-                savedHeaders.put(header, value);
-            }
 
             if (!headerFitsBuffer(header, value, output)) {
                 return;
@@ -245,15 +253,25 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         // 4: colon + SP + CR + LF
     }
 
+    private void putIfNotIgnored(byte c, ByteBuffer output) {
+        if (!ignoring)
+            output.put(c);
+    }
+
     @Override public boolean hasFinished() {
         return this.state == HttpHeaderState.END_OK;
     }
 
     @Override public void reset () {
-        headerName.clear(); headerValue.clear();
+        headerName.clear();
+        headerValue.clear();
         savedHeaders.clear();
         state = HttpHeaderState.ADD_HEADERS;
         buffered = 0;
+        ignoring = false;
+
+        headersToAddIterator = headersToAdd.entrySet().iterator();
+        nextToAdd = null;
     }
 
     @Override public byte[] getHeaderValue(Header header) {

@@ -1,23 +1,18 @@
-package tp.pdc.proxy.metric;
+package tp.pdc.proxy.metric.stub;
 
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.metric.HostMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
 
-public class ClientMetricImpl extends HostMetricImpl implements ClientMetric {
-	
-	private static final ClientMetricImpl INSTANCE = new ClientMetricImpl();
-	
+public class ClientMetricStub extends HostMetricImpl implements ClientMetric {
+
 	private final Map<Method, Integer> methodRequests;
 	
-	public static final ClientMetricImpl getInstance() {
-		return INSTANCE;
-	}
-	
-	private ClientMetricImpl() {
+	public ClientMetricStub() {
 		methodRequests = new EnumMap<>(Method.class);
 		for (Method m : Method.values())
 			methodRequests.put(m, 0);
@@ -38,4 +33,6 @@ public class ClientMetricImpl extends HostMetricImpl implements ClientMetric {
 	public Set<Method> getMethods() {
 		return methodRequests.keySet();
 	}
+
+
 }
