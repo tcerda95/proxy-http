@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.handler.interfaces.Handler;
 import tp.pdc.proxy.handler.supplier.HttpClientProxyHandlerSupplier;
+import tp.pdc.proxy.handler.supplier.ProtocolHandlerSupplier;
 
 public class Pruebita {
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
@@ -33,7 +33,7 @@ public class Pruebita {
 		this.protocolPort = protocolPort;
 		
 		registerChannel(proxyPort, HttpClientProxyHandlerSupplier.getInstance());
-		registerChannel(protocolPort, () -> (null)); // TODO: Supplier del handler de nuestro protocolo
+		registerChannel(protocolPort, ProtocolHandlerSupplier.getInstance());
 		
 		LOGGER.info("Setup done"); 
 	}
