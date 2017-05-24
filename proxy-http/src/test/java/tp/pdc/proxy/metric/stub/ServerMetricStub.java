@@ -1,22 +1,17 @@
-package tp.pdc.proxy.metric;
+package tp.pdc.proxy.metric.stub;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import tp.pdc.proxy.metric.HostMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 
-public class ServerMetricImpl extends HostMetricImpl implements ServerMetric {
-	
-	private static final ServerMetricImpl INSTANCE = new ServerMetricImpl();
-	
+public class ServerMetricStub extends HostMetricImpl implements ServerMetric {
+		
 	private final Map<Integer, Integer> responseCodeCount;
 	
-	public static final ServerMetricImpl getInstance() {
-		return INSTANCE;
-	}
-	
-	private ServerMetricImpl() {
+	public ServerMetricStub() {
 		responseCodeCount = new HashMap<>();
 	}
 	
