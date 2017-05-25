@@ -10,7 +10,8 @@ public enum Header {
 	TRANSFER_ENCODING("transfer-encoding"), 
 	USER_AGENT("user-agent"),
 	PROXY_CONNECTION("proxy-connection"), 
-	CONTENT_TYPE("content-type");
+	CONTENT_TYPE("content-type"), 
+	ACCEPT_ENCODING("accept-encoding");
 
 	private String headerName;
 	private byte[] headerBytes;
@@ -22,7 +23,7 @@ public enum Header {
 		return null;
 	}
 	
-	Header(String header) {
+	private Header(String header) {
 		headerName = header;
 		headerBytes = header.getBytes(ProxyProperties.getInstance().getCharset());
 	}
