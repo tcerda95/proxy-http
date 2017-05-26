@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ public class ProxyProperties {
 		}
 		
 		acceptedCharsets = new ArrayList<>();
+		acceptedCharsets.add(ArrayUtils.EMPTY_BYTE_ARRAY);
 		acceptedCharsets.add("utf-8".getBytes(getCharset()));
 		acceptedCharsets.add("iso-".getBytes(getCharset()));
 	}

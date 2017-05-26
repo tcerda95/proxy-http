@@ -22,6 +22,7 @@ public class ProtocolHandler implements Handler {
 	private ByteBuffer readBuffer;
 	private ByteBuffer writeBuffer;
 	private CrazyProtocolParser parser;
+	private boolean clientClosedRead;
 	
 	public ProtocolHandler(int bufferSize) {
 		readBuffer = ByteBuffer.allocate(bufferSize);
@@ -35,7 +36,14 @@ public class ProtocolHandler implements Handler {
 		
 		try {
 			int bytesRead = socketChannel.read(readBuffer);
-			LOGGER.info("Read {} bytes from protocol client", bytesRead);
+			
+			if (bytesRead == -1) {
+				LOGGER.info("Protocol client sent EOF");
+				
+				clientClosedRead = true;
+			}
+			else
+				LOGGER.info("Read {} bytes from protocol client", bytesRead);
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read from protocol client: {}", e.getMessage());
 			// TODO: agregar -end al final
@@ -55,7 +63,7 @@ public class ProtocolHandler implements Handler {
 			key.interestOps(SelectionKey.OP_WRITE);
 		}
 		
-		if (parser.hasFinished()) {
+		if (parser.hasFinished() || clientClosedRead) {
 			LOGGER.debug("Registering protocol handler for write: protocol parser has finished");
 			key.interestOps(SelectionKey.OP_WRITE);
 		}
@@ -88,7 +96,7 @@ public class ProtocolHandler implements Handler {
 			int bytesWritten = socketChannel.write(writeBuffer);
 			LOGGER.info("Wrote {} bytes to protocol client", bytesWritten);
 			
-			if (parser.hasFinished()) {
+			if (parser.hasFinished() || clientClosedRead) {
 				if (!writeBuffer.hasRemaining()) {
 					LOGGER.debug("Closing connection to protocol client: parser finished and no bytes left in writeBuffer");
 					socketChannel.close();

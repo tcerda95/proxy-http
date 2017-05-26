@@ -49,7 +49,7 @@ public class Pruebita {
 		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol();
 		
 		LOGGER.info("Accepting proxy connections from port: {}", proxyPort);
-		LOGGER.info("COMING SOON: accepting protocol connections from port: {}", protocolPort);
+		LOGGER.info("Accepting protocol connections from port: {}", protocolPort);
 		
 		while (true) {
 			try {
