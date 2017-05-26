@@ -2,7 +2,6 @@ package tp.pdc.proxy.parser.factory;
 
 import java.util.List;
 
-import tp.pdc.proxy.CharsetParser;
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
@@ -10,6 +9,7 @@ import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.parser.CharsetParser;
 import tp.pdc.proxy.parser.body.HttpChunkedParser;
 import tp.pdc.proxy.parser.body.HttpConnectionCloseParser;
 import tp.pdc.proxy.parser.body.HttpContentLengthLeetParser;

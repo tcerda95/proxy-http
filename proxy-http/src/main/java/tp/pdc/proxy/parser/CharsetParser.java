@@ -1,9 +1,10 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.parser;
 
 import java.nio.ByteBuffer;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.BytesUtils;
 
 public class CharsetParser {
@@ -21,27 +22,27 @@ public class CharsetParser {
 		
 		for (int i = 0; i < contentTypeHeader.length;) {
 			nameBuffer.clear();
-			i = BytesUtils.findValueIndex(contentTypeHeader, (byte) ';', 0);
+			i = BytesUtils.findValueIndex(contentTypeHeader, (byte) ';', i);
 			
 			if (i == -1)
 				return ArrayUtils.EMPTY_BYTE_ARRAY;
 			
-			i = skipWhiteSpaces(contentTypeHeader, i);
+			i = skipWhiteSpaces(contentTypeHeader, i+1);
 			
-			i = saveParameterName(contentTypeHeader, i); // equals index
+			i = saveParameterName(contentTypeHeader, i); // returns equals index
 			
-			i = skipWhiteSpaces(contentTypeHeader, i);
+			i = skipWhiteSpaces(contentTypeHeader, i+1);
 			
 			nameBuffer.flip();
-			if (BytesUtils.equalsBytes(charsetBytesArray, nameBuffer, charsetBytesArray.length))
+			if (BytesUtils.equalsBytes(charsetBytesArray, nameBuffer, nameBuffer.remaining()))
 				return extractCharsetValue(contentTypeHeader, i);			
 		}
 		
 		return ArrayUtils.EMPTY_BYTE_ARRAY;
 	}
 
-	private int saveParameterName(final byte[] contentTypeHeader, final int semiColonIndex) {
-		int i = semiColonIndex + 1;
+	private int saveParameterName(final byte[] contentTypeHeader, final int paramNameIndex) {
+		int i = paramNameIndex;
 		
 		while (nameBuffer.hasRemaining() && i < contentTypeHeader.length && contentTypeHeader[i] != '=' && contentTypeHeader[i] != ' ')
 			nameBuffer.put((byte) Character.toLowerCase(contentTypeHeader[i++]));
