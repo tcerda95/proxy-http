@@ -42,6 +42,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private Set<Method> acceptedMethods;
 	private boolean methodRecorded;
 	private boolean responseProcessed;
+	private boolean serverEOF;
 	
 	public HttpClientProxyHandler(int bufSize, Set<Method> acceptedMethods) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
@@ -54,6 +55,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		this.bodyParser = null;
 		this.methodRecorded = false;
 		this.responseProcessed = false;
+		this.serverEOF = false;
 		this.state = NOT_CONNECTED;
 		this.requestParser.reset();
 		
@@ -101,6 +103,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 		key.interestOps(SelectionKey.OP_WRITE);
 		
 		closeServerChannel();
+	}
+	
+	public void setServerEOF() {
+		this.serverEOF = true;
 	}
 	
 	@Override
@@ -152,6 +158,9 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 	
 	private boolean shouldKeepConnectionAlive() {
+		if (serverEOF)
+			return false;
+		
 		if (requestParser.hasHeaderValue(Header.CONNECTION))
 			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
 		else if (requestParser.hasHeaderValue(Header.PROXY_CONNECTION))

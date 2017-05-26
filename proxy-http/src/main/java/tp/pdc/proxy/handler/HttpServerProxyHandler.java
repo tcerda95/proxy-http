@@ -108,13 +108,18 @@ public class HttpServerProxyHandler extends HttpHandler {
 				
 				socketChannel.close();
 				
-				if (bodyParser != null && !shouldKeepAlive()) {
-					getClientHandler().setResponseProcessed();
+				if (bodyParser != null) {
 					LOGGER.debug("Registering client for write: client must consume EOF");
+					
+					if (shouldKeepAlive())
+						LOGGER.warn("Server EOF when should keep alive");
+					
+					if (!bodyParser.hasFinished())			// El servidor no envió headers de chunked o content-length o no los respetó. 
+						getClientHandler().setServerEOF();	// Se cierra conexión al cliente para indicar fin de la respuesta		   
+					
+					getClientHandler().setResponseProcessed();
 					this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 				}
-				else if (bodyParser != null && shouldKeepAlive())
-					setResponseError(key, "Server EOF when should keep alive");
 				else
 					setResponseError(key, "Server EOF when headers not finished");
 				
