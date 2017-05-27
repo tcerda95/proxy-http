@@ -23,6 +23,7 @@ public class ProtocolHandler implements Handler {
 	private ByteBuffer writeBuffer;
 	private CrazyProtocolParser parser;
 	private boolean clientClosedRead;
+	private boolean unrecuperableError;
 	
 	public ProtocolHandler(int bufferSize) {
 		readBuffer = ByteBuffer.allocate(bufferSize);
@@ -61,6 +62,8 @@ public class ProtocolHandler implements Handler {
 		} catch (ParserFormatException e) {
 			LOGGER.warn("Non-Recuperable error while parsing protocol: {}", e.getMessage());
 			key.interestOps(SelectionKey.OP_WRITE);
+			unrecuperableError = true;
+			return;
 		}
 		
 		if (parser.hasFinished() || clientClosedRead) {
@@ -84,7 +87,7 @@ public class ProtocolHandler implements Handler {
 		writeBuffer.compact();
 		
 		readBuffer.flip();
-		if (!parser.hasFinished() && readBuffer.hasRemaining())
+		if (key.isValid() && !parser.hasFinished() && readBuffer.hasRemaining())
 			process(key);
 		readBuffer.compact();
 	}
@@ -96,7 +99,7 @@ public class ProtocolHandler implements Handler {
 			int bytesWritten = socketChannel.write(writeBuffer);
 			LOGGER.info("Wrote {} bytes to protocol client", bytesWritten);
 			
-			if (parser.hasFinished() || clientClosedRead) {
+			if (parser.hasFinished() || clientClosedRead || unrecuperableError) {
 				if (!writeBuffer.hasRemaining()) {
 					LOGGER.debug("Closing connection to protocol client: parser finished and no bytes left in writeBuffer");
 					socketChannel.close();
