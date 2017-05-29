@@ -238,7 +238,7 @@ public class CrazyProtocolOutputGenerator {
 		putCRLF(output);
 
 		for (CrazyProtocolHeader header : CrazyProtocolHeader.values()) {
-			
+
 			if (header != CrazyProtocolHeader.END && header != CrazyProtocolHeader.METRICS 
 					&& header != CrazyProtocolHeader.PING && !isFlag(header))
 				generateOutput(header, output);
