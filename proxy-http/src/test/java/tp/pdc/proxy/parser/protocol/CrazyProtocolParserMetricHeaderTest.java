@@ -17,7 +17,7 @@ import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
-public class CrazyProtocolParserComplexHeadersTest {
+public class CrazyProtocolParserMetricHeaderTest {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	
@@ -32,22 +32,6 @@ public class CrazyProtocolParserComplexHeadersTest {
 	public void setUp() throws Exception {
 		parser = new CrazyProtocolParserImpl();
 		outputBuffer = ByteBuffer.allocate(4000);
-	}
-	
-	@Test
-	public void testNotFinished() throws ParserFormatException, UnsupportedEncodingException {
-		String protocolInput =  
-				"server_bytes_read\r\n"
-				+ "method_count\r\n"
-				+ "*3\r\n"
-				+ "GET\r\n"
-				+ "POST\r\n"
-				+ "GET\r\n";
-		
-		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
-		
-		parser.parse(inputBuffer, outputBuffer);
-		assertFalse(parser.hasFinished());
 	}
 	
 	@Test

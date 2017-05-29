@@ -53,10 +53,8 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		
 		
 		String protocolInput =  
-				"\r\n"
-				+ "asada\r\n"
+				"asada\r\n"
 				+ "l33tEnaBle\r\n"
-				+ "\r\n"
 				+ "server_bytes_read\r\n"
 				+ "server_bytes_written\r\n"
 				+ "server_connections\r\n"
@@ -64,8 +62,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 				+ "client_bytes_written\r\n"
 				+ "client_connections\r\n"
 				+ "method_count\r\n"
-				+ "*5\r\n"
-				+ "\r\n"
+				+ "*4\r\n"
 				+ "GES\r\n"
 				+ "GET\r\n"
 				+ "POST\r\n"
@@ -79,10 +76,8 @@ public class CrazyProtocolParserSimpleHeadersTest {
 				+ "ENd\r\n";
 		
 		String expectedOutput =
-				"-[NO_MATCH]\r\n"
-				+ "-[NO_MATCH]asada\r\n"
+				"-[NO_MATCH]asada\r\n"
 				+ "+l33tenable\r\n"
-				+ "-[NO_MATCH]\r\n"
 				+ "+server_bytes_read: 2\r\n"
 				+ "+server_bytes_written: 3\r\n"
 				+ "+server_connections: 1\r\n"
@@ -90,12 +85,13 @@ public class CrazyProtocolParserSimpleHeadersTest {
 				+ "+client_bytes_written: 5\r\n"
 				+ "+client_connections: 1\r\n"
 				+ "+method_count\r\n"
-				+ "-[NO_MATCH]\r\n"
+				+ "+*4\r\n"
 				+ "-[NO_MATCH]GES\r\n"
 				+ "+GET: 2\r\n"
 				+ "+POST: 1\r\n"
 				+ "+PUT: 0\r\n"
 				+ "+status_code_count\r\n"
+				+ "+*4\r\n"
 				+ "+404: 3\r\n"
 				+ "+410: 0\r\n"
 				+ "+302: 1\r\n"

@@ -40,4 +40,15 @@ public enum CrazyProtocolHeader {
 	}
 
 	public byte[] getBytes() { return headerBytes; }
+	
+	public static int maxHeaderLen() {	
+		int maxLength = 0;
+		for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
+			int currentLength = h.toString().length();
+			
+			if (currentLength > maxLength)
+					maxLength = currentLength;
+		}
+		return maxLength;
+	}
 }

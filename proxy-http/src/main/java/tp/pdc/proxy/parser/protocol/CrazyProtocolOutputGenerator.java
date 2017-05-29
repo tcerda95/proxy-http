@@ -1,13 +1,16 @@
 package tp.pdc.proxy.parser.protocol;
 
+import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import java.nio.ByteBuffer;
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
 import tp.pdc.proxy.metric.ClientMetricImpl;
 import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.parser.utils.ParseUtils;
+
 
 public class CrazyProtocolOutputGenerator {
 	
@@ -15,6 +18,7 @@ public class CrazyProtocolOutputGenerator {
 		
 	private ClientMetricImpl clientMetrics;
 	private ServerMetricImpl serverMetrics;
+	private L33tFlag l33tFlag;
 	
 	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
@@ -22,24 +26,25 @@ public class CrazyProtocolOutputGenerator {
 	public CrazyProtocolOutputGenerator() {
 		clientMetrics = ClientMetricImpl.getInstance();
 		serverMetrics = ServerMetricImpl.getInstance();
+		l33tFlag = L33tFlag.getInstance();
 		//TODO: sacarlo de properties
 		remainingBytes = ByteBuffer.allocate(4000);
 	}
 	
 	public void generateOutput(CrazyProtocolHeader header, ByteBuffer output) {
 		
-		putHeader(header.getBytes(), output);
+		putField(header.getBytes(), output);
 				
 		switch (header) {
 		
 			case L33TENABLE:
 				
-				L33tFlag.getInstance().set();
+				l33tFlag.set();
 				break;
 				
 			case L33TDISABLE:
 				
-				L33tFlag.getInstance().unset();
+				l33tFlag.unset();
 				break;
 				
 			case ISL33TENABLE:
@@ -83,7 +88,7 @@ public class CrazyProtocolOutputGenerator {
 				long serverConnections = serverMetrics.getConnections();
 				putValue(ParseUtils.parseLong(serverConnections), output);
 				break;
-				
+
 			case METHOD_COUNT:				
 				break;
 				
@@ -104,7 +109,7 @@ public class CrazyProtocolOutputGenerator {
 	
 	public void generateOutput(Method method, ByteBuffer output) {
 		
-		putHeader(method.getBytes(), output);
+		putField(method.getBytes(), output);
 		
 		int methodCount = clientMetrics.getMethodCount(method);
 		putValue(ParseUtils.parseInt(methodCount), output);
@@ -112,30 +117,27 @@ public class CrazyProtocolOutputGenerator {
 		putCRLF(output);
 	}
 	
-	public void generateOutput(Integer statusCode, ByteBuffer output) {
+	public void generateOutput(int statusCode, ByteBuffer output) {
 		
-		putHeader(ParseUtils.parseInt(statusCode), output);
+		putField(ParseUtils.parseInt(statusCode), output);
 				
 		int statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
 		putValue(ParseUtils.parseInt(statusCodeCount), output);
 		
 		putCRLF(output);
 	}
+
+	public void generateOutput(ByteBuffer input, ByteBuffer output) {
 	
-	public void generateOutput(byte c, CrazyProtocolInputError errorCode, ByteBuffer output) {
-		ByteBuffer characterWrapped = ByteBuffer.allocate(1);
-		characterWrapped.put(c);
-		characterWrapped.flip();
-		generateOutput(characterWrapped, errorCode, output);
+		put(PS.getValue(), output);
+		put(input, output);
+	
+		putCRLF(output);
 	}
 	
-	public void generateOutput(byte[] input, CrazyProtocolInputError errorCode, ByteBuffer output) {
-		generateOutput(ByteBuffer.wrap(input), errorCode, output);
-	}
-	
-	public void generateOutput(ByteBuffer input, CrazyProtocolInputError errorCode, ByteBuffer output) {
+	public void generateErrorOutput(ByteBuffer input, CrazyProtocolError errorCode, ByteBuffer output) {
 		
-		put((byte) '-', output);
+		put(LS.getValue(), output);
 		
 		put(errorCode.getBytes(), output);
 		
@@ -147,48 +149,38 @@ public class CrazyProtocolOutputGenerator {
 				putCRLF(output);
 				break;
 				
-			case NOT_VALID:
-				putMightContinue(output);
-				putEnd(output);
-				break;
-				
-			case TOO_LONG:
+			default:
 				putMightContinue(output);
 				putEnd(output);
 				break;
 		}
 	}
 	
-	public void generateOutput(CrazyProtocolInputError errorCode, ByteBuffer output) {
-		put((byte) '-', output);
-		put(errorCode.getBytes(), output);
-		putCRLF(output);
-	}
-	private void putHeader(byte[] bytes, ByteBuffer output) {
+	private void putField(byte[] bytes, ByteBuffer output) {
 				
-		put((byte) '+', output);
+		put(PS.getValue(), output);
 		put(bytes, output);
 	}
 	
 	private void putValue(byte[] bytes, ByteBuffer output) {
 				
-		put((byte) ':', output);
-		put((byte) ' ', output);
+		put(DP.getValue(), output);
+		put(SP.getValue(), output);
 		put(bytes, output);
 	}
 	
 	private void putCRLF(ByteBuffer output) {
 				
-		put((byte) '\r', output);
-		put((byte) '\n', output);
+		put(CR.getValue(), output);
+		put(LF.getValue(), output);
 	}
 	
 	private void putMightContinue(ByteBuffer output) {
-		put((byte) '[', output);
-		put((byte) '.', output);
-		put((byte) '.', output);
-		put((byte) '.', output);
-		put((byte) ']', output);
+		put(OB.getValue(), output);
+		put(PT.getValue(), output);
+		put(PT.getValue(), output);
+		put(PT.getValue(), output);
+		put(CB.getValue(), output);
 		
 		putCRLF(output);
 	}
@@ -202,28 +194,38 @@ public class CrazyProtocolOutputGenerator {
 	}
 	
 	private void put(ByteBuffer input, ByteBuffer output) {
-		while (input.hasRemaining())
-			put(input.get(), output);
+		
+		putRemainingBytes(output);
+		
+		if (output.remaining() >= input.remaining())
+			output.put(input);
+		else
+			lengthPut(input, output, output.remaining());
+		
+		remainingBytes.put(input);
 	}
 	
 	private void put(byte c, ByteBuffer output) {
 		
 		putRemainingBytes(output);
 		
-		if (output.hasRemaining())
+		if (output.remaining() >= 1)
 			output.put(c);
 		else
 			remainingBytes.put(c);
 	}	
 
 	private void putRemainingBytes(ByteBuffer output) {
-		
-		remainingBytes.flip();
-		
-		while(output.hasRemaining() && remainingBytes.hasRemaining())
-				output.put(remainingBytes.get());
-		
-		remainingBytes.compact();
+		if (remainingBytes()) {
+			remainingBytes.flip();
+			
+			if (output.remaining() >= remainingBytes.remaining())
+				output.put(remainingBytes);
+			else
+				lengthPut(remainingBytes, output, output.remaining());
+			
+			remainingBytes.compact();
+		}
 	}	
 	
 	private void addAllMetrics(ByteBuffer output) {
@@ -258,7 +260,15 @@ public class CrazyProtocolOutputGenerator {
 		}
 	}
 	
-	public boolean isFlag(CrazyProtocolHeader header) {
+	private void lengthPut(ByteBuffer input, ByteBuffer output, int length) {
+		BytesUtils.lengthPut(input, output, length);
+	}
+	
+	private boolean remainingBytes() {
+		return remainingBytes.position() != 0;
+	}
+	
+	private boolean isFlag(CrazyProtocolHeader header) {
 		return (header == CrazyProtocolHeader.L33TENABLE ||
 				header == CrazyProtocolHeader.L33TDISABLE);
 	}

@@ -31,6 +31,17 @@ public enum Method {
     public byte[] getBytes() {
     	return methodBytes;
     }
+    
+	public static int maxMethodLen() {	
+		int maxLength = 0;
+		for (Method m : Method.values()) {
+			int currentLength = m.toString().length();
+			
+			if (currentLength > maxLength)
+					maxLength = currentLength;
+		}
+		return maxLength;
+	}
 
     public static void main (String[] args) {
         ByteBuffer b = ByteBuffer.allocate(10);
