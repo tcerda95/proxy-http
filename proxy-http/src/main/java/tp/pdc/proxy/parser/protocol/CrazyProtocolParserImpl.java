@@ -1,13 +1,19 @@
 package tp.pdc.proxy.parser.protocol;
 
-import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.AS;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.CR;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.LF;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.US;
 import static tp.pdc.proxy.parser.utils.DecimalConstants.DECIMAL_BASE_VALUE;
 
 import java.nio.ByteBuffer;
+
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
+import tp.pdc.proxy.metric.interfaces.ClientMetric;
+import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
@@ -82,7 +88,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     private static final int HEADER_NAME_SIZE = ProxyProperties.getInstance().getHeaderNameBufferSize();
     private static final int HEADER_CONTENT_SIZE = ProxyProperties.getInstance().getHeaderContentBufferSize();
     
-    public CrazyProtocolParserImpl() {
+    public CrazyProtocolParserImpl(ClientMetric clientMetrics, ServerMetric serverMetrics) {
     	parserState = ParserState.READ_HEADER;
     	headerState = HeaderState.START;
     	argumentCountState = ArgumentCountState.NOT_READ_YET;
@@ -95,7 +101,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     	argumentNumber = 0;
     	statusCodeNumber = 0;
     	
-    	outputGenerator = new CrazyProtocolOutputGenerator();
+    	outputGenerator = new CrazyProtocolOutputGenerator(clientMetrics, serverMetrics);
     }
 
     @Override

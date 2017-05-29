@@ -2,30 +2,31 @@ package tp.pdc.proxy.parser.protocol;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import java.nio.ByteBuffer;
+
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
-import tp.pdc.proxy.metric.ClientMetricImpl;
-import tp.pdc.proxy.metric.ServerMetricImpl;
+import tp.pdc.proxy.metric.interfaces.ClientMetric;
+import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 
 public class CrazyProtocolOutputGenerator {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
-		
-	private ClientMetricImpl clientMetrics;
-	private ServerMetricImpl serverMetrics;
-	private L33tFlag l33tFlag;
+
+	private final ClientMetric clientMetrics;
+	private final ServerMetric serverMetrics;
+	private final L33tFlag l33tFlag;
 	
 	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
 	
-	public CrazyProtocolOutputGenerator() {
-		clientMetrics = ClientMetricImpl.getInstance();
-		serverMetrics = ServerMetricImpl.getInstance();
+	public CrazyProtocolOutputGenerator(ClientMetric clientMetrics, ServerMetric serverMetrics) {
+		this.clientMetrics = clientMetrics;
+		this.serverMetrics = serverMetrics;
 		l33tFlag = L33tFlag.getInstance();
 		//TODO: sacarlo de properties
 		remainingBytes = ByteBuffer.allocate(4000);

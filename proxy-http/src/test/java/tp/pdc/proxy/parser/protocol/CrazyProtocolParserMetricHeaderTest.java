@@ -11,10 +11,10 @@ import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.metric.ClientMetricImpl;
-import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
+import tp.pdc.proxy.metric.stub.ClientMetricStub;
+import tp.pdc.proxy.metric.stub.ServerMetricStub;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 
 public class CrazyProtocolParserMetricHeaderTest {
@@ -25,12 +25,14 @@ public class CrazyProtocolParserMetricHeaderTest {
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	
-	private ServerMetric serverMetric = ServerMetricImpl.getInstance();
-	private ClientMetric clientMetric = ClientMetricImpl.getInstance();
+	private ServerMetric serverMetric;
+	private ClientMetric clientMetric;
 	
 	@Before
 	public void setUp() throws Exception {
-		parser = new CrazyProtocolParserImpl();
+		serverMetric = new ServerMetricStub();
+		clientMetric = new ClientMetricStub();
+		parser = new CrazyProtocolParserImpl(clientMetric, serverMetric);
 		outputBuffer = ByteBuffer.allocate(4000);
 	}
 	
