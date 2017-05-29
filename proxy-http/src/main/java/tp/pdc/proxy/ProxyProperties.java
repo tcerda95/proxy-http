@@ -72,6 +72,10 @@ public class ProxyProperties {
 	public final int getProtocolBufferSize() {
 		return Integer.parseInt(properties.getProperty("protocol.bufferSize"));
 	}
+
+	public final int getProtocolParserBufferSize() {
+		return Integer.parseInt(properties.getProperty("protocol.parser.bufferSize"));
+	}
 	
 	public final int getProtocolPort() {
 		return Integer.parseInt(properties.getProperty("protocol.port"));
@@ -104,4 +108,5 @@ public class ProxyProperties {
 	public final int getConnectionCleanRate() {
 		return Integer.parseInt(properties.getProperty("connection.clean.rate"));
 	}
+
 }

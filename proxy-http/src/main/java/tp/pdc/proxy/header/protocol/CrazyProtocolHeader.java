@@ -17,6 +17,7 @@ public enum CrazyProtocolHeader {
 	METHOD_COUNT("method_count"),
 	STATUS_CODE_COUNT("status_code_count"),
 	METRICS("metrics"),
+	PING("ping"),
 	END("end");
 
 	private String headerName;
