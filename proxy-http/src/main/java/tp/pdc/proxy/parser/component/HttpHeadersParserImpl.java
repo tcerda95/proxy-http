@@ -2,16 +2,15 @@ package tp.pdc.proxy.parser.component;
 
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.*;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 public class HttpHeadersParserImpl implements HttpHeaderParser {
 
@@ -72,6 +71,12 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         while(inputBuffer.hasRemaining() && outputBuffer.remaining() > buffered)
             if (parse(inputBuffer.get(), outputBuffer))
                 return true;
+
+        if (outputBuffer.remaining() <= buffered)
+        	outputBuffer.limit(outputBuffer.position()); // Así se simula que el buffer está lleno
+
+        assertBufferCapacity(outputBuffer);
+
         return false;
     }
 
@@ -112,7 +117,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
                     break;
 
                 case RELEVANT_SPACE:
-                    if (ParseUtils.isHeaderNameChar(c)) {
+                    if (ParseUtils.isHeaderContentChar(c)) {
                         saveHeaderContentbyte((byte) Character.toLowerCase(c));
                         state = HttpHeaderState.RELEVANT_CONTENT;
                     } else {
@@ -175,7 +180,6 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
         buffered = headerName.position() + headerValue.position();
         return false;
-
     }
 
     private void saveHeaderNameByte(byte b) throws ParserFormatException {
@@ -203,11 +207,16 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
             outputBuffer.put(headerName).put(c);
 
         if (headersToSave.contains(currentHeader) || currentHeader == Header.HOST) {
-            savedHeaders.put(currentHeader, new byte[0]);
+            savedHeaders.put(currentHeader, ArrayUtils.EMPTY_BYTE_ARRAY);
             state = HttpHeaderState.RELEVANT_COLON;
         } else {
             state = HttpHeaderState.COLON;
         }
+    }
+
+    private void assertBufferCapacity(ByteBuffer buffer) {
+        if (buffer.capacity() < buffered)
+            throw new IllegalArgumentException("Output buffer too small");
     }
 
     private void addHeaders(ByteBuffer output) {

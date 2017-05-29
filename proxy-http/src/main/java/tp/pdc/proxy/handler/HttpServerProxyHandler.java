@@ -8,9 +8,13 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tp.pdc.proxy.ConnectionManager;
 import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.BytesUtils;
+import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
@@ -24,79 +28,32 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpResponseParserFactory RESPONSE_PARSER_FACTORY = HttpResponseParserFactory.getInstance();
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
+	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
 	
 	private HttpResponseParser responseParser;
 	private HttpBodyParser bodyParser;
 	private Method clientMethod;
-	private boolean responseProcessed;
 	private boolean responseCodeRecorded;
 	
 	public HttpServerProxyHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
 		super(readBufferSize, writeBuffer, processedBuffer);
 		this.responseParser = RESPONSE_PARSER_FACTORY.getResponseParser();
 		this.clientMethod = clientMethod;
-		responseProcessed = false;
-		responseCodeRecorded = false;
-	}
-
-	@Override
-	protected void processRead(SelectionKey key) {
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		ByteBuffer buffer = this.getReadBuffer();
-		
-		try {
-			int bytesRead = socketChannel.read(buffer);
-			
-			if (bytesRead == -1) {
-				LOGGER.warn("Closing connection to server: EOF");
-				socketChannel.close();
-				responseProcessed = true;
-				
-				LOGGER.debug("Registering clieng for write: client must consume EOF");
-				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
-			}
-			else {
-				LOGGER.info("Read {} bytes from server", bytesRead);
-				SERVER_METRICS.addBytesRead(bytesRead);
-			}
-			
-		} catch (IOException e) {
-			LOGGER.warn("Failed to read response from server");
-			getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey());
-		}
 	}
 	
-	@Override
-	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
-		ByteBuffer processedBuffer = this.getProcessedBuffer();
+	public void reset() {
+		responseParser.reset();
+		setConnectedPeerKey(null);
+		setProcessedBuffer(null);
+		setWriteBuffer(null);
 		
-		if (!responseParser.hasFinished())
-			processResponse(inputBuffer, processedBuffer, key);
-		else if (!bodyParser.hasFinished())
-			processBody(inputBuffer, processedBuffer, key);
-		
-		if (!key.channel().isOpen())
-			responseProcessed = true;
-		
-		if (processedBuffer.position() != 0) {
-			LOGGER.debug("Registering client for write: server has written to processed buffer");
-			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
-		}
-		
-		// Conexión no persistente
-		if (isResponseProcessed()) {
-			try {
-				LOGGER.info("Closing connection to server: whole response processed");
-				key.channel().close();
-			} catch (IOException e) {
-				LOGGER.error("Failed to close server's socket on response processed: {}", e.getMessage());
-				e.printStackTrace();
-			}
-		}
-		else if (!processedBuffer.hasRemaining()) {
-			LOGGER.debug("Unregistering server from read: processed buffer full");
-			key.interestOps(0);
-		}
+		clientMethod = null;
+		responseCodeRecorded = false;
+		bodyParser = null;
+	}
+	
+	public void setClientMethod(Method method) {
+		this.clientMethod = method;
 	}
 	
 	@Override
@@ -127,8 +84,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 			}
 			
 		} catch (IOException e) {
-			LOGGER.warn("Failed to write request to server");
-			getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey());
+			LOGGER.warn("Failed to write response to server");
+			setResponseError(key, e.getMessage());
 			try {
 				socketChannel.close();
 			} catch (IOException e1) {
@@ -138,6 +95,88 @@ public class HttpServerProxyHandler extends HttpHandler {
 		}
 	}
 	
+	@Override
+	protected void processRead(SelectionKey key) {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		ByteBuffer buffer = this.getReadBuffer();
+		
+		try {
+			int bytesRead = socketChannel.read(buffer);
+			
+			if (bytesRead == -1) {
+				LOGGER.warn("Closing connection to server: EOF");
+				
+				socketChannel.close();
+				
+				if (bodyParser != null) {
+					LOGGER.debug("Registering client for write: client must consume EOF");
+					
+					if (shouldKeepAlive())
+						LOGGER.warn("Server EOF when should keep alive");
+					
+					if (!bodyParser.hasFinished())			// El servidor no envió headers de chunked o content-length o no los respetó. 
+						getClientHandler().setServerEOF();	// Se cierra conexión al cliente para indicar fin de la respuesta		   
+					
+					getClientHandler().setResponseProcessed();
+					this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+				}
+				else
+					setResponseError(key, "Server EOF when headers not finished");
+				
+			}
+			else {
+				LOGGER.info("Read {} bytes from server", bytesRead);
+				SERVER_METRICS.addBytesRead(bytesRead);
+			}
+			
+		} catch (IOException e) {
+			LOGGER.warn("Failed to read response from server", e.getMessage());
+			setResponseError(key, e.getMessage());
+		}
+	}
+	
+	@Override
+	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
+		ByteBuffer processedBuffer = this.getProcessedBuffer();
+		
+		if (!key.isValid())
+			return;
+		
+		if (!responseParser.hasFinished())
+			processResponse(inputBuffer, processedBuffer, key);
+		else if (!bodyParser.hasFinished())
+			processBody(inputBuffer, processedBuffer, key);
+		
+		if (!key.channel().isOpen())
+			getClientHandler().setResponseProcessed();
+		
+		if (processedBuffer.position() != 0) {
+			LOGGER.debug("Registering client for write: server has written to processed buffer");
+			this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+		}
+		
+		if (bodyParser != null && bodyParser.hasFinished()) {
+			try {
+				if (shouldKeepAlive())
+					CONNECTION_MANAGER.storeConnection(key);
+				else
+					key.channel().close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to store server's connection on response processed: {}", e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		else if (!processedBuffer.hasRemaining()) {
+			LOGGER.debug("Unregistering server from read: processed buffer full");
+			key.interestOps(0);
+		}
+	}
+	
+	private boolean shouldKeepAlive() {
+		return responseParser.hasHeaderValue(Header.CONNECTION) && 
+				BytesUtils.equalsBytes(responseParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+	}
+
 	private void processResponse(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
 			responseParser.parse(inputBuffer, outputBuffer);
@@ -153,23 +192,24 @@ public class HttpServerProxyHandler extends HttpHandler {
 			}
 			
 		} catch (ParserFormatException e) {
-			setResponseError(key, e);
+			setResponseError(key, e.getMessage());
 		} catch (IllegalHttpHeadersException e) {
-			setResponseError(key, e);
+			setResponseError(key, e.getMessage());
 		}
 	}
 	
 	private void processBody(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
 			bodyParser.parse(inputBuffer, outputBuffer);
-			responseProcessed = bodyParser.hasFinished();
+			if (bodyParser.hasFinished())
+				getClientHandler().setResponseProcessed();
 		} catch (ParserFormatException e) {
-			setResponseError(key, e);
+			setResponseError(key, e.getMessage());
 		}
 	}
 
-	private void setResponseError(SelectionKey key, Exception e) {
-		LOGGER.warn("Closing Connection to server: {}", e.getMessage());
+	private void setResponseError(SelectionKey key, String message) {
+		LOGGER.warn("Closing Connection to server: {}", message);
 		
 		try {
 			key.channel().close();
@@ -177,12 +217,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 			e1.printStackTrace();
 		}
 		
-		responseProcessed = true;
-		this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
-	}
-
-	public boolean isResponseProcessed() {
-		return responseProcessed;
+		// TODO: en realidad solo hay q settear estado de error sin responder ningun codigo de error
+		getClientHandler().setErrorState(HttpErrorCode.BAD_GATEWAY_502, this.getConnectedPeerKey());
 	}
 	
 	private ClientHandlerState getClientState() {

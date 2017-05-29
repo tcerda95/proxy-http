@@ -4,7 +4,6 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 import java.nio.ByteBuffer;
 
-//TODO: tests
 public class ParseUtils {
     private static final int US_ASCII_LENGTH = 128;
 
@@ -14,7 +13,6 @@ public class ParseUtils {
     private static final byte[] separator = {'(', ')', '<', '>', '@', ',', ';', ':', '\\',
         '"', '/', '[', ']', '?', '=', '{', '}', SP.getValue(), HT.getValue()};
 
-    // Cargo tablas estáticas para hacer los chequeos más rápido.
     static {
         isToken = new boolean[US_ASCII_LENGTH]; isSeparator = new boolean[US_ASCII_LENGTH];
         isLWS = new boolean[US_ASCII_LENGTH]; isDigit = new boolean[US_ASCII_LENGTH];
@@ -44,33 +42,33 @@ public class ParseUtils {
     }
 
     public static boolean isHeaderNameChar (byte c) {
-        return isToken[c];
+        return c > 0 && (isToken[c]);
     }
 
     public static boolean isHeaderContentChar (byte c) {
-        return isToken[c] || isLWS[c] || isSeparator[c];
+        return c > 0 && (isToken[c] || isLWS[c] || isSeparator[c]);
     }
 
     public static boolean isDigit (byte c) {
-        return isDigit[c];
+        return c > 0 && isDigit[c];
     }
 
     public static boolean isText (byte c) {
-        return isToken[c] || isSeparator[c];
+        return c > 0 && (isToken[c] || isSeparator[c]);
     }
 
-    public static boolean isUriCharacter(byte c) { return isToken[c] || isDigit[c] || isSeparator[c]; }
+    public static boolean isUriCharacter(byte c) { return c > 0 && (isToken[c] || isDigit[c] || isSeparator[c]); }
 
     public static boolean isAlphabetic(byte c) {
-        return isAlphabetic[c];
+        return c > 0 && isAlphabetic[c];
     }
     
     public static boolean isAlphaNumerical(byte c) {
-    	return isAlphaNumerical[c];
+    	return c > 0 && isAlphaNumerical[c];
     }
     
     public static boolean isHexadecimal(byte c) {
-        return isHexadecimal[c];
+        return c > 0 && isHexadecimal[c];
     }
     
 	public static int parseInt(byte[] arr) {

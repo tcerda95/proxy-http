@@ -1,11 +1,15 @@
 package tp.pdc.proxy.parser.factory;
 
+import java.util.List;
+
 import tp.pdc.proxy.L33tFlag;
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.parser.CharsetParser;
 import tp.pdc.proxy.parser.body.HttpChunkedParser;
 import tp.pdc.proxy.parser.body.HttpConnectionCloseParser;
 import tp.pdc.proxy.parser.body.HttpContentLengthLeetParser;
@@ -19,10 +23,13 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class HttpBodyParserFactory {
 	
+	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final HttpBodyParserFactory INSTANCE = new HttpBodyParserFactory();
 	
 	private final HttpNullBodyParser nullParser = HttpNullBodyParser.getInstance();
 	private final L33tFlag l33tFlag = L33tFlag.getInstance();
+	private final CharsetParser charsetParser = new CharsetParser();
+	private final List<byte[]> acceptedCharsets = PROPERTIES.getAcceptedCharsets();
 	
 	private HttpBodyParserFactory() {
 	}
@@ -103,9 +110,23 @@ public class HttpBodyParserFactory {
 	}
 	
 	private boolean shouldL33t(HttpHeaderParser headersParser) {
-		byte[] textPlain = HeaderValue.TEXT_PLAIN.getValue();
-		return l33tFlag.isSet() && headersParser.hasHeaderValue(Header.CONTENT_TYPE) 
-				&& BytesUtils.equalsBytes(headersParser.getHeaderValue(Header.CONTENT_TYPE), textPlain, textPlain.length);
+		final byte[] textPlain = HeaderValue.TEXT_PLAIN.getValue();
+		
+		if (l33tFlag.isSet() && headersParser.hasHeaderValue(Header.CONTENT_TYPE)) {
+			final byte[] contentTypeValue = headersParser.getHeaderValue(Header.CONTENT_TYPE);
+			
+			return BytesUtils.equalsBytes(contentTypeValue, textPlain, textPlain.length) && 
+					isAcceptedCharset(charsetParser.extractCharset(contentTypeValue));
+		}
+		
+		return false;
+	}
+
+	private boolean isAcceptedCharset(byte[] charset) {
+		for (byte[] accepted : acceptedCharsets)
+			if (BytesUtils.equalsBytes(charset, accepted, accepted.length))
+				return true;
+		return false;
 	}
 	
 }

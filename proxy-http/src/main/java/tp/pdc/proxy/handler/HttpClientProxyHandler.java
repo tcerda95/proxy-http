@@ -1,30 +1,26 @@
 package tp.pdc.proxy.handler;
 
-import static tp.pdc.proxy.handler.ClientHandlerState.CONNECTED;
-import static tp.pdc.proxy.handler.ClientHandlerState.CONNECTING;
-import static tp.pdc.proxy.handler.ClientHandlerState.ERROR;
-import static tp.pdc.proxy.handler.ClientHandlerState.NOT_CONNECTED;
-import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_PROCESSED;
-import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_PROCESSED_CONNECTING;
-import static tp.pdc.proxy.handler.ClientHandlerState.REQUEST_SENT;
+import static tp.pdc.proxy.handler.ClientHandlerState.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tp.pdc.proxy.ConnectionManager;
 import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.BytesUtils;
+import tp.pdc.proxy.header.Header;
+import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ClientMetricImpl;
-import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.parser.HostParser;
 import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
@@ -38,23 +34,41 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
 	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
+	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
 	
 	private ClientHandlerState state;
 	private HttpRequestParser requestParser;
 	private HttpBodyParser bodyParser;
 	private Set<Method> acceptedMethods;
 	private boolean methodRecorded;
+	private boolean responseProcessed;
+	private boolean serverEOF;
 	
 	public HttpClientProxyHandler(int bufSize, Set<Method> acceptedMethods) {
 		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
+		this.acceptedMethods = acceptedMethods;
 		this.state = NOT_CONNECTED;
 		this.requestParser = REQUEST_PARSER_FACTORY.getRequestParser();
-		this.acceptedMethods = acceptedMethods;
-		methodRecorded = false;
 	}
 	
+	public void reset(SelectionKey key) {
+		this.bodyParser = null;
+		this.methodRecorded = false;
+		this.responseProcessed = false;
+		this.serverEOF = false;
+		this.state = NOT_CONNECTED;
+		this.requestParser.reset();
+		
+		setConnectedPeerKey(null);
+		key.interestOps(SelectionKey.OP_READ);
+	}
+		
 	public ClientHandlerState getState() {
 		return state;
+	}
+	
+	public void setResponseProcessed() {
+		this.responseProcessed = true;
 	}
 	
 	public void setConnectedState() {
@@ -91,6 +105,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 		closeServerChannel();
 	}
 	
+	public void setServerEOF() {
+		this.serverEOF = true;
+	}
+	
 	@Override
 	protected void processWrite(ByteBuffer inputBuffer, SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -101,25 +119,31 @@ public class HttpClientProxyHandler extends HttpHandler {
 			LOGGER.info("Sent {} bytes to client", bytesSent);
 			CLIENT_METRICS.addBytesWritten(bytesSent);
 			
-			if (!inputBuffer.hasRemaining()) {
-				LOGGER.debug("Unregistering client: write buffer empty");
-				key.interestOps(0);			
-				if (state == ERROR) {
-					socketChannel.close();
-					LOGGER.info("Closing connection to client: error message sent");
-				}
-				else if (isServerResponseProcessed()) {
-					LOGGER.info("Server response processed and sent: closing connection to client");
-					socketChannel.close();
-				}
-			}
-			
 			if (state != ERROR && !isServerResponseProcessed()) {
 				LOGGER.debug("Registering server for read: server's response not processed yet");
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
 				getServerHandler().handleProcess(getConnectedPeerKey());  // Espacio libre en processedBuffer ---> servidor puede procesar
 			}
-			
+
+			if (!inputBuffer.hasRemaining()) {
+				LOGGER.debug("Unregistering client: write buffer empty");
+				key.interestOps(0);
+
+				if (state == ERROR) {
+					socketChannel.close();
+					LOGGER.info("Closing connection to client: error message sent");
+				}
+				else if (isServerResponseProcessed()) {
+					if (shouldKeepConnectionAlive()) {
+						LOGGER.info("Keeping alive connection: server response processed and sent");
+						reset(key);
+					}
+					else {
+						LOGGER.info("Closing connection to client: server response processed and sent");
+						socketChannel.close();
+					}
+				}
+			}			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write to client: {}", e.getMessage());
 			e.printStackTrace();
@@ -133,6 +157,17 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 	
+	private boolean shouldKeepConnectionAlive() {
+		if (serverEOF)
+			return false;
+		
+		if (requestParser.hasHeaderValue(Header.CONNECTION))
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+		else if (requestParser.hasHeaderValue(Header.PROXY_CONNECTION))
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.PROXY_CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+		return false;
+	}
+
 	@Override
 	protected void processRead(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -141,7 +176,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		try {
 			int bytesRead = socketChannel.read(buffer);
 			if (bytesRead == -1) {
-				LOGGER.warn("Received EOF from client");
+				LOGGER.info("Received EOF from client");
 				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo? SI
 				closeServerChannel();
 			}
@@ -159,14 +194,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 	protected void process(ByteBuffer inputBuffer, SelectionKey key) {
 		ByteBuffer processedBuffer = this.getProcessedBuffer();
 		
-		if (!requestParser.hasFinished()) {
-			LOGGER.debug("Processing client's headers");
+		if (!requestParser.hasFinished())
 			processRequest(inputBuffer, processedBuffer, key);
-		}
-		else if (!bodyParser.hasFinished()) {
-			LOGGER.debug("Processing client's body");
+		else if (!bodyParser.hasFinished())
 			processBody(inputBuffer, processedBuffer, key);
-		}
 		
 		if (state == ERROR)
 			return;
@@ -238,9 +269,9 @@ public class HttpClientProxyHandler extends HttpHandler {
 			throw new IllegalStateException("State must be " + CONNECTING + " or " + CONNECTING);
 		}
 	}
-	
+		
 	private boolean isServerResponseProcessed() {
-		return getServerHandler().isResponseProcessed();
+		return responseProcessed;
 	}
 	
 	private void closeServerChannel() {
@@ -300,30 +331,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 
 	private void tryConnect(byte[] hostBytes, SelectionKey key) throws IOException {
 		InetSocketAddress address = HOST_PARSER.parseAddress(hostBytes);
-		Selector selector = key.selector();
-		SocketChannel serverSocket = SocketChannel.open();
-		SelectionKey serverKey;
-				
-		serverSocket.configureBlocking(false);
+		
 		LOGGER.debug("Server address: {}", address);
 		
-		if (serverSocket.connect(address)) {
-			serverKey = serverSocket.register(selector, SelectionKey.OP_WRITE, buildHttpServerProxyHandler(key));
-			ServerMetricImpl.getInstance().addConnection();
-			state = CONNECTED;
-		}
-		else {
-			serverKey = serverSocket.register(selector, SelectionKey.OP_CONNECT, buildHttpServerProxyHandler(key));
-			state = CONNECTING;
-		}
-		
-		this.setConnectedPeerKey(serverKey);
-	}
-	
-	private HttpServerProxyHandler buildHttpServerProxyHandler(SelectionKey key) {
-		HttpServerProxyHandler handler = new HttpServerProxyHandler(this.getProcessedBuffer().capacity(), this.getProcessedBuffer(), this.getWriteBuffer(), requestParser.getMethod());
-		handler.setConnectedPeerKey(key);
-		return handler;
+		state = CONNECTING;
+		CONNECTION_MANAGER.connect(requestParser.getMethod(), address, key);		
 	}
 	
 	private HttpServerProxyHandler getServerHandler() {

@@ -1,17 +1,13 @@
 package tp.pdc.proxy.parser.component;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
-import tp.pdc.proxy.parser.main.HttpRequestParserImpl;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
-import java.net.URI;
+import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
@@ -19,7 +15,6 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParserImpl.class);
     private static final int METHOD_NAME_SIZE = ProxyProperties.getInstance().getMethodBufferSize();
     private static final int URI_HOST_SIZE = ProxyProperties.getInstance().getURIHostBufferSize();
 
@@ -169,7 +164,18 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     handleError("Error while parsing first line");
             }
         }
+
+        if (output.remaining() <= buffered)
+            output.limit(output.position()); // Así se simula que el buffer está lleno
+
+        assertBufferCapacity(output);
+
         return false;
+    }
+
+    private void assertBufferCapacity(ByteBuffer buffer) {
+        if (buffer.capacity() <= buffered)
+            throw new IllegalArgumentException("Output buffer too small");
     }
 
     private void saveMethodByte(byte c) throws ParserFormatException {
@@ -213,7 +219,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         state = RequestLineParserState.START;
         methodName.clear();
         URIHostBuf.clear();
-        method = null; hostValue = null;
+        method = null; 
+        hostValue = null;
         buffered = 0;
     }
 }

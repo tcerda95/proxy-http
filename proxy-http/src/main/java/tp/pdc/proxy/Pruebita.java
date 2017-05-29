@@ -14,11 +14,12 @@ import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.handler.interfaces.Handler;
 import tp.pdc.proxy.handler.supplier.HttpClientProxyHandlerSupplier;
+import tp.pdc.proxy.handler.supplier.ProtocolHandlerSupplier;
 
 public class Pruebita {
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
 	
 	private final Selector selector;
 	private final int proxyPort;
@@ -32,7 +33,7 @@ public class Pruebita {
 		this.protocolPort = protocolPort;
 		
 		registerChannel(proxyPort, HttpClientProxyHandlerSupplier.getInstance());
-		registerChannel(protocolPort, () -> (null)); // TODO: Supplier del handler de nuestro protocolo
+		registerChannel(protocolPort, ProtocolHandlerSupplier.getInstance());
 		
 		LOGGER.info("Setup done"); 
 	}
@@ -48,7 +49,7 @@ public class Pruebita {
 		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol();
 		
 		LOGGER.info("Accepting proxy connections from port: {}", proxyPort);
-		LOGGER.info("COMING SOON: accepting protocol connections from port: {}", protocolPort);
+		LOGGER.info("Accepting protocol connections from port: {}", protocolPort);
 		
 		while (true) {
 			try {
@@ -61,6 +62,7 @@ public class Pruebita {
 			
 			Set<SelectionKey> keySet = selector.selectedKeys();			
 			Iterator<SelectionKey> keyIter = keySet.iterator();
+			
 			while (keyIter.hasNext()) {
 				SelectionKey key = keyIter.next();
 				keyIter.remove();
@@ -81,6 +83,8 @@ public class Pruebita {
 					protocol.handleWrite(key);
 				}
 			}
+			
+			CONNECTION_MANAGER.clean();
 		}
 	}
 	

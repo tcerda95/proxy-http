@@ -16,11 +16,12 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 public class CrazyProtocolOutputGenerator {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	private static final int PROTOCOL_PARSER_BUFFER_SIZE = ProxyProperties.getInstance().getProtocolParserBufferSize();
 
 	private final ClientMetric clientMetrics;
 	private final ServerMetric serverMetrics;
 	private final L33tFlag l33tFlag;
-	
+
 	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
 	
@@ -28,8 +29,7 @@ public class CrazyProtocolOutputGenerator {
 		this.clientMetrics = clientMetrics;
 		this.serverMetrics = serverMetrics;
 		l33tFlag = L33tFlag.getInstance();
-		//TODO: sacarlo de properties
-		remainingBytes = ByteBuffer.allocate(4000);
+		remainingBytes = ByteBuffer.allocate(PROTOCOL_PARSER_BUFFER_SIZE);
 	}
 	
 	public void generateOutput(CrazyProtocolHeader header, ByteBuffer output) {
@@ -98,6 +98,9 @@ public class CrazyProtocolOutputGenerator {
 				
 			case METRICS:
 				addAllMetrics(output);
+				break;
+
+			case PING:
 				break;
 				
 			case END:				
@@ -268,7 +271,7 @@ public class CrazyProtocolOutputGenerator {
 		for (CrazyProtocolHeader header : CrazyProtocolHeader.values()) {
 			
 			if (header != CrazyProtocolHeader.END && header != CrazyProtocolHeader.METRICS 
-					&& !isFlag(header))
+					&& header != CrazyProtocolHeader.PING && !isFlag(header))
 				generateOutput(header, output);
 		
 			switch (header) {

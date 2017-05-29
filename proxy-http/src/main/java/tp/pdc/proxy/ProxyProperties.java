@@ -3,11 +3,14 @@ package tp.pdc.proxy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,18 +24,25 @@ public class ProxyProperties {
 	private static final Set<Method> ACCEPTED_METHODS = Collections.unmodifiableSet(EnumSet.of(Method.GET, Method.POST, Method.HEAD));
 	
 	private final Charset charset = Charset.forName("ASCII");
+	private final List<byte[]> acceptedCharsets;
 	private final Properties properties;
 	
 	private ProxyProperties() {
 		properties = new Properties();
 		ClassLoader loader = Thread.currentThread().getContextClassLoader();
 		InputStream resourceStream = loader.getResourceAsStream(RESOURCE_NAME);
+		
 		try {
 			properties.load(resourceStream);
 		} catch (IOException e) {
 			LOGGER.error("Failed to load proxy.properties: {}", e.getMessage());
 			e.printStackTrace();
 		}
+		
+		acceptedCharsets = new ArrayList<>();
+		acceptedCharsets.add(ArrayUtils.EMPTY_BYTE_ARRAY);
+		acceptedCharsets.add("utf-8".getBytes(getCharset()));
+		acceptedCharsets.add("iso-".getBytes(getCharset()));
 	}
 	
 	public static final ProxyProperties getInstance() {
@@ -41,6 +51,14 @@ public class ProxyProperties {
 	
 	public final Charset getCharset() {
 		return charset;
+	}
+	
+	public Set<Method> getAcceptedMethods() {
+		return ACCEPTED_METHODS;
+	}
+
+	public List<byte[]> getAcceptedCharsets() {
+		return acceptedCharsets;
 	}
 	
 	public final int getProxyBufferSize() {
@@ -53,6 +71,10 @@ public class ProxyProperties {
 	
 	public final int getProtocolBufferSize() {
 		return Integer.parseInt(properties.getProperty("protocol.bufferSize"));
+	}
+
+	public final int getProtocolParserBufferSize() {
+		return Integer.parseInt(properties.getProperty("protocol.parser.bufferSize"));
 	}
 	
 	public final int getProtocolPort() {
@@ -74,8 +96,17 @@ public class ProxyProperties {
 	public final int getHeaderContentBufferSize() {
 		return Integer.parseInt(properties.getProperty("parser.headerContentBufferSize"));
 	}
-
-	public Set<Method> getAcceptedMethods() {
-		return ACCEPTED_METHODS;
+	
+	public final int getConnectionQueueLength() {
+		return Integer.parseInt(properties.getProperty("connection.queue.length"));
 	}
+	
+	public final int getConnectionTimeToLive() {
+		return Integer.parseInt(properties.getProperty("connection.ttl"));
+	}
+	
+	public final int getConnectionCleanRate() {
+		return Integer.parseInt(properties.getProperty("connection.clean.rate"));
+	}
+
 }
