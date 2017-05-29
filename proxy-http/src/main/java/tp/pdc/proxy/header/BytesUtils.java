@@ -51,4 +51,11 @@ public final class BytesUtils {
     public static boolean equalsBytes(byte[] arr1, byte[] arr2) {
     	return (arr1 == arr2) || (arr1.length == arr2.length && equalsBytes(arr1, arr2, arr1.length));
     }
+    
+    public static int findValueIndex(byte[] arr, byte value, int startingIndex) {
+		for (int i = startingIndex; i < arr.length; i++)
+			if (arr[i] == value)
+				return i;
+		return -1;
+    }
 }
