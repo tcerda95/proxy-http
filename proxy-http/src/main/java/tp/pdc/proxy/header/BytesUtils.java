@@ -20,6 +20,10 @@ public final class BytesUtils {
 		input.position(inputPos + length);
 	}
 	
+	public static void lengthPut(byte[] input, ByteBuffer output, int length) {
+		output.put(input, 0, length);
+	}
+	
     public static boolean equalsBytes(byte[] array, ByteBuffer byteBuffer, int length) {
     	byte[] bufferArray = byteBuffer.array();
     	int offset = byteBuffer.position();

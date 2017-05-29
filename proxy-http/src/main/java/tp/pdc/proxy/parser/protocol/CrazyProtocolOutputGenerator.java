@@ -56,37 +56,37 @@ public class CrazyProtocolOutputGenerator {
 			case CLIENT_BYTES_READ:
 				
 				long clientBytesRead = clientMetrics.getBytesRead();
-				putValue(ParseUtils.parseLong(clientBytesRead), output);
+				putValue(clientBytesRead, output);
 				break;
 				
 			case CLIENT_BYTES_WRITTEN:
 				
 				long clientBytesWritten = clientMetrics.getBytesWritten();
-				putValue(ParseUtils.parseLong(clientBytesWritten), output);
+				putValue(clientBytesWritten, output);
 				break;
 
 			case CLIENT_CONNECTIONS:
 				
 				long clientConnections = (clientMetrics.getConnections());
-				putValue(ParseUtils.parseLong(clientConnections), output);
+				putValue(clientConnections, output);
 				break;
 				
 			case SERVER_BYTES_READ:
 				
 				long serverBytesRead = serverMetrics.getBytesRead();
-				putValue(ParseUtils.parseLong(serverBytesRead), output);
+				putValue(serverBytesRead, output);
 				break;
 				
 			case SERVER_BYTES_WRITTEN:
 				
 				long serverBytesWritten = serverMetrics.getBytesWritten();
-				putValue(ParseUtils.parseLong(serverBytesWritten), output);
+				putValue(serverBytesWritten, output);
 				break;
 
 			case SERVER_CONNECTIONS:
 				
 				long serverConnections = serverMetrics.getConnections();
-				putValue(ParseUtils.parseLong(serverConnections), output);
+				putValue(serverConnections, output);
 				break;
 
 			case METHOD_COUNT:				
@@ -112,17 +112,17 @@ public class CrazyProtocolOutputGenerator {
 		putField(method.getBytes(), output);
 		
 		int methodCount = clientMetrics.getMethodCount(method);
-		putValue(ParseUtils.parseInt(methodCount), output);
+		putValue(methodCount, output);
 		
 		putCRLF(output);
 	}
 	
 	public void generateOutput(int statusCode, ByteBuffer output) {
 		
-		putField(ParseUtils.parseInt(statusCode), output);
+		putField(statusCode, output);
 				
 		int statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
-		putValue(ParseUtils.parseInt(statusCodeCount), output);
+		putValue(statusCodeCount, output);
 		
 		putCRLF(output);
 	}
@@ -162,11 +162,34 @@ public class CrazyProtocolOutputGenerator {
 		put(bytes, output);
 	}
 	
+	private void putField(int number, ByteBuffer output) {
+		
+		put(PS.getValue(), output);
+		
+		ParseUtils.parseInt(number, output, remainingBytes);
+	}
+	
 	private void putValue(byte[] bytes, ByteBuffer output) {
 				
 		put(DP.getValue(), output);
 		put(SP.getValue(), output);
 		put(bytes, output);
+	}
+	
+	private void putValue(int number, ByteBuffer output) {
+		
+		put(DP.getValue(), output);
+		put(SP.getValue(), output);
+
+		ParseUtils.parseInt(number, output, remainingBytes);
+	}
+	
+	private void putValue(long number, ByteBuffer output) {
+		
+		put(DP.getValue(), output);
+		put(SP.getValue(), output);
+
+		ParseUtils.parseLong(number, output, remainingBytes);
 	}
 	
 	private void putCRLF(ByteBuffer output) {
@@ -190,7 +213,16 @@ public class CrazyProtocolOutputGenerator {
 	}
 	
 	private void put(byte[] input, ByteBuffer output) {
-		put(ByteBuffer.wrap(input), output);
+
+		putRemainingBytes(output);
+		
+		if (output.remaining() >= input.length)
+			output.put(input);
+		else {
+			int remainingOutput = output.remaining();
+			lengthPut(input, output, remainingOutput);
+			remainingBytes.put(input, remainingOutput, input.length-remainingOutput);	
+		}
 	}
 	
 	private void put(ByteBuffer input, ByteBuffer output) {
@@ -199,10 +231,10 @@ public class CrazyProtocolOutputGenerator {
 		
 		if (output.remaining() >= input.remaining())
 			output.put(input);
-		else
+		else {
 			lengthPut(input, output, output.remaining());
-		
-		remainingBytes.put(input);
+			remainingBytes.put(input);
+		}
 	}
 	
 	private void put(byte c, ByteBuffer output) {
@@ -263,6 +295,11 @@ public class CrazyProtocolOutputGenerator {
 	private void lengthPut(ByteBuffer input, ByteBuffer output, int length) {
 		BytesUtils.lengthPut(input, output, length);
 	}
+	
+	private void lengthPut(byte[] input, ByteBuffer output, int length) {
+		BytesUtils.lengthPut(input, output, length);
+	}
+	
 	
 	private boolean remainingBytes() {
 		return remainingBytes.position() != 0;

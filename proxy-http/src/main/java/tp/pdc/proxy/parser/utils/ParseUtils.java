@@ -94,15 +94,18 @@ public class ParseUtils {
 		return num;
 	}
 	
-	public static byte[] parseInt(int value) {
+	public static byte[] parseInt(int value, ByteBuffer output, ByteBuffer remainingBytes) {
 		
 		int len = intLength(value);
-		
-		ByteBuffer output = ByteBuffer.allocate(len);
-		
+				
 		for(int j=len; j>0; j--) {
 			int digit = (int) (value/Math.pow(10,j-1));
-			output.put((byte) (digit + '0'));
+			
+			if (output.hasRemaining())
+				output.put((byte) (digit + '0'));
+			else
+				remainingBytes.put((byte) (digit + '0'));
+			
 			value = (int) (value - digit * Math.pow(10,j-1));
 		}
 		
@@ -124,15 +127,18 @@ public class ParseUtils {
 		return length;
 	}
 	
-	public static byte[] parseLong(long value) {
+	public static byte[] parseLong(long value, ByteBuffer output, ByteBuffer remainingBytes) {
 		
 		int len = longLength(value);
-		
-		ByteBuffer output = ByteBuffer.allocate(len);
-		
+			
 		for(int j=len; j>0; j--) {
-			long digit = (long) (value/Math.pow(10,j-1));
-			output.put((byte) (digit + '0'));
+			int digit = (int) (value/Math.pow(10,j-1));
+			
+			if (output.hasRemaining())
+				output.put((byte) (digit + '0'));
+			else
+				remainingBytes.put((byte) (digit + '0'));
+
 			value = (long) (value - digit * Math.pow(10,j-1));
 		}
 		

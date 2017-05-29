@@ -23,7 +23,7 @@ public class CrazyProtocolParserBufferOverflowTest {
 	@Before
 	public void setUp() throws Exception {
 		parser = new CrazyProtocolParserImpl();
-		outputBuffer = ByteBuffer.allocate(20);
+		outputBuffer = ByteBuffer.allocate(25);
 	}
 
 	@Test
@@ -32,12 +32,42 @@ public class CrazyProtocolParserBufferOverflowTest {
 				"server_bytes_read\r\n"
 				+ "ISL33TenaBle\r\n"
 				+ "isl33tenable\r\n"
+				+ "server_bytes_read\r\n"
+				+ "server_bytes_read\r\n"
+				+ "server_bytes_read\r\n"
+				+ "method_count\r\n"
+				+ "*4\r\n"
+				+ "GES\r\n"
+				+ "GET\r\n"
+				+ "POST\r\n"
+				+ "PUT\r\n"
+				+ "status_code_count\r\n"
+				+ "*4\r\n"
+				+ "404\r\n"
+				+ "410\r\n"
+				+ "302\r\n"
+				+ "404\r\n"
 				+ "enD\r\n";
 		
 		String expectedOutput = 
 				"+server_bytes_read: 0\r\n"
 				+ "+isl33tenable: NO\r\n"
 				+ "+isl33tenable: NO\r\n"
+				+ "+server_bytes_read: 0\r\n"
+				+ "+server_bytes_read: 0\r\n"
+				+ "+server_bytes_read: 0\r\n"
+				+ "+method_count\r\n"
+				+ "+*4\r\n"
+				+ "-[NO_MATCH]GES\r\n"
+				+ "+GET: 0\r\n"
+				+ "+POST: 0\r\n"
+				+ "+PUT: 0\r\n"
+				+ "+status_code_count\r\n"
+				+ "+*4\r\n"
+				+ "+404: 0\r\n"
+				+ "+410: 0\r\n"
+				+ "+302: 0\r\n"
+				+ "+404: 0\r\n"
 				+ "+end\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
