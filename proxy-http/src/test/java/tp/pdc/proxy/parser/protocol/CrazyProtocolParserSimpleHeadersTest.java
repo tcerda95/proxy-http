@@ -37,6 +37,26 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		outputBuffer = ByteBuffer.allocate(4000);
 		parser = new CrazyProtocolParserImpl(clientMetric, serverMetric);
 	}
+	
+	@Test
+	public void testPINGPONG() throws UnsupportedEncodingException, ParserFormatException {
+		
+	
+				
+		String protocolInput =  
+				"piNG\r\n"
+				+ "ENd\r\n";
+		
+		String expectedOutput =
+				"+PONG\r\n"
+				+ "+end\r\n";
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		parser.parse(inputBuffer, outputBuffer);
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+		assertTrue(parser.hasFinished());
+	}
 
 	@Test
 	public void testFinished() throws UnsupportedEncodingException, ParserFormatException {
@@ -55,12 +75,10 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		clientMetric.addMethodCount(Method.GET);
 		clientMetric.addMethodCount(Method.GET);
 		clientMetric.addMethodCount(Method.POST);
-		
-		System.out.println(clientMetric.getMethodCount(Method.GET));
-		
+				
 		String protocolInput =  
 				"asada\r\n"
-				+ "l33tEnaBle\r\n"
+				+ "l33t_EnaBle\r\n"
 				+ "server_bytes_read\r\n"
 				+ "server_bytes_written\r\n"
 				+ "server_connections\r\n"
@@ -83,7 +101,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		
 		String expectedOutput =
 				"-[NO_MATCH]asada\r\n"
-				+ "+l33tenable\r\n"
+				+ "+l33t_enable\r\n"
 				+ "+server_bytes_read: 2\r\n"
 				+ "+server_bytes_written: 3\r\n"
 				+ "+server_connections: 1\r\n"

@@ -63,7 +63,7 @@ public class CrazyProtocolParserMetricHeaderTest {
 		String expectedOutput =
 				"+server_bytes_read: 2\r\n"
 				+ "+metrics\r\n"
-				+ "+isl33tenable: NO\r\n"
+				+ "+is_l33t_enabled: NO\r\n"
 				+ "+client_bytes_read: 4\r\n"
 				+ "+client_bytes_written: 5\r\n"
 				+ "+client_connections: 1\r\n"

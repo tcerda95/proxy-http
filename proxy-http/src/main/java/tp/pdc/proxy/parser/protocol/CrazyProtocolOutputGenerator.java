@@ -21,6 +21,8 @@ public class CrazyProtocolOutputGenerator {
 	private final ClientMetric clientMetrics;
 	private final ServerMetric serverMetrics;
 	private final L33tFlag l33tFlag;
+	
+	private final String PONG = "PONG";
 
 	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
@@ -34,7 +36,8 @@ public class CrazyProtocolOutputGenerator {
 	
 	public void generateOutput(CrazyProtocolHeader header, ByteBuffer output) {
 		
-		putField(header.getBytes(), output);
+		if (header != CrazyProtocolHeader.PING)
+			putField(header.getBytes(), output);
 				
 		switch (header) {
 		
@@ -101,6 +104,7 @@ public class CrazyProtocolOutputGenerator {
 				break;
 
 			case PING:
+				putField(PONG.getBytes(), output);
 				break;
 				
 			case END:				
