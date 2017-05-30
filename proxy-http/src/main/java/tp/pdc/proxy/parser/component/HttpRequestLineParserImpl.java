@@ -28,6 +28,22 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private HttpVersionParser versionParser;
 
+    @Override public boolean readMinorVersion () {
+        return versionParser.readMinorVersion();
+    }
+
+    @Override public boolean readMajorVersion () {
+        return versionParser.readMajorVersion();
+    }
+
+    @Override public int getMajorHttpVersion () {
+        return versionParser.getMajorHttpVersion();
+    }
+
+    @Override public int getMinorHttpVersion () {
+        return versionParser.getMinorHttpVersion();
+    }
+
     private enum RequestLineParserState {
         START, METHOD_READ, HTTP_VERSION, CR,
         URI_READ, HOST_PROTOCOL, URI_HOST_ADDR, URI_NO_HOST, URI_HOST_SLASH,
@@ -145,7 +161,9 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                     break;
 
                 case HTTP_VERSION:
-                    if (versionParser.parse(c, output)) {
+                    // Vuelve al byte que sacó
+                    input.position(input.position() - 1);
+                    if (versionParser.parse(input, output)) {
                         state = RequestLineParserState.CR;
                     }
                     break;

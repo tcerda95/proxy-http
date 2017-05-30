@@ -66,7 +66,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
         return false;
     }
 
-    @Override public boolean parse (byte b, ByteBuffer outputBuffer) throws ParserFormatException {
+    public boolean parse (byte b, ByteBuffer outputBuffer) throws ParserFormatException {
         if (!outputBuffer.hasRemaining())
             return false;
 
