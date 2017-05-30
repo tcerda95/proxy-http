@@ -26,15 +26,15 @@ public class CrazyProtocolParserBufferOverflowTest {
 	@Before
 	public void setUp() throws Exception {
 		parser = new CrazyProtocolParserImpl(new ClientMetricStub(), new ServerMetricStub());
-		outputBuffer = ByteBuffer.allocate(25);
+		outputBuffer = ByteBuffer.allocate(30);
 	}
 
 	@Test
 	public void testFinished() throws ParserFormatException, UnsupportedEncodingException {
 		String protocolInput =
 				"server_bytes_read\r\n"
-				+ "ISL33TenaBle\r\n"
-				+ "isl33tenable\r\n"
+				+ "IS_L33T_enaBled\r\n"
+				+ "is_l33t_enabled\r\n"
 				+ "server_bytes_read\r\n"
 				+ "server_bytes_read\r\n"
 				+ "server_bytes_read\r\n"
@@ -54,8 +54,8 @@ public class CrazyProtocolParserBufferOverflowTest {
 		
 		String expectedOutput = 
 				"+server_bytes_read: 0\r\n"
-				+ "+isl33tenable: NO\r\n"
-				+ "+isl33tenable: NO\r\n"
+				+ "+is_l33t_enabled: NO\r\n"
+				+ "+is_l33t_enabled: NO\r\n"
 				+ "+server_bytes_read: 0\r\n"
 				+ "+server_bytes_read: 0\r\n"
 				+ "+server_bytes_read: 0\r\n"
