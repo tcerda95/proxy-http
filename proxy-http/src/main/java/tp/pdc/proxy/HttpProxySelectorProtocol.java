@@ -39,6 +39,7 @@ public class HttpProxySelectorProtocol {
 	public void handleConnect(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		HttpClientProxyHandler clientHandler = clientHandlerFromServerKey(key);
+		SelectionKey clientKey = clientKeyFromServerKey(key);
 		
 		try {
 			if (socketChannel.finishConnect()) {
@@ -46,13 +47,10 @@ public class HttpProxySelectorProtocol {
 				SERVER_METRICS.addConnection();
 				
 				key.interestOps(SelectionKey.OP_WRITE);
-				clientHandler.setConnectedState();
+				clientHandler.handleConnect(clientKey);
 			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to connect to server: {}", e.getMessage());
-			
-			HttpHandler serverHandler = (HttpHandler) key.attachment();
-			SelectionKey clientKey = serverHandler.getConnectedPeerKey();
 			
 			clientHandler.setErrorState(HttpErrorCode.BAD_GATEWAY_502, clientKey);			
 		}
@@ -63,6 +61,11 @@ public class HttpProxySelectorProtocol {
 		handler.handleWrite(key);
 	}
 
+	private SelectionKey clientKeyFromServerKey(SelectionKey key) {
+		HttpHandler serverHandler = (HttpHandler) key.attachment();
+		return serverHandler.getConnectedPeerKey();
+	}
+	
 	private HttpClientProxyHandler clientHandlerFromServerKey(SelectionKey key) {
 		HttpHandler serverHandler = (HttpHandler) key.attachment();
 		SelectionKey clientKey = serverHandler.getConnectedPeerKey();
