@@ -64,4 +64,20 @@ public class HttpResponseParserImpl implements HttpResponseParser {
     @Override public byte[] getHeaderValue (Header header) {
         return headerParser.getHeaderValue(header);
     }
+
+    @Override public boolean readMinorVersion () {
+        return lineParser.readMinorVersion();
+    }
+
+    @Override public boolean readMajorVersion () {
+        return lineParser.readMajorVersion();
+    }
+
+    @Override public int getMajorHttpVersion () {
+        return lineParser.getMajorHttpVersion();
+    }
+
+    @Override public int getMinorHttpVersion () {
+        return lineParser.getMinorHttpVersion();
+    }
 }

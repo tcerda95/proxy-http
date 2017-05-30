@@ -31,8 +31,4 @@ public class HttpConnectionCloseParser implements HttpBodyParser {
 		return false;
 	}
 
-	@Override public void reset () {
-		//TODO
-	}
-
 }

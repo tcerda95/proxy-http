@@ -15,6 +15,22 @@ public class HttpResponseLineParserImpl implements HttpResponseLineParser {
     private int statusCode;
     private ResponseLineState state;
 
+    @Override public boolean readMinorVersion () {
+        return versionParser.readMinorVersion();
+    }
+
+    @Override public boolean readMajorVersion () {
+        return versionParser.readMajorVersion();
+    }
+
+    @Override public int getMajorHttpVersion () {
+        return versionParser.getMajorHttpVersion();
+    }
+
+    @Override public int getMinorHttpVersion () {
+        return versionParser.getMinorHttpVersion();
+    }
+
     private enum ResponseLineState {
         HTTP_VERSION, STATUS_CODE, REASON_PHRASE, CR_END, READ_OK, ERROR,
     }

@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
-import tp.pdc.proxy.parser.interfaces.l33tEncoder;
 import tp.pdc.proxy.parser.encoders.*;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
@@ -111,7 +110,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 				
 				if (c == LF.getValue()) {
 					
-					chunkSizeState = chunkSizeisZero() ? ChunkSizeState.CHUNKSIZE_IS_ZERO : 
+					chunkSizeState = chunkSizeIsZero() ? ChunkSizeState.CHUNKSIZE_IS_ZERO :
 						ChunkSizeState.END_OK;
 					
 					parserState = ParserState.READ_CHUNK;
@@ -174,11 +173,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 				&& chunkSizeState == ChunkSizeState.CHUNKSIZE_IS_ZERO;
 	}
 
-	@Override public void reset () {
-		//TODO
-	}
-
-	private boolean chunkSizeisZero() {
+	private boolean chunkSizeIsZero() {
 		return chunkSize == 0;
 	}
 	
@@ -197,6 +192,7 @@ public class HttpChunkedParser implements HttpBodyParser {
         throw new ParserFormatException("Error while parsing body");
     }
 
+	// TODO: si esto no se usa, sacar
 	public void reset(boolean l33tFlag) {
 		parserState = ParserState.READ_CHUNK_SIZE;
     	chunkSizeState = ChunkSizeState.START;

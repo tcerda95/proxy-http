@@ -59,15 +59,12 @@ public class HttpContentLengthLeetParser implements HttpBodyParser{
 		return parserState == ParserState.END_OK;
 	}
 
-	@Override public void reset () {
-		//TODO
-	}
-
 	private void handleParserError() throws ParserFormatException {
         parserState = ParserState.ERROR;
         throw new ParserFormatException("Error while parsing");
     }
 
+	// TODO: si esto no se usa, sacar. Hay Que solucionarlo contra alguna interfaz
 	public void reset(int contentLength) {
 		this.parserState = ParserState.START;
 		this.contentLength = contentLength;

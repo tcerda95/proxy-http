@@ -1,5 +1,5 @@
 package tp.pdc.proxy.parser.interfaces;
 
-public interface ProtocolParser extends Parser {
+public interface ProtocolParser extends Parser, Reseteable {
 
 }

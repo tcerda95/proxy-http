@@ -183,6 +183,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read from client: {}", e.getMessage());
+			closeServerChannel();
 			e.printStackTrace();
 		}
 	}

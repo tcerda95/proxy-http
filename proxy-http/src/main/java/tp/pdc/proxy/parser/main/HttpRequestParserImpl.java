@@ -77,4 +77,20 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 	public Method getMethod() {
 		return requestLineParser.getMethod();
 	}
+
+    @Override public boolean readMinorVersion () {
+        return requestLineParser.readMinorVersion();
+    }
+
+    @Override public boolean readMajorVersion () {
+        return requestLineParser.readMajorVersion();
+    }
+
+    @Override public int getMajorHttpVersion () {
+        return requestLineParser.getMajorHttpVersion();
+    }
+
+    @Override public int getMinorHttpVersion () {
+        return requestLineParser.getMinorHttpVersion();
+    }
 }
