@@ -75,7 +75,7 @@ public class ConnectionManager {
 			serverKey.interestOps(SelectionKey.OP_WRITE);
 			
 			clientHandler.setConnectedPeerKey(serverKey);
-			clientHandler.setConnectedState();
+			clientHandler.handleConnect(clientKey);
 			return true;
 		}
 	}
@@ -110,7 +110,7 @@ public class ConnectionManager {
 		if (connected) {
 			serverKey = serverSocket.register(selector, SelectionKey.OP_WRITE);
 			SERVER_METRICS.addConnection();
-			clientHandler.setConnectedState();
+			clientHandler.handleConnect(clientKey);
 		}
 		else {
 			serverKey = serverSocket.register(selector, SelectionKey.OP_CONNECT);
@@ -136,7 +136,7 @@ public class ConnectionManager {
 		SocketChannel serverChannel = (SocketChannel) serverKey.channel();
 		HttpServerProxyHandler serverHandler = (HttpServerProxyHandler) serverKey.attachment();
 		
-		serverHandler.reset();
+		serverHandler.reset(serverKey);
 		
 		storeKey(serverChannel.getRemoteAddress(), serverKey);
 	}

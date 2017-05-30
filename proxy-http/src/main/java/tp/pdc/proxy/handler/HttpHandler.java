@@ -51,7 +51,9 @@ public abstract class HttpHandler implements Handler {
 	
 	public void handleRead(SelectionKey key) {
 		processRead(key);
-		processReadBuffer(key);
+		
+		if (key.isValid()) // in case of EOF was received
+			processReadBuffer(key);
 	}
 
 	public void handleWrite(SelectionKey key) {
@@ -60,7 +62,7 @@ public abstract class HttpHandler implements Handler {
 		writeBuffer.compact();
 	}
 	
-	protected void handleProcess(SelectionKey key) {
+	public void handleProcess(SelectionKey key) {
 		if (key.isValid() && readBuffer.position() != 0) {
 			processedBuffer.compact();
 			processReadBuffer(key);
