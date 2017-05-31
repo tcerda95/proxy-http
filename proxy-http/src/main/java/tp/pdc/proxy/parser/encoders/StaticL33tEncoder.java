@@ -7,8 +7,8 @@ public class StaticL33tEncoder implements l33tEncoder {
     private static byte[] decode;
 
     static {
-        encode = new byte[256]; decode = new byte[256];
-        for (int c = 0; c < 256; c++) {
+        encode = new byte[128]; decode = new byte[128];
+        for (int c = 0; c < 128; c++) {
             switch (c) {
                 case 'a':
                     encode[c] = '4';
@@ -52,11 +52,11 @@ public class StaticL33tEncoder implements l33tEncoder {
     }
 
     public static byte encodeByte(byte c) {
-        return encode[c];
+    	return c > 0 ? encode[c] : c;
     }
 
     public static byte decodeByte(byte c) {
-        return decode[c];
+        return c > 0 ? decode[c] : c;
     }
 }
 

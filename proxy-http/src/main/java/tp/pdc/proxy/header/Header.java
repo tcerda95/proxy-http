@@ -11,7 +11,8 @@ public enum Header {
 	USER_AGENT("user-agent"),
 	PROXY_CONNECTION("proxy-connection"), 
 	CONTENT_TYPE("content-type"), 
-	ACCEPT_ENCODING("accept-encoding");
+	ACCEPT_ENCODING("accept-encoding"), 
+	SERVER("server");
 
 	private String headerName;
 	private byte[] headerBytes;

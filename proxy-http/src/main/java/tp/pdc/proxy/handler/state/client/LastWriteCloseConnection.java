@@ -8,12 +8,14 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tp.pdc.proxy.ProxyLogger;
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
 
 public class LastWriteCloseConnection implements HttpClientState {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LastWriteCloseConnection.class);
+	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 	
 	private static final LastWriteCloseConnection INSTANCE = new LastWriteCloseConnection();
 	
@@ -30,9 +32,10 @@ public class LastWriteCloseConnection implements HttpClientState {
 
 		ByteBuffer writeBuffer = httpHandler.getWriteBuffer();
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		
+
 		if (!writeBuffer.hasRemaining()) {
 			LOGGER.info("Closing connection to client: response sent");
+//TODO		PROXY_LOGGER.LogAccess(method, source, destination, statusCode, userAgentBytes, serverBytes);
 			
 			try {
 				socketChannel.close();
@@ -40,7 +43,6 @@ public class LastWriteCloseConnection implements HttpClientState {
 				LOGGER.error("Failed to close client's channel on client's write error");
 				e.printStackTrace();
 			}
-			
 		}
 	}
 
