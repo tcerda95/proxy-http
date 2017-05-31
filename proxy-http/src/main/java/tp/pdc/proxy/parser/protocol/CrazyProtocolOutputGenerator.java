@@ -2,6 +2,7 @@ package tp.pdc.proxy.parser.protocol;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import java.nio.ByteBuffer;
+import java.util.Set;
 
 import tp.pdc.proxy.L33tFlag;
 import tp.pdc.proxy.ProxyProperties;
@@ -174,7 +175,7 @@ public class CrazyProtocolOutputGenerator {
 		
 		put(PS.getValue(), output);
 		
-		ParseUtils.parseInt(number, output, remainingBytes);
+		put(number, output);
 	}
 	
 	private void putValue(byte[] bytes, ByteBuffer output) {
@@ -189,7 +190,7 @@ public class CrazyProtocolOutputGenerator {
 		put(DP.getValue(), output);
 		put(SP.getValue(), output);
 
-		ParseUtils.parseInt(number, output, remainingBytes);
+		put(number, output);
 	}
 	
 	private void putValue(long number, ByteBuffer output) {
@@ -197,7 +198,7 @@ public class CrazyProtocolOutputGenerator {
 		put(DP.getValue(), output);
 		put(SP.getValue(), output);
 
-		ParseUtils.parseLong(number, output, remainingBytes);
+		put(number, output);
 	}
 	
 	private void putCRLF(ByteBuffer output) {
@@ -253,7 +254,22 @@ public class CrazyProtocolOutputGenerator {
 			output.put(c);
 		else
 			remainingBytes.put(c);
-	}	
+	}
+	
+	private void put(int number, ByteBuffer output) {
+		ParseUtils.parseInt(number, output, remainingBytes);
+	}
+	
+	private void put(long number, ByteBuffer output) {
+		ParseUtils.parseLong(number, output, remainingBytes);
+	}
+	
+	private void putArgCount(int count, ByteBuffer output) {
+		put(PS.getValue(), output);
+		put(AS.getValue(), output);
+		put(count, output);
+		putCRLF(output);
+	}
 
 	private void putRemainingBytes(ByteBuffer output) {
 		if (remainingBytes()) {
@@ -282,14 +298,22 @@ public class CrazyProtocolOutputGenerator {
 			
 				case METHOD_COUNT:
 					
-					for (Method method : clientMetrics.getMethods())
+					Set<Method> m = clientMetrics.getMethods();
+					
+					putArgCount(m.size(), output);
+					
+					for (Method method : m)
 						generateOutput(method, output);
 					
 					break;
 					
 				case STATUS_CODE_COUNT:
 					
-					for (Integer statusCode : serverMetrics.getStatusCodes())
+					Set<Integer> s = serverMetrics.getStatusCodes();
+					
+					putArgCount(s.size(), output);
+
+					for (Integer statusCode : s)
 						generateOutput(statusCode, output);
 					
 					break;
@@ -299,7 +323,7 @@ public class CrazyProtocolOutputGenerator {
 			}
 		}
 	}
-	
+
 	private void lengthPut(ByteBuffer input, ByteBuffer output, int length) {
 		BytesUtils.lengthPut(input, output, length);
 	}

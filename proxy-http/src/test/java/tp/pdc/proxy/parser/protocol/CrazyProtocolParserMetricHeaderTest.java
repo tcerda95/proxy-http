@@ -71,6 +71,7 @@ public class CrazyProtocolParserMetricHeaderTest {
 				+ "+server_bytes_written: 3\r\n"
 				+ "+server_connections: 1\r\n"
 				+ "+method_count\r\n"
+				+ "+*8\r\n"
 				+ "+GET: 2\r\n"
 				+ "+POST: 1\r\n"
 				+ "+HEAD: 0\r\n"
@@ -80,6 +81,7 @@ public class CrazyProtocolParserMetricHeaderTest {
 				+ "+TRACE: 0\r\n"
 				+ "+CONNECT: 0\r\n"
 				+ "+status_code_count\r\n"
+				+ "+*2\r\n"
 				+ "+404: 3\r\n"
 				+ "+302: 1\r\n"
 				+ "+end\r\n";
