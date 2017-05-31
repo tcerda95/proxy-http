@@ -1,17 +1,18 @@
 package tp.pdc.proxy.parser.component;
 
+import static tp.pdc.proxy.parser.utils.AsciiConstants.CR;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.LF;
+import static tp.pdc.proxy.parser.utils.AsciiConstants.SP;
+
+import java.nio.ByteBuffer;
+import java.util.NoSuchElementException;
+
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
-
-import java.awt.image.BufferedImage;
-import java.nio.ByteBuffer;
-import java.util.NoSuchElementException;
-
-import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 

@@ -1,6 +1,7 @@
 package tp.pdc.proxy.handler;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -8,6 +9,7 @@ import java.nio.channels.SocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tp.pdc.proxy.ProxyLogger;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.HttpServerState;
@@ -27,6 +29,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpResponseParserFactory RESPONSE_PARSER_FACTORY = HttpResponseParserFactory.getInstance();
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
+	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 	
 	private HttpServerState state;
 	private HttpResponseParser responseParser;
@@ -92,14 +95,24 @@ public class HttpServerProxyHandler extends HttpHandler {
 		try {
 			int bytesRead = socketChannel.read(buffer);
 			
+			// EOF could signal normal end of response if no content-length or chunked was received
 			if (bytesRead == -1) {
 				LOGGER.info("Closing connection to server: EOF");
 				LOGGER.debug("Registering client for write: client must consume EOF");
+				
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
+				
+				if (responseParser.hasFinished())
+					logAccess(key);
+				else {
+					LOGGER.warn("Sever sent EOF though headers not finished");
+					// TODO: loggear error
+				}
+					
 				socketChannel.close();
 				
 				if (hasFinishedProcessing()) {
-					LOGGER.error("Read server EOF and procesing had finished. Shouldn't be registered for reading.");
+					LOGGER.error("Read server EOF and processing had finished. Shouldn't be registered for reading.");
 					LOGGER.debug("Signaling client to send last write and keep connection");
 					getClientHandler().signalResponseProcessed(false);
 				}
@@ -114,7 +127,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			}
 			
 		} catch (IOException e) {
-			LOGGER.warn("Failed to read response from server", e.getMessage());
+			LOGGER.warn("Failed to read response from server: {}", e.getMessage());
 			setResponseError(key, e.getMessage());
 		}
 	}
@@ -192,5 +205,19 @@ public class HttpServerProxyHandler extends HttpHandler {
 		LOGGER.debug("Unregistering server from write and registering for read: whole client request sent");
 		key.interestOps(SelectionKey.OP_READ);
 		this.state = ReadResponseState.getInstance();
+	}
+	
+	public void logAccess(SelectionKey key) {
+		try {
+			PROXY_LOGGER.logAccess(getClientHandler().getRequestParser(), responseParser, addressFromKey(getConnectedPeerKey()), addressFromKey(key));
+		} catch (IOException e) {
+			LOGGER.error("Failed to retreive inet socket address: {}", e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
+	private InetSocketAddress addressFromKey(SelectionKey key) throws IOException {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		return (InetSocketAddress) socketChannel.getRemoteAddress();
 	}
 }

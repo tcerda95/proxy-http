@@ -124,6 +124,9 @@ public class HttpBodyParserFactory {
 	}
 
 	private boolean isAcceptedCharset(byte[] charset) {
+		if (charset.length == 0)
+			return true;
+		
 		for (byte[] accepted : acceptedCharsets)
 			if (BytesUtils.equalsBytes(charset, accepted, accepted.length))
 				return true;
