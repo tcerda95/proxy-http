@@ -32,6 +32,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 	
 	private HttpServerState state;
+	private boolean errorState;
 	private HttpResponseParser responseParser;
 	private HttpBodyParser bodyParser;
 	private Method clientMethod;
@@ -141,7 +142,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 		else if (!bodyParser.hasFinished())
 			processBody(inputBuffer, processedBuffer, key);
 
-		state.handle(this, key);		
+		if (!errorState)
+			state.handle(this, key);
 	}
 	
 	private void processResponse(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
@@ -175,6 +177,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 
 	private void setResponseError(SelectionKey key, String message) {
 		LOGGER.warn("Closing Connection to server: {}", message);
+		errorState = true;
 		
 		try {
 			key.channel().close();
@@ -182,7 +185,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			e1.printStackTrace();
 		}
 		
-		getClientHandler().setErrorState(this.getConnectedPeerKey());
+		getClientHandler().setErrorState(message, this.getConnectedPeerKey());
 	}
 	
 	public HttpClientProxyHandler getClientHandler() {

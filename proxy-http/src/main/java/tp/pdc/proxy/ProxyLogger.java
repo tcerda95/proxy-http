@@ -29,7 +29,6 @@ public class ProxyLogger {
     	return INSTANCE;
     }
     
-    //TODO: client ip o algo. Recurso en el host
     public void logAccess(HttpRequestParser requestParser, HttpResponseParser responseParser, InetSocketAddress source, InetSocketAddress destination) {
     	byte[] userAgentBytes = requestParser.hasHeaderValue(Header.USER_AGENT) ? requestParser.getHeaderValue(Header.USER_AGENT) : ArrayUtils.EMPTY_BYTE_ARRAY;
     	byte[] serverBytes = responseParser.hasHeaderValue(Header.SERVER) ? responseParser.getHeaderValue(Header.SERVER) : ArrayUtils.EMPTY_BYTE_ARRAY;
@@ -61,23 +60,28 @@ public class ProxyLogger {
         });
     }
 
-    public void logError(String errorMessage, Method method, InetSocketAddress destination, int statusCode) {
+    //TODO: request
+    public void logError(HttpRequestParser requestParser, InetSocketAddress source, String message) {
+    	Method method = requestParser.hasMethod() ? requestParser.getMethod() : null;
+    	byte[] destinationHostBytes = requestParser.hasHost() ? requestParser.getHostValue() : ArrayUtils.EMPTY_BYTE_ARRAY;
+
     	loggerExecutor.execute(() -> {
+    		String destinationHost = new String(destinationHostBytes, PROPERTIES.getCharset());
             StringBuilder builder = new StringBuilder();
+            
             builder
-                .append(" request: ")
+            	.append(message)
+            	.append(", client: ")
+            	.append(source.getHostString())
+                .append(", request: ")
                 .append(method)
-                .append(" ")
-                .append(destination.getHostName())
-                .append(":")
-                .append(destination.getPort())
-                .append(" SC:").append(statusCode)
-                .append("\n");
+                .append(", host: ")
+                .append(destinationHost);
 
             String log = builder.toString();
             
             // TODO: loggear
-            System.out.println(log);
+            LOGGER.error("Logging error: \n{}\n", log);
         });
     }
 }

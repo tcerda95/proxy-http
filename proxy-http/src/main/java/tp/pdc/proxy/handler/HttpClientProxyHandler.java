@@ -2,15 +2,18 @@ package tp.pdc.proxy.handler;
 
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.HttpErrorCode;
+import tp.pdc.proxy.ProxyLogger;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
@@ -33,14 +36,16 @@ import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
 public class HttpClientProxyHandler extends HttpHandler {
+	private static final String ERROR_MESSAGE_SEPARATOR = ": ";
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
+	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
 	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
 	
-	private HttpRequestParser requestParser;
+	private final HttpRequestParser requestParser;
+	private final Set<Method> acceptedMethods;
 	private HttpBodyParser bodyParser;
-	private Set<Method> acceptedMethods;
 	private boolean methodRecorded;
 	private boolean errorState;
 	
@@ -118,18 +123,43 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 	
 	public void setErrorState(HttpErrorCode errorResponse, SelectionKey key) {
+		setErrorState(errorResponse, StringUtils.EMPTY, key);
+	}
+		
+	public void setErrorState(HttpErrorCode errorResponse, String logErrorMessage, SelectionKey key) {
 		ByteBuffer writeBuffer = this.getWriteBuffer();
 		writeBuffer.clear();
 		writeBuffer.put(errorResponse.getBytes());
-		
-		setErrorState(key);
+				
+		setErrorState(buildErrorMessage(errorResponse, logErrorMessage), key);
 	}
 	
-	public void setErrorState(SelectionKey key) {
-		errorState = true;
+	private String buildErrorMessage(HttpErrorCode errorResponse, String logErrorMessage) {
+		StringBuilder stringBuilder = new StringBuilder(errorResponse.getErrorMessage().length() + ERROR_MESSAGE_SEPARATOR.length() + logErrorMessage.length());
+		stringBuilder.append(errorResponse.getErrorMessage())
+					 .append(ERROR_MESSAGE_SEPARATOR)
+					 .append(logErrorMessage);
+		return stringBuilder.toString();
+	}
+
+	public void setErrorState(String logErrorMessage, SelectionKey key) {
+		try {
+			PROXY_LOGGER.logError(requestParser, addressFromKey(key), logErrorMessage);
+		} catch (IOException e) {
+			LOGGER.error("Failed to retreive inet socket address: {}", e.getMessage());
+			e.printStackTrace();
+		}
+		
+		this.errorState = true;
 		this.state = LastWriteCloseConnection.getInstance();
 		key.interestOps(SelectionKey.OP_WRITE);
 		closeServerChannel();
+	}
+	
+	// TODO: inet socket address debería ser un field
+	private InetSocketAddress addressFromKey(SelectionKey key) throws IOException {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		return (InetSocketAddress) socketChannel.getRemoteAddress();
 	}
 	
 	@Override
@@ -174,7 +204,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			int bytesRead = socketChannel.read(buffer);
 			if (bytesRead == -1) {
 				LOGGER.info("Received EOF from client");
-				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo? SI
+				socketChannel.close();
 				closeServerChannel();
 			}
 			else {
@@ -206,7 +236,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			bodyParser.parse(inputBuffer, outputBuffer);
 		} catch (ParserFormatException e) {
 			LOGGER.warn("Invalid body format: {}", e.getMessage());
-			setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+			setErrorState(HttpErrorCode.BAD_BODY_FORMAT_400, e.getMessage(), key);
 		}
 	}
 	
@@ -220,7 +250,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 				
 				if (!acceptedMethods.contains(requestParser.getMethod())) {					
 					LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-					setErrorState(HttpErrorCode.METHOD_NOT_ALLOWED_405, key);
+					setErrorState(HttpErrorCode.NOT_IMPLEMENTED_501, key);
 				}
 			}
 			
@@ -232,7 +262,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 		} catch (ParserFormatException e) {
 			if (requestParser.hasMethod() && !acceptedMethods.contains(requestParser.getMethod())) {
 				LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-				setErrorState(HttpErrorCode.METHOD_NOT_ALLOWED_405, key);
+				setErrorState(HttpErrorCode.NOT_IMPLEMENTED_501, key);
 			}
 			else {
 				LOGGER.warn("Invalid header format: {}", e.getMessage());

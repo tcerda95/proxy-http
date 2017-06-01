@@ -34,25 +34,26 @@ public class NotConnectedState implements HttpClientState {
 	public void handle(HttpClientProxyHandler httpHandler, SelectionKey key) {
 		LOGGER.debug("Not connected state handle");
 		
-		
 		final ByteBuffer processedBuffer = httpHandler.getProcessedBuffer();
 		final HttpRequestParser requestParser = httpHandler.getRequestParser();
 		
 		if (requestParser.hasHost()) {
-			byte[] hostValue = requestParser.getHostValue();
+			byte[] hostBytes = requestParser.getHostValue();
+			InetSocketAddress address;
 			
 			try {
-				tryConnect(httpHandler, requestParser.getMethod(), hostValue, key);
-
-			} catch (NumberFormatException e) {
-				LOGGER.warn("Failed to parse port: {}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+				address = HOST_PARSER.parseAddress(hostBytes);
 			} catch (IllegalArgumentException e) {
-				LOGGER.warn("{}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+				LOGGER.warn("Failed to parse host: {}", e.getMessage());
+				httpHandler.setErrorState(HttpErrorCode.BAD_HOST_FORMAT_400, key);
+				return;
+			}
+			
+			try {
+				tryConnect(httpHandler, requestParser.getMethod(), address, key);
 			} catch (IOException e) {
 				LOGGER.warn("Failed to connect to server: {}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_GATEWAY_502, key);
+				httpHandler.setErrorState(HttpErrorCode.BAD_GATEWAY_502, e.getMessage(), key);
 			}
 		}
 		
@@ -67,12 +68,17 @@ public class NotConnectedState implements HttpClientState {
 		}
 	}
 	
-	private void tryConnect(HttpClientProxyHandler httpHandler, Method requestMethod, byte[] hostBytes, SelectionKey key) throws IOException {
-		InetSocketAddress address = HOST_PARSER.parseAddress(hostBytes);
+	private void tryConnect(HttpClientProxyHandler httpHandler, Method requestMethod, InetSocketAddress address, SelectionKey key) throws IOException {
 		
 		LOGGER.debug("Server address: {}", address);
 		
-		httpHandler.setConnectingState(key);
-		CONNECTION_MANAGER.connect(requestMethod, address, key);		
+		if (address.isUnresolved()) {
+			LOGGER.warn("Failed to resolve address: {}", address.getHostString());
+			httpHandler.setErrorState(HttpErrorCode.UNRESOLVED_ADDRESS_400, key);
+		}
+		else {
+			httpHandler.setConnectingState(key);
+			CONNECTION_MANAGER.connect(requestMethod, address, key);		
+		}
 	}
 }
