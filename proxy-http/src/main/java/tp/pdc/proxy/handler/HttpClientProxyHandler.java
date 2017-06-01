@@ -130,15 +130,21 @@ public class HttpClientProxyHandler extends HttpHandler {
 		ByteBuffer writeBuffer = this.getWriteBuffer();
 		writeBuffer.clear();
 		writeBuffer.put(errorResponse.getBytes());
-				
+		
 		setErrorState(buildErrorMessage(errorResponse, logErrorMessage), key);
 	}
 	
 	private String buildErrorMessage(HttpErrorCode errorResponse, String logErrorMessage) {
+		if (logErrorMessage.length() == 0)
+			return errorResponse.getErrorMessage();
+		
 		StringBuilder stringBuilder = new StringBuilder(errorResponse.getErrorMessage().length() + ERROR_MESSAGE_SEPARATOR.length() + logErrorMessage.length());
 		stringBuilder.append(errorResponse.getErrorMessage())
 					 .append(ERROR_MESSAGE_SEPARATOR)
 					 .append(logErrorMessage);
+		
+		LOGGER.warn("Error message to be logged: {}", stringBuilder.toString());
+		
 		return stringBuilder.toString();
 	}
 
@@ -245,12 +251,12 @@ public class HttpClientProxyHandler extends HttpHandler {
 			requestParser.parse(inputBuffer, outputBuffer);
 
 			if (requestParser.hasMethod() && !methodRecorded) {
-				CLIENT_METRICS.addMethodCount(requestParser.getMethod());
-				methodRecorded = true;
+				Method method = requestParser.getMethod();
+				recordMethod(method);
 				
-				if (!acceptedMethods.contains(requestParser.getMethod())) {					
+				if (!acceptedMethods.contains(method)) {					
 					LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-					setErrorState(HttpErrorCode.NOT_IMPLEMENTED_501, key);
+					setErrorState(HttpErrorCode.NOT_IMPLEMENTED_501, method.toString(), key);
 				}
 			}
 			
@@ -261,8 +267,13 @@ public class HttpClientProxyHandler extends HttpHandler {
 
 		} catch (ParserFormatException e) {
 			if (requestParser.hasMethod() && !acceptedMethods.contains(requestParser.getMethod())) {
+				Method method = requestParser.getMethod();
+				
+				if (!methodRecorded)
+					recordMethod(method);
+				
 				LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-				setErrorState(HttpErrorCode.NOT_IMPLEMENTED_501, key);
+				setErrorState(HttpErrorCode.NOT_IMPLEMENTED_501, method.toString(), key);
 			}
 			else {
 				LOGGER.warn("Invalid header format: {}", e.getMessage());
@@ -273,6 +284,16 @@ public class HttpClientProxyHandler extends HttpHandler {
 			LOGGER.warn("Illegal request headers: {}", e.getMessage());
 			setErrorState(HttpErrorCode.LENGTH_REQUIRED_411, key);
 		}
+	}
+	
+	private void recordMethod(Method method) {
+		if (methodRecorded) {
+			LOGGER.error("Method already recorded");
+			throw new IllegalStateException("Method is already recorded");
+		}
+		
+		methodRecorded = true;
+		CLIENT_METRICS.addMethodCount(method);
 	}
 	
 	private void closeServerChannel() {
