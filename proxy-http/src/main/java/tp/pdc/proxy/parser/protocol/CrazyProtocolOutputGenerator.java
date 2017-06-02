@@ -16,7 +16,6 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class CrazyProtocolOutputGenerator {
 	
-	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final int PROTOCOL_PARSER_BUFFER_SIZE = ProxyProperties.getInstance().getProtocolParserBufferSize();
 
 	private final ClientMetric clientMetrics;
@@ -55,7 +54,7 @@ public class CrazyProtocolOutputGenerator {
 			case ISL33TENABLE:
 				
 				String toPut = L33tFlag.getInstance().isSet() ? "YES" : "NO";
-				putValue(toPut.getBytes(PROPERTIES.getCharset()), output);
+				putValue(toPut.getBytes(), output);
 				break;
 				
 			case CLIENT_BYTES_READ:
