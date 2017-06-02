@@ -277,7 +277,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 			else {
 				LOGGER.warn("Invalid header format: {}", e.getMessage());
-				setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+				setErrorState(e.getResponseErrorCode(), e.getMessage(), key);
 			}
 
 		} catch (IllegalHttpHeadersException e) {

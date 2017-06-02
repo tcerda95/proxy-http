@@ -7,6 +7,7 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.SP;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
+import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
@@ -206,7 +207,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private void saveHostByte(byte c) throws ParserFormatException {
         if (!URIHostBuf.hasRemaining())
-            throw new ParserFormatException("Host too long");
+            throw new ParserFormatException("Host too long", HttpErrorCode.REQUEST_URI_TOO_LONG_414);
         URIHostBuf.put(c);
         buffered++;
     }

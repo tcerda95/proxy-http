@@ -59,7 +59,7 @@ public class NotConnectedState implements HttpClientState {
 		
 		else if (!processedBuffer.hasRemaining()) {
 			LOGGER.warn("Client's processed buffer full and connection not established with server");
-			httpHandler.setErrorState(HttpErrorCode.HEADER_FIELDS_TOO_LARGE_431, key);
+			httpHandler.setErrorState(HttpErrorCode.TOO_MANY_HEADERS_NO_HOST_431, key);
 		}		
 		
 		else if (requestParser.hasFinished()) {

@@ -43,7 +43,6 @@ public class ReadResponseState implements HttpServerState {
 			LOGGER.debug("Signaling client to send last write and keep connection");
 			handler.getClientHandler().signalResponseProcessed(false); // Client should attempt to store connection
 			
-			
 			try {
 				handler.logAccess(key);
 				if (shouldKeepAlive(handler))
