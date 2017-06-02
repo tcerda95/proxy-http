@@ -5,8 +5,8 @@ import java.nio.ByteBuffer;
 public class ByteBufferFactory {
 
 	private static final ByteBufferFactory INSTANCE = new ByteBufferFactory();
-	private static final int MIN_PROXY_SIZE = 256;
-	private static final int MAX_PROXY_SIZE = 1024*1024; // 1Mb
+	public static final int MIN_PROXY_SIZE = 256;
+	public static final int MAX_PROXY_SIZE = 1024*1024; // 1Mb
 	
 	private int proxyBufferSize;
 	
@@ -26,7 +26,7 @@ public class ByteBufferFactory {
 		return proxyBufferSize;
 	}
 	
-	public void setBufferSize(int size) {
+	public void setProxyBufferSize(int size) {
 		this.proxyBufferSize = normalizeSize(size);
 	}
 

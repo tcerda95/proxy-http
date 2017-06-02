@@ -4,8 +4,8 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import java.nio.ByteBuffer;
 import java.util.Set;
 
+import tp.pdc.proxy.ByteBufferFactory;
 import tp.pdc.proxy.L33tFlag;
-import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
@@ -16,11 +16,13 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class CrazyProtocolOutputGenerator {
 	
-	private static final int PROTOCOL_PARSER_BUFFER_SIZE = ProxyProperties.getInstance().getProtocolParserBufferSize();
+	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
+	private static final L33tFlag L33TFLAG = L33tFlag.getInstance();
+	
+	private static final int PROTOCOL_PARSER_BUFFER_SIZE = BUFFER_FACTORY.getProxyBufferSize();
 
 	private final ClientMetric clientMetrics;
 	private final ServerMetric serverMetrics;
-	private final L33tFlag l33tFlag;
 	
 	private final String PONG = "PONG";
 
@@ -30,7 +32,6 @@ public class CrazyProtocolOutputGenerator {
 	public CrazyProtocolOutputGenerator(ClientMetric clientMetrics, ServerMetric serverMetrics) {
 		this.clientMetrics = clientMetrics;
 		this.serverMetrics = serverMetrics;
-		l33tFlag = L33tFlag.getInstance();
 		remainingBytes = ByteBuffer.allocate(PROTOCOL_PARSER_BUFFER_SIZE);
 	}
 	
@@ -41,14 +42,20 @@ public class CrazyProtocolOutputGenerator {
 				
 		switch (header) {
 		
+			case PROXY_BUF_SIZE:
+				
+				int proxyBufferSize = BUFFER_FACTORY.getProxyBufferSize();
+				putValue(proxyBufferSize, output);
+				break;
+		
 			case L33TENABLE:
 				
-				l33tFlag.set();
+				L33TFLAG.set();
 				break;
 				
 			case L33TDISABLE:
 				
-				l33tFlag.unset();
+				L33TFLAG.unset();
 				break;
 				
 			case ISL33TENABLE:
@@ -93,6 +100,9 @@ public class CrazyProtocolOutputGenerator {
 				putValue(serverConnections, output);
 				break;
 
+			case SET_PROXY_BUF_SIZE:
+				break;
+			
 			case METHOD_COUNT:				
 				break;
 				
@@ -125,12 +135,17 @@ public class CrazyProtocolOutputGenerator {
 		putCRLF(output);
 	}
 	
-	public void generateOutput(int statusCode, ByteBuffer output) {
+	
+	public void generateOutput(int number, ByteBuffer output, CrazyProtocolHeader currentHeader) {
 		
-		putField(statusCode, output);
-				
-		int statusCodeCount = serverMetrics.getResponseCodeCount(statusCode);
-		putValue(statusCodeCount, output);
+		putField(number, output);
+		
+		if (currentHeader == CrazyProtocolHeader.SET_PROXY_BUF_SIZE)
+			BUFFER_FACTORY.setProxyBufferSize(number);
+		else {
+			int statusCodeCount = serverMetrics.getResponseCodeCount(number);
+			putValue(statusCodeCount, output);
+		}
 		
 		putCRLF(output);
 	}
@@ -290,7 +305,7 @@ public class CrazyProtocolOutputGenerator {
 		for (CrazyProtocolHeader header : CrazyProtocolHeader.values()) {
 
 			if (header != CrazyProtocolHeader.END && header != CrazyProtocolHeader.METRICS 
-					&& header != CrazyProtocolHeader.PING && !isFlag(header))
+					&& header != CrazyProtocolHeader.PING && !setter(header))
 				generateOutput(header, output);
 		
 			switch (header) {
@@ -313,7 +328,7 @@ public class CrazyProtocolOutputGenerator {
 					putArgCount(s.size(), output);
 
 					for (Integer statusCode : s)
-						generateOutput(statusCode, output);
+						generateOutput(statusCode, output, CrazyProtocolHeader.STATUS_CODE_COUNT);
 					
 					break;
 					
@@ -336,9 +351,10 @@ public class CrazyProtocolOutputGenerator {
 		return remainingBytes.position() != 0;
 	}
 	
-	private boolean isFlag(CrazyProtocolHeader header) {
+	private boolean setter(CrazyProtocolHeader header) {
 		return (header == CrazyProtocolHeader.L33TENABLE ||
-				header == CrazyProtocolHeader.L33TDISABLE);
+				header == CrazyProtocolHeader.L33TDISABLE ||
+				header == CrazyProtocolHeader.SET_PROXY_BUF_SIZE);
 	}
 	
 	public void reset() {
