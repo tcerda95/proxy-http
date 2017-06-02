@@ -38,16 +38,16 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
 	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
 	
-	private HttpRequestParser requestParser;
+	private final HttpRequestParser requestParser;
+	private final Set<Method> acceptedMethods;
 	private HttpBodyParser bodyParser;
-	private Set<Method> acceptedMethods;
 	private boolean methodRecorded;
 	private boolean errorState;
 	
 	private HttpClientState state;
 	
-	public HttpClientProxyHandler(int bufSize, Set<Method> acceptedMethods) {
-		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
+	public HttpClientProxyHandler(Set<Method> acceptedMethods) {
+		super();
 		this.acceptedMethods = acceptedMethods;
 		this.state = NotConnectedState.getInstance();
 		this.requestParser = REQUEST_PARSER_FACTORY.getRequestParser();

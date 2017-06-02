@@ -37,8 +37,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private Method clientMethod;
 	private boolean responseCodeRecorded;
 	
-	public HttpServerProxyHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
-		super(readBufferSize, writeBuffer, processedBuffer);
+	public HttpServerProxyHandler(ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
+		super(writeBuffer, processedBuffer);
 		this.responseParser = RESPONSE_PARSER_FACTORY.getResponseParser();
 		this.clientMethod = clientMethod;
 		this.state = SendingRequestState.getInstance();
