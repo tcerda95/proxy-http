@@ -6,6 +6,7 @@ import java.util.Set;
 
 import tp.pdc.proxy.ByteBufferFactory;
 import tp.pdc.proxy.L33tFlag;
+import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
@@ -17,10 +18,10 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 public class CrazyProtocolOutputGenerator {
 	
 	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
+	private static final ProxyProperties PROXY_PROPERTIES = ProxyProperties.getInstance();
 	private static final L33tFlag L33TFLAG = L33tFlag.getInstance();
 	
-	private static final int PROTOCOL_PARSER_BUFFER_SIZE = BUFFER_FACTORY.getProxyBufferSize();
-
+	private static final int PROTOCOL_PARSER_BUFFER_SIZE = PROXY_PROPERTIES.getProtocolParserBufferSize();
 	private final ClientMetric clientMetrics;
 	private final ServerMetric serverMetrics;
 	
