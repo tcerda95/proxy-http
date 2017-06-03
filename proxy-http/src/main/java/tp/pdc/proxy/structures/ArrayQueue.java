@@ -1,9 +1,7 @@
 package tp.pdc.proxy.structures;
 
 import java.lang.reflect.Array;
-import java.util.AbstractQueue;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 
 public class ArrayQueue<T> extends AbstractQueue<T> implements FixedLengthQueue<T> {
 

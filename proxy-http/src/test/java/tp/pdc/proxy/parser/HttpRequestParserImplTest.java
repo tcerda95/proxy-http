@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
@@ -170,6 +171,19 @@ public class HttpRequestParserImplTest {
 		inputBuffer = ByteBuffer.wrap((post + nomethod).getBytes(charset));
 		parser.reset();
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
+	}
+
+	@Test
+	public void getWholeRequestLineTest() throws ParserFormatException {
+		String line = "GET / HTTP/1.1\r\n";
+		String rest = "Host: localhost:8080\r\n"
+				+ "X-Header: Custom\r\n"
+				+ "\r\n";
+
+		inputBuffer = ByteBuffer.wrap((line + rest).getBytes(charset));
+		parser.parse(inputBuffer, outputBuffer);
+
+		assertTrue(BytesUtils.equalsBytes(line.getBytes(charset), parser.getWholeRequestLine()));
 	}
 
 	@Test(expected = ParserFormatException.class)

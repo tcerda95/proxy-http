@@ -80,7 +80,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         return false;
     }
 
-    private boolean parse(byte c, ByteBuffer output) throws ParserFormatException {
+        private boolean parse(byte c, ByteBuffer output) throws ParserFormatException {
             switch (state) {
                 case ADD_HEADERS:
                     addHeaders(output);

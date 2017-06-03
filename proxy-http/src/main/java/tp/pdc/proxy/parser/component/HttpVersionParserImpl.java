@@ -13,6 +13,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     private boolean readMinorVersion, readMajorVersion;
     private byte endByte;
     private HttpVersionState state;
+    private ByteBuffer wholeVersionBuffer;
 
     private enum HttpVersionState {
         NOT_READ_YET, H, T_1, T_2, P, MAJOR_VERSION, MINOR_VERSION, READ_OK, ERROR,
@@ -21,6 +22,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     public HttpVersionParserImpl (byte endByte) {
         majorVersion = minorVersion = 0;
         state = HttpVersionState.NOT_READ_YET;
+        wholeVersionBuffer = ByteBuffer.allocate(16);
 
         if (endByte < 0)
             throw new IllegalArgumentException("Not a valid us-ascii character");
@@ -34,6 +36,7 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     @Override public void reset () {
         majorVersion = minorVersion = 0;
         state = HttpVersionState.NOT_READ_YET;
+        wholeVersionBuffer.clear();
     }
 
     @Override public boolean readMinorVersion () {
@@ -56,6 +59,16 @@ public class HttpVersionParserImpl implements HttpVersionParser {
         return minorVersion;
     }
 
+    @Override public byte[] getWholeVersionBytes () {
+        if (!hasFinished())
+            throw new IllegalStateException("Version not read yet");
+
+        wholeVersionBuffer.flip();
+        byte[] wholeBytes = new byte[wholeVersionBuffer.remaining()];
+        wholeVersionBuffer.get(wholeBytes);
+        return wholeBytes;
+    }
+
     @Override public boolean parse (ByteBuffer inputBuffer, ByteBuffer outputBuffer)
         throws ParserFormatException {
         while (inputBuffer.hasRemaining() && outputBuffer.hasRemaining()) {
@@ -67,8 +80,9 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     }
 
     public boolean parse (byte b, ByteBuffer outputBuffer) throws ParserFormatException {
-        if (!outputBuffer.hasRemaining())
-            return false;
+        if (!wholeVersionBuffer.hasRemaining())
+            throw new ParserFormatException("Http Version Section Too Long");
+        wholeVersionBuffer.put(b);
 
         switch (state) {
             case NOT_READ_YET:

@@ -80,4 +80,8 @@ public class HttpResponseParserImpl implements HttpResponseParser {
     @Override public int getMinorHttpVersion () {
         return lineParser.getMinorHttpVersion();
     }
+
+    @Override public byte[] getWholeVersionBytes () {
+        return lineParser.getWholeVersionBytes();
+    }
 }

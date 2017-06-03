@@ -31,6 +31,10 @@ public class HttpResponseLineParserImpl implements HttpResponseLineParser {
         return versionParser.getMinorHttpVersion();
     }
 
+    @Override public byte[] getWholeVersionBytes () {
+        return versionParser.getWholeVersionBytes();
+    }
+
     private enum ResponseLineState {
         HTTP_VERSION, STATUS_CODE, REASON_PHRASE, CR_END, READ_OK, ERROR,
     }

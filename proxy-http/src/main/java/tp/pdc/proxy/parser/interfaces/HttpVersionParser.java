@@ -13,4 +13,6 @@ public interface HttpVersionParser extends Parser, Reseteable {
     int getMajorHttpVersion();
 
     int getMinorHttpVersion();
+
+    byte[] getWholeVersionBytes();
 }

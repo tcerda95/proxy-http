@@ -42,6 +42,10 @@ public class HttpRequestParserImpl implements HttpRequestParser {
             return headersParser.getHeaderValue(Header.HOST);
     }
 
+    public byte[] getWholeRequestLine () {
+        return requestLineParser.getWholeRequestLine();
+    }
+
     @Override public boolean hasMethod () {
         return requestLineParser.hasMethod();
     }
@@ -92,5 +96,9 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 
     @Override public int getMinorHttpVersion () {
         return requestLineParser.getMinorHttpVersion();
+    }
+
+    @Override public byte[] getWholeVersionBytes () {
+        return requestLineParser.getWholeVersionBytes();
     }
 }
