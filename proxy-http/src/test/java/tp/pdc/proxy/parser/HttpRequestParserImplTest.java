@@ -175,15 +175,20 @@ public class HttpRequestParserImplTest {
 
 	@Test
 	public void getWholeRequestLineTest() throws ParserFormatException {
-		String line = "GET / HTTP/1.1\r\n";
+		String line1 = "GET / HTTP/1.1\r\n";
+		String line2 =  "GET http://localhost:8080/hello/give/me/the/resource/a.html HTTP/1.1\r\n";
 		String rest = "Host: localhost:8080\r\n"
 				+ "X-Header: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap((line + rest).getBytes(charset));
+		inputBuffer = ByteBuffer.wrap((line1 + rest).getBytes(charset));
 		parser.parse(inputBuffer, outputBuffer);
+		assertTrue(BytesUtils.equalsBytes(line1.getBytes(charset), parser.getWholeRequestLine()));
 
-		assertTrue(BytesUtils.equalsBytes(line.getBytes(charset), parser.getWholeRequestLine()));
+		parser.reset(); outputBuffer.clear();
+		inputBuffer = ByteBuffer.wrap((line2 + rest).getBytes(charset));
+		parser.parse(inputBuffer, outputBuffer);
+		assertTrue(BytesUtils.equalsBytes(line2.getBytes(charset), parser.getWholeRequestLine()));
 	}
 
 	@Test(expected = ParserFormatException.class)
