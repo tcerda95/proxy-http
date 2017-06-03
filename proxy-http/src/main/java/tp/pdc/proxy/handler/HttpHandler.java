@@ -3,18 +3,28 @@ package tp.pdc.proxy.handler;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
+import tp.pdc.proxy.ByteBufferFactory;
 import tp.pdc.proxy.handler.interfaces.Handler;
 
-public abstract class HttpHandler implements Handler {	
+public abstract class HttpHandler implements Handler {
+	
+	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
+	
 	private ByteBuffer readBuffer;
 	private ByteBuffer writeBuffer;
 	private ByteBuffer processedBuffer;
 	private SelectionKey connectedPeerKey;
 	
-	public HttpHandler(int readBufferSize, ByteBuffer writeBuffer, ByteBuffer processedBuffer) {
-		this.readBuffer = ByteBuffer.allocate(readBufferSize);
+	public HttpHandler(ByteBuffer writeBuffer, ByteBuffer processedBuffer) {
+		this.readBuffer = BUFFER_FACTORY.getProxyBuffer();
 		this.writeBuffer = writeBuffer;
 		this.processedBuffer = processedBuffer;
+	}
+	
+	public HttpHandler() {
+		this.readBuffer = BUFFER_FACTORY.getProxyBuffer();
+		this.writeBuffer = BUFFER_FACTORY.getProxyBuffer();
+		this.processedBuffer = BUFFER_FACTORY.getProxyBuffer();
 	}
 	
 	abstract protected void processRead(SelectionKey key);

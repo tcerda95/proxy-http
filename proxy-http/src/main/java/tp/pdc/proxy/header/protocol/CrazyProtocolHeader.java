@@ -5,6 +5,8 @@ import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.header.BytesUtils;
 
 public enum CrazyProtocolHeader {
+	PROXY_BUF_SIZE("proxy_buf_size"),
+	SET_PROXY_BUF_SIZE("set_proxy_buf_size"),
 	L33TENABLE("l33t_enable"),
 	L33TDISABLE("l33t_disable"),
 	ISL33TENABLE("is_l33t_enabled"),
