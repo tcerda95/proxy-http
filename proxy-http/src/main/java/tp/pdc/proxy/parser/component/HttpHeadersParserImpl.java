@@ -1,5 +1,6 @@
 package tp.pdc.proxy.parser.component;
 
+import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
@@ -67,7 +68,8 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     }
 
 
-    @Override public boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException {
+    @Override 
+    public boolean parse(ByteBuffer inputBuffer, ByteBuffer outputBuffer) throws ParserFormatException {
         while(inputBuffer.hasRemaining() && outputBuffer.remaining() > buffered)
             if (parse(inputBuffer.get(), outputBuffer))
                 return true;
@@ -184,16 +186,15 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
 
     private void saveHeaderNameByte(byte b) throws ParserFormatException {
         if (!headerName.hasRemaining())
-            throw new ParserFormatException("Header name too long");
+            throw new ParserFormatException("Header name too long", HttpErrorCode.HEADER_FIELD_TOO_LARGE_431);
         headerName.put(b);
     }
 
     private void saveHeaderContentbyte(byte b) throws ParserFormatException {
         if (!headerValue.hasRemaining())
-            throw new ParserFormatException("Header content too long");
+            throw new ParserFormatException("Header content too long", HttpErrorCode.HEADER_FIELD_TOO_LARGE_431);
         headerValue.put(b);
     }
-
 
     private void handleHeaderName(byte c, ByteBuffer outputBuffer) {
         headerName.flip();
@@ -258,11 +259,13 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
             output.put(c);
     }
 
-    @Override public boolean hasFinished() {
+    @Override 
+    public boolean hasFinished() {
         return this.state == HttpHeaderState.END_OK;
     }
 
-    @Override public void reset () {
+    @Override 
+    public void reset () {
         headerName.clear();
         headerValue.clear();
         savedHeaders.clear();
@@ -274,11 +277,13 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
         nextToAdd = null;
     }
 
-    @Override public byte[] getHeaderValue(Header header) {
+    @Override 
+    public byte[] getHeaderValue(Header header) {
         return this.savedHeaders.get(header);
     }
 
-    @Override public boolean hasHeaderValue(Header header) {
+    @Override 
+    public boolean hasHeaderValue(Header header) {
         return this.savedHeaders.containsKey(header);
     }
 }

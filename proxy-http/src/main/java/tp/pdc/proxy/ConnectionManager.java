@@ -122,7 +122,7 @@ public class ConnectionManager {
 	}
 
 	private HttpServerProxyHandler buildHttpServerProxyHandler(HttpClientProxyHandler clientHandler, Method method, SelectionKey clientKey) {
-		HttpServerProxyHandler handler = new HttpServerProxyHandler(PROPERTIES.getProxyBufferSize(), clientHandler.getProcessedBuffer(), clientHandler.getWriteBuffer(), method);
+		HttpServerProxyHandler handler = new HttpServerProxyHandler(clientHandler.getProcessedBuffer(), clientHandler.getWriteBuffer(), method);
 		handler.setConnectedPeerKey(clientKey);
 		return handler;
 	}

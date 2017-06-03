@@ -24,7 +24,7 @@ public class HttpResponseParserFactory {
 		toAdd = new EnumMap<>(Header.class);
 		toAdd.put(Header.CONNECTION, HeaderValue.KEEP_ALIVE.getValue());
 		
-		toSave = EnumSet.of(Header.CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
+		toSave = EnumSet.of(Header.CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE, Header.SERVER);
 	}
 	
 	public static HttpResponseParserFactory getInstance() {

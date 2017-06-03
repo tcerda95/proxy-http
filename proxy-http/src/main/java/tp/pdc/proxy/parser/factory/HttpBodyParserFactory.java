@@ -11,6 +11,7 @@ import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.CharsetParser;
 import tp.pdc.proxy.parser.body.HttpChunkedParser;
+import tp.pdc.proxy.parser.body.HttpConnectionCloseL33tParser;
 import tp.pdc.proxy.parser.body.HttpConnectionCloseParser;
 import tp.pdc.proxy.parser.body.HttpContentLengthLeetParser;
 import tp.pdc.proxy.parser.body.HttpContentLengthParser;
@@ -59,6 +60,7 @@ public class HttpBodyParserFactory {
 		return nullParser;
 	}
 	
+	// No body responses: 1xx, 204 or 304
 	private boolean isBodyStatusCode(int statusCode) {
 		return statusCode / 100 != 1 && statusCode != 204 && statusCode != 304;
 	}
@@ -68,8 +70,7 @@ public class HttpBodyParserFactory {
 
 		if (parser == null) {
 			if (shouldL33t(headersParser))
-				// TODO: retornar connection close leet parser
-				;
+				return HttpConnectionCloseL33tParser.getInstance();
 			else
 				return HttpConnectionCloseParser.getInstance();
 		}
@@ -123,6 +124,9 @@ public class HttpBodyParserFactory {
 	}
 
 	private boolean isAcceptedCharset(byte[] charset) {
+		if (charset.length == 0)
+			return true;
+		
 		for (byte[] accepted : acceptedCharsets)
 			if (BytesUtils.equalsBytes(charset, accepted, accepted.length))
 				return true;

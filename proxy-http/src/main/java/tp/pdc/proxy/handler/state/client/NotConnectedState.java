@@ -34,45 +34,51 @@ public class NotConnectedState implements HttpClientState {
 	public void handle(HttpClientProxyHandler httpHandler, SelectionKey key) {
 		LOGGER.debug("Not connected state handle");
 		
-		
 		final ByteBuffer processedBuffer = httpHandler.getProcessedBuffer();
 		final HttpRequestParser requestParser = httpHandler.getRequestParser();
 		
 		if (requestParser.hasHost()) {
-			byte[] hostValue = requestParser.getHostValue();
+			byte[] hostBytes = requestParser.getHostValue();
+			InetSocketAddress address;
 			
 			try {
-				tryConnect(httpHandler, requestParser.getMethod(), hostValue, key);
-
-			} catch (NumberFormatException e) {
-				LOGGER.warn("Failed to parse port: {}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+				address = HOST_PARSER.parseAddress(hostBytes);
 			} catch (IllegalArgumentException e) {
-				LOGGER.warn("{}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+				LOGGER.warn("Failed to parse host: {}", e.getMessage());
+				httpHandler.setErrorState(key, HttpErrorCode.BAD_HOST_FORMAT_400);
+				return;
+			}
+			
+			try {
+				tryConnect(httpHandler, requestParser.getMethod(), address, key);
 			} catch (IOException e) {
 				LOGGER.warn("Failed to connect to server: {}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_GATEWAY_502, key);
+				httpHandler.setErrorState(key, HttpErrorCode.BAD_GATEWAY_502, e.getMessage());
 			}
 		}
 		
 		else if (!processedBuffer.hasRemaining()) {
 			LOGGER.warn("Client's processed buffer full and connection not established with server");
-			httpHandler.setErrorState(HttpErrorCode.HEADER_FIELDS_TOO_LARGE_431, key);
+			httpHandler.setErrorState(key, HttpErrorCode.TOO_MANY_HEADERS_NO_HOST_431);
 		}		
 		
 		else if (requestParser.hasFinished()) {
 			LOGGER.warn("Impossible to connect: host not found in request header nor URL");
-			httpHandler.setErrorState(HttpErrorCode.NO_HOST_400, key);
+			httpHandler.setErrorState(key, HttpErrorCode.NO_HOST_400);
 		}
 	}
 	
-	private void tryConnect(HttpClientProxyHandler httpHandler, Method requestMethod, byte[] hostBytes, SelectionKey key) throws IOException {
-		InetSocketAddress address = HOST_PARSER.parseAddress(hostBytes);
+	private void tryConnect(HttpClientProxyHandler httpHandler, Method requestMethod, InetSocketAddress address, SelectionKey key) throws IOException {
 		
 		LOGGER.debug("Server address: {}", address);
 		
-		httpHandler.setConnectingState(key);
-		CONNECTION_MANAGER.connect(requestMethod, address, key);		
+		if (address.isUnresolved()) {
+			LOGGER.warn("Failed to resolve address: {}", address.getHostString());
+			httpHandler.setErrorState(key, HttpErrorCode.UNRESOLVED_ADDRESS_400, address.getHostString());
+		}
+		else {
+			httpHandler.setConnectingState(key);
+			CONNECTION_MANAGER.connect(requestMethod, address, key);		
+		}
 	}
 }

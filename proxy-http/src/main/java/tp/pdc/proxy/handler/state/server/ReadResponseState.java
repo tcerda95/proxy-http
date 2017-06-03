@@ -44,6 +44,7 @@ public class ReadResponseState implements HttpServerState {
 			handler.getClientHandler().signalResponseProcessed(false); // Client should attempt to store connection
 			
 			try {
+				handler.logAccess(key);
 				if (shouldKeepAlive(handler))
 					CONNECTION_MANAGER.storeConnection(key);
 				else

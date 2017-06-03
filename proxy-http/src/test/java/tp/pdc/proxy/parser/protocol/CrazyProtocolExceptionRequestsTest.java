@@ -357,6 +357,82 @@ public class CrazyProtocolExceptionRequestsTest {
 	}
 	
 	@Test
+	public void testNotValidBufSizeArgSizeOutOfBounds() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"set_proxy_buf_size\r\n"
+				+ "*2\r\n";
+				
+		
+		String expectedOutput =
+				"+set_proxy_buf_size\r\n"
+				+ "-[NOT_VALID]*2[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidBufSizeOutOfBounds() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"set_proxy_buf_size\r\n"
+				+ "*1\r\n"
+				+ "200\r\n";
+				
+		
+		String expectedOutput =
+				"+set_proxy_buf_size\r\n"
+				+ "+*1\r\n"
+				+ "-[NOT_VALID]200[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
+	public void testNotValidBufSizeOutOfBoundsBis() throws UnsupportedEncodingException {
+		
+		String protocolInput =  
+				"set_proxy_buf_size\r\n"
+				+ "*1\r\n"
+				+ "99999997\r\n";
+				
+		
+		String expectedOutput =
+				"+set_proxy_buf_size\r\n"
+				+ "+*1\r\n"
+				+ "-[NOT_VALID]9999999[...]\r\n"
+				+ "+end\r\n";
+				
+		
+		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));
+		
+		try {
+			parser.parse(inputBuffer, outputBuffer);
+		} catch (ParserFormatException e) {
+		}
+		assertEquals(expectedOutput, new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset()));
+
+	}
+	
+	@Test
 	public void testNotValidMethodLFNotPresent() throws UnsupportedEncodingException {
 		
 		String protocolInput =  

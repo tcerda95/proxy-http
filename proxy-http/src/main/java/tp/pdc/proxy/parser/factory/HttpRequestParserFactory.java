@@ -27,7 +27,7 @@ public class HttpRequestParserFactory {
 		toAdd = new EnumMap<>(Header.class);
 		toAdd.put(Header.CONNECTION, HeaderValue.KEEP_ALIVE.getValue());
 		
-		toSave = EnumSet.of(Header.CONNECTION, Header.PROXY_CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE);
+		toSave = EnumSet.of(Header.CONNECTION, Header.PROXY_CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING, Header.CONTENT_TYPE, Header.USER_AGENT);
 		
 		toRemoveL33t = EnumSet.copyOf((EnumSet<Header>) toRemove);
 		toRemoveL33t.add(Header.ACCEPT_ENCODING);

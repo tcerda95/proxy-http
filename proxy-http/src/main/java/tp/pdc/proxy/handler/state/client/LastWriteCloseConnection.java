@@ -30,7 +30,7 @@ public class LastWriteCloseConnection implements HttpClientState {
 
 		ByteBuffer writeBuffer = httpHandler.getWriteBuffer();
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		
+
 		if (!writeBuffer.hasRemaining()) {
 			LOGGER.info("Closing connection to client: response sent");
 			
@@ -40,7 +40,6 @@ public class LastWriteCloseConnection implements HttpClientState {
 				LOGGER.error("Failed to close client's channel on client's write error");
 				e.printStackTrace();
 			}
-			
 		}
 	}
 

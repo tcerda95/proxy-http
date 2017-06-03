@@ -18,13 +18,11 @@ public class HttpClientProxyHandlerSupplier implements Supplier<HttpClientProxyH
 	private final Logger logger = LoggerFactory.getLogger(HttpClientProxyHandlerSupplier.class);
 	private final ClientMetric metrics = ClientMetricImpl.getInstance();
 	private final Set<Method> acceptedMethods;
-	private final int bufferSize;
 
 	private HttpClientProxyHandlerSupplier() {
 		final ProxyProperties properties = ProxyProperties.getInstance();
 		
 		acceptedMethods = properties.getAcceptedMethods();
-		bufferSize = properties.getProxyBufferSize();
 	}
 	
 	public final static HttpClientProxyHandlerSupplier getInstance() {
@@ -35,7 +33,7 @@ public class HttpClientProxyHandlerSupplier implements Supplier<HttpClientProxyH
 	public HttpClientProxyHandler get() {
 		logger.info("Client proxy connection accepted");
 		metrics.addConnection();
-		return new HttpClientProxyHandler(bufferSize, acceptedMethods);
+		return new HttpClientProxyHandler(acceptedMethods);
 	}
 
 }

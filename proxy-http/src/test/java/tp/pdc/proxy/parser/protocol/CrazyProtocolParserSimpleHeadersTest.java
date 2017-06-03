@@ -97,6 +97,9 @@ public class CrazyProtocolParserSimpleHeadersTest {
 				+ "410\r\n"
 				+ "302\r\n"
 				+ "404\r\n"
+				+ "set_proxy_BUF_size\r\n"
+				+ "*1\r\n"
+				+ "1000\r\n"
 				+ "ENd\r\n";
 		
 		String expectedOutput =
@@ -120,6 +123,9 @@ public class CrazyProtocolParserSimpleHeadersTest {
 				+ "+410: 0\r\n"
 				+ "+302: 1\r\n"
 				+ "+404: 3\r\n"
+				+ "+set_proxy_buf_size\r\n"
+				+ "+*1\r\n"
+				+ "+1000\r\n"
 				+ "+end\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(protocolInput.getBytes("ASCII"));

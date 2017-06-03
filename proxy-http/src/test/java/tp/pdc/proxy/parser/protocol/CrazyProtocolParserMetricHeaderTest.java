@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 
+import tp.pdc.proxy.ByteBufferFactory;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
@@ -20,7 +21,10 @@ import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 public class CrazyProtocolParserMetricHeaderTest {
 	
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
-	
+	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
+
+	private static final int PROTOCOL_PARSER_BUFFER_SIZE = BUFFER_FACTORY.getProxyBufferSize();
+
 	private CrazyProtocolParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
@@ -63,6 +67,7 @@ public class CrazyProtocolParserMetricHeaderTest {
 		String expectedOutput =
 				"+server_bytes_read: 2\r\n"
 				+ "+metrics\r\n"
+				+ "+proxy_buf_size: " + PROTOCOL_PARSER_BUFFER_SIZE + "\r\n"
 				+ "+is_l33t_enabled: NO\r\n"
 				+ "+client_bytes_read: 4\r\n"
 				+ "+client_bytes_written: 5\r\n"
@@ -71,6 +76,7 @@ public class CrazyProtocolParserMetricHeaderTest {
 				+ "+server_bytes_written: 3\r\n"
 				+ "+server_connections: 1\r\n"
 				+ "+method_count\r\n"
+				+ "+*8\r\n"
 				+ "+GET: 2\r\n"
 				+ "+POST: 1\r\n"
 				+ "+HEAD: 0\r\n"
@@ -80,6 +86,7 @@ public class CrazyProtocolParserMetricHeaderTest {
 				+ "+TRACE: 0\r\n"
 				+ "+CONNECT: 0\r\n"
 				+ "+status_code_count\r\n"
+				+ "+*2\r\n"
 				+ "+404: 3\r\n"
 				+ "+302: 1\r\n"
 				+ "+end\r\n";

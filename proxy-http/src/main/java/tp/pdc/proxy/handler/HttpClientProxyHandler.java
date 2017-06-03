@@ -7,10 +7,12 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.HttpErrorCode;
+import tp.pdc.proxy.ProxyLogger;
 import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
@@ -34,29 +36,31 @@ import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
 public class HttpClientProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
+	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
 	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
 	
-	private HttpRequestParser requestParser;
+	private final HttpRequestParser requestParser;
+	private final Set<Method> acceptedMethods;
 	private HttpBodyParser bodyParser;
-	private Set<Method> acceptedMethods;
 	private boolean methodRecorded;
 	private boolean errorState;
 	
 	private HttpClientState state;
 	
-	public HttpClientProxyHandler(int bufSize, Set<Method> acceptedMethods) {
-		super(bufSize, ByteBuffer.allocate(bufSize), ByteBuffer.allocate(bufSize));
-		this.acceptedMethods = acceptedMethods;
+	public HttpClientProxyHandler(Set<Method> acceptedMethods) {
+		super();
 		this.state = NotConnectedState.getInstance();
+		this.acceptedMethods = acceptedMethods;
 		this.requestParser = REQUEST_PARSER_FACTORY.getRequestParser();
 	}
 	
 	public void reset(SelectionKey key) {
+		this.state = NotConnectedState.getInstance();
 		this.bodyParser = null;
 		this.methodRecorded = false;
-		this.state = NotConnectedState.getInstance();
+		this.errorState = false;
 		this.requestParser.reset();
 		
 		setConnectedPeerKey(null);
@@ -80,6 +84,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 			this.state = LastWriteCloseConnection.getInstance();
 		else
 			this.state = LastWriteKeepConnection.getInstance();
+	}
+	
+	private boolean shouldKeepConnectionAlive() {
+		if (requestParser.hasHeaderValue(Header.CONNECTION))
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+		else if (requestParser.hasHeaderValue(Header.PROXY_CONNECTION))
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.PROXY_CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+		return false;
 	}
 	
 	public void signalRequestSent() {
@@ -117,21 +129,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 		this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 	}
 	
-	public void setErrorState(HttpErrorCode errorResponse, SelectionKey key) {
-		ByteBuffer writeBuffer = this.getWriteBuffer();
-		writeBuffer.clear();
-		writeBuffer.put(errorResponse.getBytes());
-		
-		setErrorState(key);
-	}
-	
-	public void setErrorState(SelectionKey key) {
-		errorState = true;
-		this.state = LastWriteCloseConnection.getInstance();
-		key.interestOps(SelectionKey.OP_WRITE);
-		closeServerChannel();
-	}
-	
 	@Override
 	protected void processWrite(ByteBuffer inputBuffer, SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -146,23 +143,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write to client: {}", e.getMessage());
-			e.printStackTrace();
+			logError(key, "Failed to write to client", e.getMessage());
 			closeServerChannel();
-			try {
-				socketChannel.close();
-			} catch (IOException e1) {
-				LOGGER.error("Failed to close client's channel on client's write error");
-				e1.printStackTrace();
-			}
+			closeChannel(socketChannel);
 		}
-	}
-	
-	private boolean shouldKeepConnectionAlive() {
-		if (requestParser.hasHeaderValue(Header.CONNECTION))
-			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
-		else if (requestParser.hasHeaderValue(Header.PROXY_CONNECTION))
-			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.PROXY_CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
-		return false;
 	}
 
 	@Override
@@ -174,8 +158,8 @@ public class HttpClientProxyHandler extends HttpHandler {
 			int bytesRead = socketChannel.read(buffer);
 			if (bytesRead == -1) {
 				LOGGER.info("Received EOF from client");
-				socketChannel.close();  // TODO: no podría mandar -1 el cliente pero querer seguir leyendo? SI
 				closeServerChannel();
+				closeChannel(socketChannel);
 			}
 			else {
 				LOGGER.info("Read {} bytes from client", bytesRead);
@@ -183,8 +167,9 @@ public class HttpClientProxyHandler extends HttpHandler {
 			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read from client: {}", e.getMessage());
+			logError(key, "Failed to read from client", e.getMessage());
 			closeServerChannel();
-			e.printStackTrace();
+			closeChannel(socketChannel);
 		}
 	}
 	
@@ -206,7 +191,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 			bodyParser.parse(inputBuffer, outputBuffer);
 		} catch (ParserFormatException e) {
 			LOGGER.warn("Invalid body format: {}", e.getMessage());
-			setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+			setErrorState(key, HttpErrorCode.BAD_BODY_FORMAT_400, e.getMessage());
 		}
 	}
 	
@@ -215,12 +200,12 @@ public class HttpClientProxyHandler extends HttpHandler {
 			requestParser.parse(inputBuffer, outputBuffer);
 
 			if (requestParser.hasMethod() && !methodRecorded) {
-				CLIENT_METRICS.addMethodCount(requestParser.getMethod());
-				methodRecorded = true;
+				Method method = requestParser.getMethod();
+				recordMethod(method);
 				
-				if (!acceptedMethods.contains(requestParser.getMethod())) {					
+				if (!acceptedMethods.contains(method)) {					
 					LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-					setErrorState(HttpErrorCode.METHOD_NOT_ALLOWED_405, key);
+					setErrorState(key, HttpErrorCode.NOT_IMPLEMENTED_501, method.toString());
 				}
 			}
 			
@@ -231,29 +216,38 @@ public class HttpClientProxyHandler extends HttpHandler {
 
 		} catch (ParserFormatException e) {
 			if (requestParser.hasMethod() && !acceptedMethods.contains(requestParser.getMethod())) {
+				Method method = requestParser.getMethod();
+				
+				if (!methodRecorded)
+					recordMethod(method);
+				
 				LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-				setErrorState(HttpErrorCode.METHOD_NOT_ALLOWED_405, key);
+				setErrorState(key, HttpErrorCode.NOT_IMPLEMENTED_501, method.toString());
 			}
 			else {
 				LOGGER.warn("Invalid header format: {}", e.getMessage());
-				setErrorState(HttpErrorCode.BAD_REQUEST_400, key);
+				setErrorState(key, e.getResponseErrorCode(), e.getMessage());
 			}
 
 		} catch (IllegalHttpHeadersException e) {
 			LOGGER.warn("Illegal request headers: {}", e.getMessage());
-			setErrorState(HttpErrorCode.LENGTH_REQUIRED_411, key);
+			setErrorState(key, HttpErrorCode.LENGTH_REQUIRED_411);
 		}
 	}
 	
-	private void closeServerChannel() {
-		if (isServerChannelOpen()) {
-			try {
-				this.getConnectedPeerKey().channel().close();
-			} catch (IOException e) {
-				LOGGER.error("Failed to close server's connection on client's error");
-				e.printStackTrace();
-			}
+	private void recordMethod(Method method) {
+		if (methodRecorded) {
+			LOGGER.error("Method already recorded");
+			throw new IllegalStateException("Method is already recorded");
 		}
+		
+		methodRecorded = true;
+		CLIENT_METRICS.addMethodCount(method);
+	}
+	
+	private void closeServerChannel() {
+		if (isServerChannelOpen())
+			getServerHandler().closeChannel(this.getConnectedPeerKey().channel());
 	}
 	
 	private boolean isServerChannelOpen() {
@@ -268,5 +262,30 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 		
 		return (HttpServerProxyHandler) this.getConnectedPeerKey().attachment();
+	}
+	
+	public void setErrorState(SelectionKey key, HttpErrorCode errorResponse) {
+		setErrorState(key, errorResponse, StringUtils.EMPTY);
+	}
+		
+	public void setErrorState(SelectionKey key, HttpErrorCode errorResponse, String logErrorMessage) {
+		ByteBuffer writeBuffer = this.getWriteBuffer();
+		writeBuffer.clear();
+		writeBuffer.put(errorResponse.getBytes());
+		
+		setErrorState(key, errorResponse.getErrorMessage(), logErrorMessage);
+	}
+	
+	public void setErrorState(SelectionKey key, String... logErrorMessages) {
+		logError(key, logErrorMessages);
+		
+		this.errorState = true;
+		this.state = LastWriteCloseConnection.getInstance();
+		key.interestOps(SelectionKey.OP_WRITE);
+		closeServerChannel();
+	}
+	
+	private void logError(SelectionKey key, String... logErrorMessages) {
+		PROXY_LOGGER.logError(requestParser, addressFromKey(key), logErrorMessages);		
 	}
 }
