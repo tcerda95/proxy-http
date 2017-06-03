@@ -15,6 +15,8 @@ public enum HttpErrorCode {
 	NOT_IMPLEMENTED_501("501 Method not implemented", "Method not implemented"),
 	BAD_GATEWAY_502("502 Bad Gateway", "Failed to connect to server");
 	
+	private static final String SEPARATOR = ": ";
+	
 	private final byte[] response;
 	private final String errorMessage;
 	
@@ -26,8 +28,10 @@ public enum HttpErrorCode {
 					 .append("Content-type: text/plain\r\n")
 					 .append("Connection: close\r\n")
 					 .append("Content-length: ")
-					 .append(body.length())
+					 .append(body.length() + errorCode.length() + SEPARATOR.length())
 					 .append("\r\n\r\n")
+					 .append(errorCode)
+					 .append(SEPARATOR)
 					 .append(body);
 		
 		Charset charset = ProxyProperties.getInstance().getCharset();

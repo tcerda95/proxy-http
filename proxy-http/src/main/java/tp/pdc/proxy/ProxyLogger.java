@@ -14,7 +14,7 @@ import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
 public class ProxyLogger {
-	
+	private static final String SEPARATOR = ", ";
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyLogger.class);
 	
@@ -61,22 +61,23 @@ public class ProxyLogger {
     }
 
     //TODO: request
-    public void logError(HttpRequestParser requestParser, InetSocketAddress source, String message) {
+    public void logError(HttpRequestParser requestParser, InetSocketAddress source, String... messages) {
     	Method method = requestParser.hasMethod() ? requestParser.getMethod() : null;
     	byte[] destinationHostBytes = requestParser.hasHost() ? requestParser.getHostValue() : ArrayUtils.EMPTY_BYTE_ARRAY;
 
     	loggerExecutor.execute(() -> {
     		String destinationHost = new String(destinationHostBytes, PROPERTIES.getCharset());
             StringBuilder builder = new StringBuilder();
+            builder = appendMessages(builder, messages);
             
-            builder
-            	.append(message)
-            	.append(", client: ")
-            	.append(source.getHostString())
-                .append(", request: ")
-                .append(method)
-                .append(", host: ")
-                .append(destinationHost);
+            if (source != null)
+            	builder.append(", client: ").append(source.getHostString());     
+            
+            if (method != null)
+            	builder.append(", request: ").append(method);
+            
+            if (destinationHost.length() > 0)
+                builder.append(", host: ").append(destinationHost);
 
             String log = builder.toString();
             
@@ -84,4 +85,14 @@ public class ProxyLogger {
             LOGGER.error("Logging error: \n{}\n", log);
         });
     }
+
+	private StringBuilder appendMessages(StringBuilder builder, String[] messages) {
+		builder.append(messages[0]);
+		
+		for (int i = 1; i < messages.length; i++)
+			if (messages[i].length() > 0)
+				builder.append(SEPARATOR).append(messages[i]);
+		
+		return builder;
+	}
 }

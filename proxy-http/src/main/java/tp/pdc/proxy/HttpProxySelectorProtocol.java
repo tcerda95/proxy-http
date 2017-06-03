@@ -16,7 +16,7 @@ import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 
 public class HttpProxySelectorProtocol {
-	private final static Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 
 	public void handleAccept(SelectionKey key) {
@@ -52,7 +52,7 @@ public class HttpProxySelectorProtocol {
 		} catch (IOException e) {
 			LOGGER.warn("Failed to connect to server: {}", e.getMessage());
 			
-			clientHandler.setErrorState(HttpErrorCode.BAD_GATEWAY_502, clientKey);			
+			clientHandler.setErrorState(clientKey, HttpErrorCode.BAD_GATEWAY_502, e.getMessage());			
 		}
 	}
 

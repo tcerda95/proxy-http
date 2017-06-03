@@ -45,7 +45,7 @@ public class NotConnectedState implements HttpClientState {
 				address = HOST_PARSER.parseAddress(hostBytes);
 			} catch (IllegalArgumentException e) {
 				LOGGER.warn("Failed to parse host: {}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_HOST_FORMAT_400, key);
+				httpHandler.setErrorState(key, HttpErrorCode.BAD_HOST_FORMAT_400);
 				return;
 			}
 			
@@ -53,18 +53,18 @@ public class NotConnectedState implements HttpClientState {
 				tryConnect(httpHandler, requestParser.getMethod(), address, key);
 			} catch (IOException e) {
 				LOGGER.warn("Failed to connect to server: {}", e.getMessage());
-				httpHandler.setErrorState(HttpErrorCode.BAD_GATEWAY_502, e.getMessage(), key);
+				httpHandler.setErrorState(key, HttpErrorCode.BAD_GATEWAY_502, e.getMessage());
 			}
 		}
 		
 		else if (!processedBuffer.hasRemaining()) {
 			LOGGER.warn("Client's processed buffer full and connection not established with server");
-			httpHandler.setErrorState(HttpErrorCode.TOO_MANY_HEADERS_NO_HOST_431, key);
+			httpHandler.setErrorState(key, HttpErrorCode.TOO_MANY_HEADERS_NO_HOST_431);
 		}		
 		
 		else if (requestParser.hasFinished()) {
 			LOGGER.warn("Impossible to connect: host not found in request header nor URL");
-			httpHandler.setErrorState(HttpErrorCode.NO_HOST_400, key);
+			httpHandler.setErrorState(key, HttpErrorCode.NO_HOST_400);
 		}
 	}
 	
@@ -74,7 +74,7 @@ public class NotConnectedState implements HttpClientState {
 		
 		if (address.isUnresolved()) {
 			LOGGER.warn("Failed to resolve address: {}", address.getHostString());
-			httpHandler.setErrorState(HttpErrorCode.UNRESOLVED_ADDRESS_400, key);
+			httpHandler.setErrorState(key, HttpErrorCode.UNRESOLVED_ADDRESS_400, address.getHostString());
 		}
 		else {
 			httpHandler.setConnectingState(key);

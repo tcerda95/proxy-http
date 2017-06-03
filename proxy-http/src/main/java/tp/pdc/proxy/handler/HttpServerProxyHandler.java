@@ -1,7 +1,6 @@
 package tp.pdc.proxy.handler;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -79,12 +78,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write response to server");
 			setResponseError(key, e.getMessage());
-			try {
-				socketChannel.close();
-			} catch (IOException e1) {
-				LOGGER.error("Failed to close server's socket on server's write error: {}", e1.getMessage());
-				e1.printStackTrace();
-			}
+			closeChannel(socketChannel);
 		}
 	}
 	
@@ -107,19 +101,20 @@ public class HttpServerProxyHandler extends HttpHandler {
 					logAccess(key);
 				else {
 					LOGGER.warn("Sever sent EOF though headers not finished");
-					// TODO: loggear error
+					setResponseError(key, "Server EOF but headers not finished");
+					return;
 				}
 					
-				socketChannel.close();
+				closeChannel(socketChannel);
 				
-				if (hasFinishedProcessing()) {
+				if (!hasFinishedProcessing()) {
+					LOGGER.debug("Signaling client to send last write and not keep connection");
+					getClientHandler().signalResponseProcessed(true);
+				}
+				else {
 					LOGGER.error("Read server EOF and processing had finished. Shouldn't be registered for reading.");
 					LOGGER.debug("Signaling client to send last write and keep connection");
 					getClientHandler().signalResponseProcessed(false);
-				}
-				else {
-					LOGGER.debug("Signaling client to send last write and not keep connection");
-					getClientHandler().signalResponseProcessed(true);
 				}				
 			}
 			else {
@@ -179,13 +174,9 @@ public class HttpServerProxyHandler extends HttpHandler {
 		LOGGER.warn("Closing Connection to server: {}", message);
 		errorState = true;
 		
-		try {
-			key.channel().close();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		closeChannel(key.channel());
 		
-		getClientHandler().setErrorState(message, this.getConnectedPeerKey());
+		getClientHandler().setErrorState(this.getConnectedPeerKey(), message);
 	}
 	
 	public HttpClientProxyHandler getClientHandler() {
@@ -211,16 +202,6 @@ public class HttpServerProxyHandler extends HttpHandler {
 	}
 	
 	public void logAccess(SelectionKey key) {
-		try {
-			PROXY_LOGGER.logAccess(getClientHandler().getRequestParser(), responseParser, addressFromKey(getConnectedPeerKey()), addressFromKey(key));
-		} catch (IOException e) {
-			LOGGER.error("Failed to retreive inet socket address: {}", e.getMessage());
-			e.printStackTrace();
-		}
-	}
-	
-	private InetSocketAddress addressFromKey(SelectionKey key) throws IOException {
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		return (InetSocketAddress) socketChannel.getRemoteAddress();
+		PROXY_LOGGER.logAccess(getClientHandler().getRequestParser(), responseParser, addressFromKey(getConnectedPeerKey()), addressFromKey(key));
 	}
 }

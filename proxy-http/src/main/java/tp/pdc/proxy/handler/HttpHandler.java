@@ -1,13 +1,20 @@
 package tp.pdc.proxy.handler;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.ByteBufferFactory;
 import tp.pdc.proxy.handler.interfaces.Handler;
 
 public abstract class HttpHandler implements Handler {
-	
+	private static final Logger LOGGER = LoggerFactory.getLogger(HttpHandler.class);
 	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
 	
 	private ByteBuffer readBuffer;
@@ -88,4 +95,22 @@ public abstract class HttpHandler implements Handler {
 		readBuffer.compact();
 	}
 	
+	protected InetSocketAddress addressFromKey(SelectionKey key) {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		try {
+			return (InetSocketAddress) socketChannel.getRemoteAddress();
+		} catch (IOException e) {
+			LOGGER.error("Failed to retrieve remote address from socket channel");
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	protected void closeChannel(SelectableChannel socketChannel) {
+		try {
+			socketChannel.close();
+		} catch (IOException e1) {
+			LOGGER.error("Failed to close handler's socket: {}", e1.getMessage());
+		}
+	}
 }
