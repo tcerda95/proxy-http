@@ -59,24 +59,29 @@ public class ProxyLogger {
         });
     }
 
-    //TODO: request
     public void logError(HttpRequestParser requestParser, InetSocketAddress source, String... messages) {
-    	Method method = requestParser.hasMethod() ? requestParser.getMethod() : null;
+    	byte[] requestBytes = requestParser.getWholeRequestLine();
     	byte[] destinationHostBytes = requestParser.hasHost() ? requestParser.getHostValue() : ArrayUtils.EMPTY_BYTE_ARRAY;
+    	byte[] referrerBytes = requestParser.hasHeaderValue(Header.REFERER) ? requestParser.getHeaderValue(Header.REFERER) : ArrayUtils.EMPTY_BYTE_ARRAY;
 
     	loggerExecutor.execute(() -> {
+    		String request = new String(requestBytes, PROPERTIES.getCharset());
     		String destinationHost = new String(destinationHostBytes, PROPERTIES.getCharset());
+    		String referrer = new String(referrerBytes, PROPERTIES.getCharset());
             StringBuilder builder = new StringBuilder();
+            
             builder = appendMessages(builder, messages);
             
             if (source != null)
             	builder.append(", client: ").append(source.getHostString());     
             
-            if (method != null)
-            	builder.append(", request: ").append(method);
+        	builder.append(", request: ").append(request);
             
             if (destinationHost.length() > 0)
                 builder.append(", host: ").append(destinationHost);
+            
+            if (referrer.length() > 0)
+            	builder.append(", referrer: ").append(referrer);
 
             String log = builder.toString();
             

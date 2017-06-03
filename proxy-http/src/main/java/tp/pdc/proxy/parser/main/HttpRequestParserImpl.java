@@ -43,6 +43,7 @@ public class HttpRequestParserImpl implements HttpRequestParser {
             return headersParser.getHeaderValue(Header.HOST);
     }
 
+    @Override
     public byte[] getWholeRequestLine () {
         return requestLineParser.getWholeRequestLine();
     }
@@ -109,7 +110,8 @@ public class HttpRequestParserImpl implements HttpRequestParser {
         return requestLineParser.getMinorHttpVersion();
     }
 
-    @Override public byte[] getWholeVersionBytes () {
+    @Override 
+    public byte[] getWholeVersionBytes () {
         return requestLineParser.getWholeVersionBytes();
     }
 }

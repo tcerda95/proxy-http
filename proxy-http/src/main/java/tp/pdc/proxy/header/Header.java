@@ -12,7 +12,8 @@ public enum Header {
 	PROXY_CONNECTION("proxy-connection"), 
 	CONTENT_TYPE("content-type"), 
 	ACCEPT_ENCODING("accept-encoding"), 
-	SERVER("server");
+	SERVER("server"), 
+	REFERER("referer");
 
 	private String headerName;
 	private byte[] headerBytes;
