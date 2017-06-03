@@ -55,8 +55,7 @@ public class ProxyLogger {
 
             String log = builder.toString();
             
-            // TODO: loggear
-            LOGGER.info("Logging access: \n{}\n", log);
+            LOGGER.info("{}", log);
         });
     }
 
@@ -81,8 +80,7 @@ public class ProxyLogger {
 
             String log = builder.toString();
             
-            // TODO: loggear
-            LOGGER.error("Logging error: \n{}\n", log);
+            LOGGER.error("{}", log);
         });
     }
 
