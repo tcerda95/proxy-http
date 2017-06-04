@@ -8,33 +8,41 @@ import java.util.Set;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.parser.component.HttpHeadersParserImpl;
+import tp.pdc.proxy.parser.body.HttpNullBodyParser;
+import tp.pdc.proxy.parser.component.HttpHeaderParserImpl;
 import tp.pdc.proxy.parser.component.HttpRequestLineParserImpl;
+import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
+import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
+import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
 public class HttpRequestParserImpl implements HttpRequestParser {
 
+	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
+	
     private HttpRequestLineParser requestLineParser;
-    private HttpHeadersParserImpl headersParser;
+    private HttpHeaderParser headersParser;
+    private HttpBodyParser bodyParser;
     
     public HttpRequestParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
-        headersParser = new HttpHeadersParserImpl(toAdd, toRemove, toSave);
+        headersParser = new HttpHeaderParserImpl(toAdd, toRemove, toSave);
         requestLineParser = new HttpRequestLineParserImpl();
+        bodyParser = HttpNullBodyParser.getInstance();
     }
     
     @Override 
-    public boolean hasHeaderValue (Header header) {
+    public boolean hasHeaderValue(Header header) {
         return headersParser.hasHeaderValue(header);
     }
 
     @Override 
-    public byte[] getHeaderValue (Header header) {
+    public byte[] getHeaderValue(Header header) {
         return headersParser.getHeaderValue(header);
     }
 
     @Override 
-    public byte[] getHostValue () {
+    public byte[] getHostValue() {
         if (!hasHost())
             throw new NoSuchElementException("Host not read yet");
         if (requestLineParser.hasHost())
@@ -44,40 +52,62 @@ public class HttpRequestParserImpl implements HttpRequestParser {
     }
 
     @Override
-    public byte[] getWholeRequestLine () {
+    public byte[] getWholeRequestLine() {
         return requestLineParser.getWholeRequestLine();
     }
 
     @Override
-    public boolean hasMethod () {
+    public boolean hasRequestLineFinished() {
+    	return requestLineParser.hasFinished();
+    }
+    
+	@Override
+	public boolean hasHeadersFinished() {
+		return hasRequestLineFinished() && headersParser.hasFinished();
+	}
+    
+	@Override 
+	public boolean hasFinished() {
+		return hasRequestLineFinished() && hasHeadersFinished() && bodyParser.hasFinished();
+	}
+	
+    @Override
+    public boolean hasMethod() {
         return requestLineParser.hasMethod();
     }
 
     @Override 
-    public boolean hasHost () {
+    public boolean hasHost() {
         return requestLineParser.hasHost() || headersParser.hasHeaderValue(Header.HOST);
     }
 
     @Override 
-    public boolean hasFinished () {
-        return requestLineParser.hasFinished() && headersParser.hasFinished();
-    }
-
-    @Override 
-    public void reset () {
+    public void reset() {
         headersParser.reset();
         requestLineParser.reset();
+        bodyParser = HttpNullBodyParser.getInstance();
     }
 
     @Override 
     public boolean parse(final ByteBuffer input, final ByteBuffer output) throws ParserFormatException {
         while (input.hasRemaining() && output.hasRemaining()) {
+        	
             if (!requestLineParser.hasFinished()) {
                 requestLineParser.parse(input, output);
+                
             } else if (!headersParser.hasFinished()) {
-                if (headersParser.parse(input, output))
-                    return true;
-            } else {
+            	
+                if (headersParser.parse(input, output)) {
+        			bodyParser = BODY_PARSER_FACTORY.getClientHttpBodyParser(this);
+        			return bodyParser.parse(input, output);
+                }
+                
+            } else if (!bodyParser.hasFinished()) {
+            	
+            	if (bodyParser.parse(input, output))
+            		return true;
+            }
+            else {
                 throw new IllegalStateException("Already finished parsing");
             }
         }
@@ -91,27 +121,27 @@ public class HttpRequestParserImpl implements HttpRequestParser {
 	}
 
     @Override 
-    public boolean readMinorVersion () {
+    public boolean readMinorVersion() {
         return requestLineParser.readMinorVersion();
     }
 
     @Override 
-    public boolean readMajorVersion () {
+    public boolean readMajorVersion() {
         return requestLineParser.readMajorVersion();
     }
 
     @Override 
-    public int getMajorHttpVersion () {
+    public int getMajorHttpVersion() {
         return requestLineParser.getMajorHttpVersion();
     }
 
     @Override 
-    public int getMinorHttpVersion () {
+    public int getMinorHttpVersion() {
         return requestLineParser.getMinorHttpVersion();
     }
 
     @Override 
-    public byte[] getWholeVersionBytes () {
+    public byte[] getWholeVersionBytes() {
         return requestLineParser.getWholeVersionBytes();
     }
 }

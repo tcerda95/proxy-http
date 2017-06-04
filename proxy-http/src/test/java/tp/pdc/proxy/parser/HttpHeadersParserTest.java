@@ -6,7 +6,7 @@ import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
-import tp.pdc.proxy.parser.component.HttpHeadersParserImpl;
+import tp.pdc.proxy.parser.component.HttpHeaderParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 
 import java.nio.ByteBuffer;
@@ -43,7 +43,7 @@ public class HttpHeadersParserTest {
         Set<Header> toRemove = Collections.emptySet();
         Map<Header, byte[]> toAdd = Collections.emptyMap();
 
-        parser = new HttpHeadersParserImpl(toAdd, toRemove, relevant);
+        parser = new HttpHeaderParserImpl(toAdd, toRemove, relevant);
     }
 
     @Test
@@ -83,7 +83,7 @@ public class HttpHeadersParserTest {
         toRemove.add(Header.USER_AGENT);
         Map<Header, byte[]> toAdd = Collections.emptyMap();
 
-        HttpHeaderParser removeParser = new HttpHeadersParserImpl(toAdd, toRemove, relevant);
+        HttpHeaderParser removeParser = new HttpHeaderParserImpl(toAdd, toRemove, relevant);
 
         removeParser.parse(inputBuffer1, outputBuffer);
 
@@ -107,7 +107,7 @@ public class HttpHeadersParserTest {
         Set<Header> relevant = Collections.emptySet();
         Set<Header> remove = Collections.emptySet();
 
-        HttpHeaderParser addParser = new HttpHeadersParserImpl(toAdd, remove, relevant);
+        HttpHeaderParser addParser = new HttpHeaderParserImpl(toAdd, remove, relevant);
 
         addParser.parse(inputBuffer1, outputBuffer);
 

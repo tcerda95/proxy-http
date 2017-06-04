@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.factory.HttpResponseParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
@@ -34,9 +35,9 @@ public class HttpResponseParserTest {
             + "connection: close\r\n"
             + "transfer-encoding: chunked\r\n"
             + "connection-no: close\r\n"
-            + "transfer-size: chunked\r\n\r\n";;
+            + "transfer-size: chunked\r\n\r\n";
 
-        parser = HttpResponseParserFactory.getInstance().getResponseParser();
+        parser = HttpResponseParserFactory.getInstance().getResponseParser(Method.HEAD);
         output = ByteBuffer.allocate(1024);
         emptyHeadersInput = ByteBuffer.wrap((responseLine + emptyHeaders).getBytes(charset));
         fullHeadersInput = ByteBuffer.wrap((responseLine + contentHeaders).getBytes(charset));

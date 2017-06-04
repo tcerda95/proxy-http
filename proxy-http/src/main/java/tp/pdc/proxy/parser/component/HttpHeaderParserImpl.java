@@ -13,7 +13,7 @@ import java.util.*;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-public class HttpHeadersParserImpl implements HttpHeaderParser {
+public class HttpHeaderParserImpl implements HttpHeaderParser {
 
     private enum HttpHeaderState {
         ADD_HEADERS, LINE_START, ERROR, END_LINE_CR, SECTION_END_CR, END_OK,
@@ -40,7 +40,7 @@ public class HttpHeadersParserImpl implements HttpHeaderParser {
     // Buffered bytes que todavía no se escribieron en outputBuffer
     private int buffered = 0;
 
-    public HttpHeadersParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
+    public HttpHeaderParserImpl(Map<Header, byte[]> toAdd, Set<Header> toRemove, Set<Header> toSave) {
         state = HttpHeaderState.ADD_HEADERS;
         headerName = ByteBuffer.allocate(HEADER_NAME_SIZE);
         headerValue = ByteBuffer.allocate(HEADER_CONTENT_SIZE);

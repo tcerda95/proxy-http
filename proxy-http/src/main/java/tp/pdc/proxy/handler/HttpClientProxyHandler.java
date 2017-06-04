@@ -1,6 +1,5 @@
 package tp.pdc.proxy.handler;
 
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.HttpErrorCode;
 import tp.pdc.proxy.ProxyLogger;
-import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
 import tp.pdc.proxy.handler.state.client.ConnectedState;
@@ -29,21 +27,17 @@ import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ClientMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
-import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
 import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
-import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
 public class HttpClientProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
-	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
 	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
 	
 	private final HttpRequestParser requestParser;
 	private final Set<Method> acceptedMethods;
-	private HttpBodyParser bodyParser;
 	private boolean methodRecorded;
 	private boolean errorState;
 	
@@ -58,7 +52,6 @@ public class HttpClientProxyHandler extends HttpHandler {
 	
 	public void reset(SelectionKey key) {
 		this.state = NotConnectedState.getInstance();
-		this.bodyParser = null;
 		this.methodRecorded = false;
 		this.errorState = false;
 		this.requestParser.reset();
@@ -68,15 +61,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 
 	public boolean hasFinishedProcessing() {
-		return requestParser.hasFinished() && bodyParser.hasFinished();
+		return requestParser.hasFinished();
 	}
 	
 	public HttpRequestParser getRequestParser() {
 		return requestParser;
-	}
-	
-	public HttpBodyParser getBodyParser() {
-		return bodyParser;
 	}
 	
 	public void signalResponseProcessed(boolean closeConnectionToClient) {
@@ -179,70 +168,45 @@ public class HttpClientProxyHandler extends HttpHandler {
 		
 		if (!requestParser.hasFinished())
 			processRequest(inputBuffer, processedBuffer, key);
-		else if (!bodyParser.hasFinished())
-			processBody(inputBuffer, processedBuffer, key);
 		
 		if (!errorState)
 			state.handle(this, key);			
 	}
-	
-	private void processBody(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
-		try {
-			bodyParser.parse(inputBuffer, outputBuffer);
-		} catch (ParserFormatException e) {
-			LOGGER.warn("Invalid body format: {}", e.getMessage());
-			setErrorState(key, HttpErrorCode.BAD_BODY_FORMAT_400, e.getMessage());
-		}
-	}
-	
+		
 	private void processRequest(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {			
 			requestParser.parse(inputBuffer, outputBuffer);
-
-			if (requestParser.hasMethod() && !methodRecorded) {
-				Method method = requestParser.getMethod();
-				recordMethod(method);
-				
-				if (!acceptedMethods.contains(method)) {					
-					LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-					setErrorState(key, HttpErrorCode.NOT_IMPLEMENTED_501, method.toString());
-				}
-			}
+			recordAndValidateMethod(key);
 			
-			if (requestParser.hasFinished() && !errorState) {
-				bodyParser = BODY_PARSER_FACTORY.getClientHttpBodyParser(requestParser);
-				processBody(inputBuffer, outputBuffer, key);
-			}
-
 		} catch (ParserFormatException e) {
-			if (requestParser.hasMethod() && !acceptedMethods.contains(requestParser.getMethod())) {
-				Method method = requestParser.getMethod();
-				
-				if (!methodRecorded)
-					recordMethod(method);
-				
-				LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
-				setErrorState(key, HttpErrorCode.NOT_IMPLEMENTED_501, method.toString());
+			recordAndValidateMethod(key);
+			
+			if (!errorState) {
+				LOGGER.warn("Invalid parse format: {}", e.getMessage());
+				setErrorState(key, e.getResponseErrorCode());
 			}
-			else {
-				LOGGER.warn("Invalid header format: {}", e.getMessage());
-				setErrorState(key, e.getResponseErrorCode(), e.getMessage());
-			}
-
-		} catch (IllegalHttpHeadersException e) {
-			LOGGER.warn("Illegal request headers: {}", e.getMessage());
-			setErrorState(key, HttpErrorCode.LENGTH_REQUIRED_411);
 		}
 	}
 	
-	private void recordMethod(Method method) {
-		if (methodRecorded) {
-			LOGGER.error("Method already recorded");
-			throw new IllegalStateException("Method is already recorded");
+	private void recordAndValidateMethod(SelectionKey key) {
+		if (requestParser.hasMethod() && !methodRecorded) {
+			Method method = requestParser.getMethod();
+			recordMethod(method);
+			validateMethod(method, key);
 		}
-		
+	}
+
+	private void recordMethod(Method method) {
+		LOGGER.info("Method recorded: {}", method.toString());
 		methodRecorded = true;
 		CLIENT_METRICS.addMethodCount(method);
+	}
+	
+	private void validateMethod(Method method, SelectionKey key) {
+		if (!acceptedMethods.contains(method)) {
+			LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
+			setErrorState(key, HttpErrorCode.NOT_IMPLEMENTED_501, method.toString());
+		}
 	}
 	
 	private void closeServerChannel() {

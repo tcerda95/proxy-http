@@ -19,7 +19,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private static final int METHOD_NAME_SIZE = ProxyProperties.getInstance().getMethodBufferSize();
     private static final int URI_HOST_SIZE = ProxyProperties.getInstance().getURIHostBufferSize();
-    private static final int REQUEST_LINE_SIZE = 512;
+    private static final int REQUEST_LINE_SIZE = 1024;
 
     private RequestLineParserState state;
     private Method method;
@@ -31,23 +31,28 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private HttpVersionParser versionParser;
 
-    @Override public boolean readMinorVersion () {
+    @Override 
+    public boolean readMinorVersion () {
         return versionParser.readMinorVersion();
     }
 
-    @Override public boolean readMajorVersion () {
+    @Override 
+    public boolean readMajorVersion () {
         return versionParser.readMajorVersion();
     }
 
-    @Override public int getMajorHttpVersion () {
+    @Override 
+    public int getMajorHttpVersion () {
         return versionParser.getMajorHttpVersion();
     }
 
-    @Override public int getMinorHttpVersion () {
+    @Override 
+    public int getMinorHttpVersion () {
         return versionParser.getMinorHttpVersion();
     }
 
-    @Override public byte[] getWholeVersionBytes () {
+    @Override 
+    public byte[] getWholeVersionBytes () {
         return versionParser.getWholeVersionBytes();
     }
 
@@ -57,7 +62,7 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         READ_OK, ERROR,
     }
 
-    public HttpRequestLineParserImpl () {
+    public HttpRequestLineParserImpl() {
         versionParser = new HttpVersionParserImpl(CR.getValue());
         state = RequestLineParserState.START;
 
@@ -66,47 +71,48 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         URIHostBuf = ByteBuffer.allocate(URI_HOST_SIZE);
     }
 
-    @Override public byte[] getHostValue () {
+    @Override 
+    public byte[] getHostValue() {
         if (!hasHost())
             throw new NoSuchElementException("Host not read");
         return hostValue;
     }
 
     @Override
-    public byte[] getWholeRequestLine () {
+    public byte[] getWholeRequestLine() {
         if (!hasFinished())
             throw new IllegalStateException("Request not finished!");
 
         byte[] version = versionParser.getWholeVersionBytes();
 
-        ByteBuffer wholeLine = ByteBuffer.allocate(version.length + methodAndURLBuffer.remaining() + 1);
-
         methodAndURLBuffer.flip();
-        wholeLine.put(methodAndURLBuffer).put(version).put(LF.getValue());
+        
+        ByteBuffer wholeLine = ByteBuffer.allocate(methodAndURLBuffer.remaining() + version.length);
 
-        wholeLine.flip();
-        byte[] result = new byte[wholeLine.remaining()];
-        wholeLine.get(result);
+        wholeLine.put(methodAndURLBuffer).put(version);
 
-        return result;
+        return wholeLine.array();
     }
 
-    @Override public boolean hasMethod () {
+    @Override 
+    public boolean hasMethod () {
         return method != null;
     }
     
-    @Override public Method getMethod() {
+    @Override 
+    public Method getMethod() {
         if (!hasMethod())
             throw new NoSuchElementException("Method not read");
 		return method;
 	}
 
-    @Override public boolean hasHost () {
+    @Override 
+    public boolean hasHost() {
         return hostValue != null;
     }
 
-    @Override public boolean parse (ByteBuffer input, ByteBuffer output)
-        throws ParserFormatException {
+    @Override 
+    public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
         while (input.hasRemaining() && output.hasRemaining() && output.remaining() > buffered) {
             byte c = input.get();
 
@@ -200,7 +206,6 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
                 case CR:
                     if (c == LF.getValue()) {
                         state = RequestLineParserState.READ_OK;
-                        methodAndURLBuffer.position(methodAndURLBuffer.position() - 1);
                         output.put(c);
                         return true;
                     } else {
@@ -235,14 +240,18 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
     private void saveHostByte(byte c) throws ParserFormatException {
         if (!URIHostBuf.hasRemaining())
-            throw new ParserFormatException("Host too long", HttpErrorCode.REQUEST_URI_TOO_LONG_414);
+            throw new ParserFormatException("Host uri too long", HttpErrorCode.REQUEST_URI_TOO_LONG_414);
         URIHostBuf.put(c);
         buffered++;
     }
 
     private void saveRequestByte(byte c) throws ParserFormatException {
+    	if (c == CR.getValue() || c == LF.getValue())
+    		return;
+    	
         if (!methodAndURLBuffer.hasRemaining())
-            throw new ParserFormatException("Request line too long");
+            throw new ParserFormatException("Request line too long", HttpErrorCode.REQUEST_URI_TOO_LONG_414);
+        
         methodAndURLBuffer.put(c);
     }
 
@@ -264,11 +273,13 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
         throw new ParserFormatException(message);
     }
 
-    @Override public boolean hasFinished () {
+    @Override 
+    public boolean hasFinished () {
         return state == RequestLineParserState.READ_OK;
     }
 
-    @Override public void reset () {
+    @Override 
+    public void reset () {
         versionParser.reset();
         state = RequestLineParserState.START;
         methodAndURLBuffer.clear();

@@ -2,6 +2,7 @@ package tp.pdc.proxy.parser.component;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
+import tp.pdc.proxy.parser.utils.AsciiConstants;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 import java.nio.ByteBuffer;
@@ -82,7 +83,9 @@ public class HttpVersionParserImpl implements HttpVersionParser {
     public boolean parse (byte b, ByteBuffer outputBuffer) throws ParserFormatException {
         if (!wholeVersionBuffer.hasRemaining())
             throw new ParserFormatException("Http Version Section Too Long");
-        wholeVersionBuffer.put(b);
+        
+        if (b != AsciiConstants.CR.getValue())
+        	wholeVersionBuffer.put(b);
 
         switch (state) {
             case NOT_READ_YET:

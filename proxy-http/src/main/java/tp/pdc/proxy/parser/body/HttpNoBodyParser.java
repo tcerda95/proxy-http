@@ -5,25 +5,25 @@ import java.nio.ByteBuffer;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 
-public class HttpNullBodyParser implements HttpBodyParser {
+public class HttpNoBodyParser implements HttpBodyParser {
 
-	private static final HttpNullBodyParser INSTANCE = new HttpNullBodyParser();
+	private static final HttpNoBodyParser INSTANCE = new HttpNoBodyParser();
 	
-	private HttpNullBodyParser() {
+	private HttpNoBodyParser() {
 	}
 	
-	public static final HttpNullBodyParser getInstance() {
+	public static final HttpNoBodyParser getInstance() {
 		return INSTANCE;
 	}
 	
 	@Override
 	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
-		return false;
+		return true;
 	}
 
 	@Override
 	public boolean hasFinished() {
-		return false;
+		return true;
 	}
 
 }

@@ -8,6 +8,7 @@ import java.util.Set;
 
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
+import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.parser.main.HttpResponseParserImpl;
 
@@ -31,7 +32,7 @@ public class HttpResponseParserFactory {
 		return INSTANCE;
 	}
 	
-	public HttpResponseParser getResponseParser() {
-		return new HttpResponseParserImpl(toAdd, toRemove, toSave);
+	public HttpResponseParser getResponseParser(Method clientMethod) {
+		return new HttpResponseParserImpl(toAdd, toRemove, toSave, clientMethod);
 	}
 }

@@ -62,7 +62,7 @@ public class NotConnectedState implements HttpClientState {
 			httpHandler.setErrorState(key, HttpErrorCode.TOO_MANY_HEADERS_NO_HOST_431);
 		}		
 		
-		else if (requestParser.hasFinished()) {
+		else if (requestParser.hasHeadersFinished()) {
 			LOGGER.warn("Impossible to connect: host not found in request header nor URL");
 			httpHandler.setErrorState(key, HttpErrorCode.NO_HOST_400);
 		}

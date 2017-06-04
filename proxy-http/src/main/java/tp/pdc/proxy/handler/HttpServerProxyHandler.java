@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.ProxyLogger;
-import tp.pdc.proxy.exceptions.IllegalHttpHeadersException;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.HttpServerState;
 import tp.pdc.proxy.handler.state.server.LastWriteState;
@@ -18,14 +17,11 @@ import tp.pdc.proxy.handler.state.server.SendingRequestState;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
-import tp.pdc.proxy.parser.factory.HttpBodyParserFactory;
 import tp.pdc.proxy.parser.factory.HttpResponseParserFactory;
-import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
 public class HttpServerProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpServerProxyHandler.class);
-	private static final HttpBodyParserFactory BODY_PARSER_FACTORY = HttpBodyParserFactory.getInstance();
 	private static final HttpResponseParserFactory RESPONSE_PARSER_FACTORY = HttpResponseParserFactory.getInstance();
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
@@ -33,14 +29,11 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private HttpServerState state;
 	private boolean errorState;
 	private HttpResponseParser responseParser;
-	private HttpBodyParser bodyParser;
-	private Method clientMethod;
 	private boolean responseCodeRecorded;
 	
 	public HttpServerProxyHandler(ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
 		super(writeBuffer, processedBuffer);
-		this.responseParser = RESPONSE_PARSER_FACTORY.getResponseParser();
-		this.clientMethod = clientMethod;
+		this.responseParser = RESPONSE_PARSER_FACTORY.getResponseParser(clientMethod);
 		this.state = SendingRequestState.getInstance();
 	}
 	
@@ -54,13 +47,11 @@ public class HttpServerProxyHandler extends HttpHandler {
 		setProcessedBuffer(null);
 		setWriteBuffer(null);
 		
-		clientMethod = null;
 		responseCodeRecorded = false;
-		bodyParser = null;
 	}
 	
 	public void setClientMethod(Method method) {
-		this.clientMethod = method;
+		responseParser.setClientMethod(method);
 	}
 	
 	@Override
@@ -97,7 +88,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 				
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 				
-				if (responseParser.hasFinished())
+				if (responseParser.hasHeadersFinished())
 					logAccess(key);
 				else {
 					LOGGER.warn("Sever sent EOF though headers not finished");
@@ -134,8 +125,6 @@ public class HttpServerProxyHandler extends HttpHandler {
 		
 		if (!responseParser.hasFinished())
 			processResponse(inputBuffer, processedBuffer, key);
-		else if (!bodyParser.hasFinished())
-			processBody(inputBuffer, processedBuffer, key);
 
 		if (!errorState)
 			state.handle(this, key);
@@ -145,29 +134,24 @@ public class HttpServerProxyHandler extends HttpHandler {
 		try {
 			responseParser.parse(inputBuffer, outputBuffer);
 			
-			if (responseParser.hasStatusCode() && !responseCodeRecorded) {
-				SERVER_METRICS.addResponseCodeCount(responseParser.getStatusCode());
-				responseCodeRecorded = true;
-			}
-			
-			if (responseParser.hasFinished()) {
-				bodyParser = BODY_PARSER_FACTORY.getServerHttpBodyParser(responseParser, clientMethod);
-				processBody(inputBuffer, outputBuffer, key);
-			}
+			if (shouldRecordStatusCode())
+				recordStatusCode();
 			
 		} catch (ParserFormatException e) {
-			setResponseError(key, e.getMessage());
-		} catch (IllegalHttpHeadersException e) {
+			if (shouldRecordStatusCode())
+				recordStatusCode();
+			
 			setResponseError(key, e.getMessage());
 		}
 	}
 	
-	private void processBody(ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
-		try {
-			bodyParser.parse(inputBuffer, outputBuffer);
-		} catch (ParserFormatException e) {
-			setResponseError(key, e.getMessage());
-		}
+	private boolean shouldRecordStatusCode() {
+		return responseParser.hasStatusCode() && !responseCodeRecorded;
+	}
+	
+	private void recordStatusCode() {
+		SERVER_METRICS.addResponseCodeCount(responseParser.getStatusCode());
+		responseCodeRecorded = true;
 	}
 
 	private void setResponseError(SelectionKey key, String message) {
@@ -192,7 +176,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 	}
 	
 	public boolean hasFinishedProcessing() {
-		return responseParser.hasFinished() && bodyParser.hasFinished();
+		return responseParser.hasFinished();
 	}
 
 	public void setReadResponseState(SelectionKey key) {

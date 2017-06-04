@@ -32,7 +32,7 @@ public class HttpRequestParserImplTest {
 	}
 
 	@Test
-	public void testFinished() throws UnsupportedEncodingException, ParserFormatException {
+	public void testNoBodyFinished() throws UnsupportedEncodingException, ParserFormatException {
 		String request =   "GET / HTTP/1.1\r\n"
 				 + "Host: localhost:8080\r\n"
 				 + "\r\n";
@@ -42,9 +42,9 @@ public class HttpRequestParserImplTest {
  		assertTrue(parser.parse(inputBuffer, outputBuffer));
 		assertTrue(parser.hasFinished());
 	}
-
+	
 	@Test
-	public void testNotFinished() throws UnsupportedEncodingException, ParserFormatException {
+	public void testNoBodyNotFinished() throws UnsupportedEncodingException, ParserFormatException {
 		String request = "GET / HTTP/1.1\r\n"
 				+ "Host: localhost:8080\r\n"
 				+ "X-Header: Custom\r\n";
@@ -55,6 +55,34 @@ public class HttpRequestParserImplTest {
 		assertFalse(parser.hasFinished());
 	}
 
+	@Test
+	public void testBodyFinished() throws UnsupportedEncodingException, ParserFormatException {
+		String request =   "POST / HTTP/1.1\r\n"
+				 + "Host: localhost:8080\r\n"
+				 + "content-length: 20\r\n"
+				 + "\r\n"
+				 + "hola como te va?Bien";
+		
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
+		
+ 		assertTrue(parser.parse(inputBuffer, outputBuffer));
+		assertTrue(parser.hasFinished());
+	}
+	
+	@Test
+	public void testBodyNotFinished() throws UnsupportedEncodingException, ParserFormatException {
+		String request =   "POST / HTTP/1.1\r\n"
+				 + "Host: localhost:8080\r\n"
+				 + "content-length: 20\r\n"
+				 + "\r\n"
+				 + "hola como te va?Bie";
+		
+		inputBuffer = ByteBuffer.wrap(request.getBytes(charset));
+		
+ 		assertFalse(parser.parse(inputBuffer, outputBuffer));
+		assertFalse(parser.hasFinished());
+	}
+	
 	@Test
 	public void notHasHostTest() throws UnsupportedEncodingException, ParserFormatException {
 		String request = "GET / HTTP/1.1\r\n"
@@ -153,7 +181,9 @@ public class HttpRequestParserImplTest {
 
 		String nomethod = " / HTTP/1.1\r\n"
 				+ "Host: localhost:8080\r\n"
-				+ "\r\n";
+				+ "Content-length: 10\r\n"
+				+ "\r\n"
+				+ "hoola como";
 
 		inputBuffer = ByteBuffer.wrap((get + nomethod).getBytes(charset));
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
@@ -171,22 +201,25 @@ public class HttpRequestParserImplTest {
 		inputBuffer = ByteBuffer.wrap((post + nomethod).getBytes(charset));
 		parser.reset();
 		assertTrue(parser.parse(inputBuffer, outputBuffer));
+		assertTrue(parser.hasMethod());
+		assertEquals(Method.POST, parser.getMethod());
 	}
 
 	@Test
 	public void getWholeRequestLineTest() throws ParserFormatException {
-		String line1 = "GET / HTTP/1.1\r\n";
-		String line2 =  "GET http://localhost:8080/hello/give/me/the/resource/a.html HTTP/1.1\r\n";
+		String crlf = "\r\n";
+		String line1 = "GET / HTTP/1.1";
+		String line2 =  "GET http://localhost:8080/hello/give/me/the/resource/a.html HTTP/1.1";
 		String rest = "Host: localhost:8080\r\n"
 				+ "X-Header: Custom\r\n"
 				+ "\r\n";
 
-		inputBuffer = ByteBuffer.wrap((line1 + rest).getBytes(charset));
+		inputBuffer = ByteBuffer.wrap((line1 + crlf + rest).getBytes(charset));
 		parser.parse(inputBuffer, outputBuffer);
-		assertTrue(BytesUtils.equalsBytes(line1.getBytes(charset), parser.getWholeRequestLine()));
+		assertArrayEquals(line1.getBytes(charset), parser.getWholeRequestLine());
 
 		parser.reset(); outputBuffer.clear();
-		inputBuffer = ByteBuffer.wrap((line2 + rest).getBytes(charset));
+		inputBuffer = ByteBuffer.wrap((line2 + crlf + rest).getBytes(charset));
 		parser.parse(inputBuffer, outputBuffer);
 		assertTrue(BytesUtils.equalsBytes(line2.getBytes(charset), parser.getWholeRequestLine()));
 	}
