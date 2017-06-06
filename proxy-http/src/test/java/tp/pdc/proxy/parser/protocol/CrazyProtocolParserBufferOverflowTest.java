@@ -78,11 +78,10 @@ public class CrazyProtocolParserBufferOverflowTest {
 		String inputProcessed = "";
 		
 		while (!parser.parse(inputBuffer, outputBuffer))
-		{	
+		{
 			inputProcessed += new String(outputBuffer.array(), 0, outputBuffer.position(), PROPERTIES.getCharset());
-			
+
 			outputBuffer.clear();
-		
 		}
 	
 		parser.parse(inputBuffer, outputBuffer);

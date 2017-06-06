@@ -42,21 +42,4 @@ public enum Method {
 		}
 		return maxLength;
 	}
-
-    public static void main (String[] args) {
-        ByteBuffer b = ByteBuffer.allocate(10);
-
-        b.put((byte) 'a');
-        b.put((byte) 'b');
-        b.put((byte) 'c');
-        b.put((byte) 'd');
-
-        b.flip();
-        System.out.println(b.get());
-        System.out.println(b);
-
-        b.position(b.position() - 1);
-        System.out.println(b.get());
-        System.out.println(b);
-    }
 }
