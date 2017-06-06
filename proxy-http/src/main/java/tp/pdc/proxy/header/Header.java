@@ -1,6 +1,8 @@
 package tp.pdc.proxy.header;
 
 import java.nio.ByteBuffer;
+
+import sun.jvm.hotspot.runtime.Bytes;
 import tp.pdc.proxy.ProxyProperties;
 
 public enum Header {
@@ -18,14 +20,16 @@ public enum Header {
 	private String headerName;
 	private byte[] headerBytes;
 
+	private static final ByteOperation TO_LOWERCASE = c -> (byte) Character.toLowerCase(c);
+
 	public static Header getHeaderByBytes (ByteBuffer bytes, int length) {
 		for (Header header : values())
-			if (BytesUtils.equalsBytes(header.headerBytes, bytes, length))
+			if (BytesUtils.equalsBytes(header.headerBytes, 0, bytes.array(), bytes.position(), length, TO_LOWERCASE))
 				return header;
 		return null;
 	}
 	
-	private Header(String header) {
+	Header(String header) {
 		headerName = header;
 		headerBytes = header.getBytes(ProxyProperties.getInstance().getCharset());
 	}

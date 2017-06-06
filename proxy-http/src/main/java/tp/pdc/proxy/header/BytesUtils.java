@@ -3,7 +3,9 @@ package tp.pdc.proxy.header;
 import java.nio.ByteBuffer;
 
 public final class BytesUtils {
-	
+
+	private static final ByteOperation NO_OPERATION = c -> c;
+
 	private BytesUtils() {
 	}
 
@@ -28,13 +30,13 @@ public final class BytesUtils {
     	byte[] bufferArray = byteBuffer.array();
     	int offset = byteBuffer.position();
     	
-    	if (length == array.length && equalsBytes(array, 0, bufferArray, offset, length))
+    	if (length == array.length && equalsBytes(array, 0, bufferArray, offset, length, NO_OPERATION))
     		return true;
     	
     	return false;
     }
     
-    public static boolean equalsBytes(byte[] arr1, int offset1, byte[] arr2, int offset2, int length) {
+    public static boolean equalsBytes(byte[] arr1, int offset1, byte[] arr2, int offset2, int length, ByteOperation op) {
     	 if (arr1.length - offset1 < length)
     		 return false;
     	 
@@ -42,20 +44,20 @@ public final class BytesUtils {
     		 return false;
     	 
     	 for (int i = offset1, j = offset2; length > 0; i++, j++, length--)
-    		 if (arr1[i] != arr2[j])
+    		 if (op.transform(arr1[i]) != op.transform(arr2[j]))
     			 return false;
     	 
     	 return true;
     }
      
     public static boolean equalsBytes(byte[] arr1, byte[] arr2, int length) {
-    	return equalsBytes(arr1, 0, arr2, 0, length);
+    	return equalsBytes(arr1, 0, arr2, 0, length, NO_OPERATION);
     }
     
     public static boolean equalsBytes(byte[] arr1, byte[] arr2) {
     	return (arr1 == arr2) || (arr1.length == arr2.length && equalsBytes(arr1, arr2, arr1.length));
     }
-    
+
     public static int findValueIndex(byte[] arr, byte value, int startingIndex) {
 		for (int i = startingIndex; i < arr.length; i++)
 			if (arr[i] == value)

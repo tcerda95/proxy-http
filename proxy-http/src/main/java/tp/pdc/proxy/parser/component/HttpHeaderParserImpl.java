@@ -98,7 +98,7 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
                         headerName.clear();
                         headerValue.clear();
                         currentHeader = null;
-                        saveHeaderNameByte((byte) Character.toLowerCase(c));
+                        saveHeaderNameByte(c);
                         state = HttpHeaderState.NAME;
                     } else
                         handleError();
@@ -108,7 +108,7 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
                     if (c == ':') {
                         handleHeaderName(c, output);
                     } else if (ParseUtils.isHeaderNameChar(c)) {
-                        saveHeaderNameByte((byte) Character.toLowerCase(c));
+                        saveHeaderNameByte(c);
                     } else {
                         handleError();
                     }
@@ -120,7 +120,7 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
 
                 case RELEVANT_SPACE:
                     if (ParseUtils.isHeaderContentChar(c)) {
-                        saveHeaderContentbyte((byte) Character.toLowerCase(c));
+                        saveHeaderContentbyte(c);
                         state = HttpHeaderState.RELEVANT_CONTENT;
                     } else {
                         handleError();
@@ -138,7 +138,7 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
                         if (!ignoring)
                             output.put(headerAux).put(CR.getValue());
                     } else if (ParseUtils.isHeaderContentChar(c)) {
-                        saveHeaderContentbyte((byte) Character.toLowerCase(c));
+                        saveHeaderContentbyte(c);
                     } else {
                         handleError();
                     }
