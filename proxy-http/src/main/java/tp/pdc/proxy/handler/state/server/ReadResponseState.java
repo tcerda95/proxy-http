@@ -63,6 +63,6 @@ public class ReadResponseState implements HttpServerState {
 	private boolean shouldKeepAlive(HttpServerProxyHandler handler) {
 		HttpResponseParser responseParser = handler.getResponseParser();
 		return responseParser.hasHeaderValue(Header.CONNECTION) && 
-				BytesUtils.equalsBytes(responseParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+				BytesUtils.equalsBytes(responseParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue(), BytesUtils.TO_LOWERCASE);
 	}
 }

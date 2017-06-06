@@ -77,9 +77,9 @@ public class HttpClientProxyHandler extends HttpHandler {
 	
 	private boolean shouldKeepConnectionAlive() {
 		if (requestParser.hasHeaderValue(Header.CONNECTION))
-			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION), HeaderValue.KEEP_ALIVE.getValue(), BytesUtils.TO_LOWERCASE);
 		else if (requestParser.hasHeaderValue(Header.PROXY_CONNECTION))
-			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.PROXY_CONNECTION), HeaderValue.KEEP_ALIVE.getValue());
+			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.PROXY_CONNECTION), HeaderValue.KEEP_ALIVE.getValue(), BytesUtils.TO_LOWERCASE);
 		return false;
 	}
 	

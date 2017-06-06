@@ -4,7 +4,8 @@ import java.nio.ByteBuffer;
 
 public final class BytesUtils {
 
-	private static final ByteOperation NO_OPERATION = c -> c;
+	public static final ByteOperation NO_OPERATION = c -> c;
+	public static final ByteOperation TO_LOWERCASE = c -> (byte) Character.toLowerCase(c);
 
 	private BytesUtils() {
 	}
@@ -26,14 +27,18 @@ public final class BytesUtils {
 		output.put(input, 0, length);
 	}
 	
-    public static boolean equalsBytes(byte[] array, ByteBuffer byteBuffer, int length) {
+    public static boolean equalsBytes(byte[] array, ByteBuffer byteBuffer, int length, ByteOperation op) {
     	byte[] bufferArray = byteBuffer.array();
     	int offset = byteBuffer.position();
     	
-    	if (length == array.length && equalsBytes(array, 0, bufferArray, offset, length, NO_OPERATION))
+    	if (length == array.length && equalsBytes(array, 0, bufferArray, offset, length, op))
     		return true;
     	
     	return false;
+    }
+    
+    public static boolean equalsBytes(byte[] array, ByteBuffer byteBuffer, int length) {
+    	return equalsBytes(array, byteBuffer, length, NO_OPERATION);
     }
     
     public static boolean equalsBytes(byte[] arr1, int offset1, byte[] arr2, int offset2, int length, ByteOperation op) {
@@ -49,13 +54,25 @@ public final class BytesUtils {
     	 
     	 return true;
     }
+    
+    public static boolean equalsBytes(byte[] arr1, int offset1, byte[] arr2, int offset2, int length) {
+    	return equalsBytes(arr1, offset1, arr2, offset2, length, NO_OPERATION);
+    }
      
+    public static boolean equalsBytes(byte[] arr1, byte[] arr2, int length, ByteOperation op) {
+    	return equalsBytes(arr1, 0, arr2, 0, length, op);
+    }
+    
     public static boolean equalsBytes(byte[] arr1, byte[] arr2, int length) {
-    	return equalsBytes(arr1, 0, arr2, 0, length, NO_OPERATION);
+    	return equalsBytes(arr1, arr2, length, NO_OPERATION);
+    }
+    
+    public static boolean equalsBytes(byte[] arr1, byte[] arr2, ByteOperation op) {
+    	return (arr1 == arr2) || (arr1.length == arr2.length && equalsBytes(arr1, arr2, arr1.length, op));
     }
     
     public static boolean equalsBytes(byte[] arr1, byte[] arr2) {
-    	return (arr1 == arr2) || (arr1.length == arr2.length && equalsBytes(arr1, arr2, arr1.length));
+    	return equalsBytes(arr1, arr2, NO_OPERATION);
     }
 
     public static int findValueIndex(byte[] arr, byte value, int startingIndex) {

@@ -13,10 +13,10 @@ public class CharsetParser {
 	
 	private final static int MAX_PARAM_NAME = 50;
 	private final static int MAX_PARAM_VALUE = 50;
+	private static final byte[] CHARSET_BYTES = "charset".getBytes(PROPERTIES.getCharset());
 	
 	private final ByteBuffer valueBuffer = ByteBuffer.allocate(MAX_PARAM_VALUE);
 	private final ByteBuffer nameBuffer = ByteBuffer.allocate(MAX_PARAM_NAME);
-	private final byte[] charsetBytesArray = "charset".getBytes(PROPERTIES.getCharset());
 	
 	public byte[] extractCharset(final byte[] contentTypeHeader) {
 		
@@ -34,7 +34,7 @@ public class CharsetParser {
 			i = skipWhiteSpaces(contentTypeHeader, i+1);
 			
 			nameBuffer.flip();
-			if (BytesUtils.equalsBytes(charsetBytesArray, nameBuffer, nameBuffer.remaining()))
+			if (BytesUtils.equalsBytes(CHARSET_BYTES, nameBuffer, nameBuffer.remaining()))
 				return extractCharsetValue(contentTypeHeader, i);			
 		}
 		

@@ -109,7 +109,7 @@ public class HttpBodyParserFactory {
 	
 	private boolean hasChunked(HttpHeaderParser headersParser) {
 		return headersParser.hasHeaderValue(Header.TRANSFER_ENCODING) && 
-				BytesUtils.equalsBytes(headersParser.getHeaderValue(Header.TRANSFER_ENCODING), HeaderValue.CHUNKED.getValue());
+				BytesUtils.equalsBytes(headersParser.getHeaderValue(Header.TRANSFER_ENCODING), HeaderValue.CHUNKED.getValue(), BytesUtils.TO_LOWERCASE);
 	}
 	
 	private boolean shouldL33t(HttpHeaderParser headersParser) {
