@@ -87,6 +87,8 @@ public class ArrayQueue<T> extends AbstractQueue<T> implements FixedLengthQueue<
 
 		@Override
 		public E next() {
+            if (!hasNext())
+                throw new NoSuchElementException();
 			E elem = arr[dequeueIndex];
 			dequeueIndex = (dequeueIndex + 1) % arr.length;
 			remainingItems--;

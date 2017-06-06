@@ -2,6 +2,7 @@ package tp.pdc.proxy.parser.protocol;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Set;
 
 import tp.pdc.proxy.ByteBufferFactory;
@@ -16,7 +17,7 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 
 
 public class CrazyProtocolOutputGenerator {
-	
+	private static final Charset charset = ProxyProperties.getInstance().getCharset();
 	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
 	private static final ProxyProperties PROXY_PROPERTIES = ProxyProperties.getInstance();
 	private static final L33tFlag L33TFLAG = L33tFlag.getInstance();
@@ -25,7 +26,7 @@ public class CrazyProtocolOutputGenerator {
 	private final ClientMetric clientMetrics;
 	private final ServerMetric serverMetrics;
 	
-	private final String PONG = "PONG";
+	private static final String PONG = "PONG";
 
 	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
@@ -62,7 +63,7 @@ public class CrazyProtocolOutputGenerator {
 			case ISL33TENABLE:
 				
 				String toPut = L33tFlag.getInstance().isSet() ? "YES" : "NO";
-				putValue(toPut.getBytes(), output);
+				putValue(toPut.getBytes(charset), output);
 				break;
 				
 			case CLIENT_BYTES_READ:

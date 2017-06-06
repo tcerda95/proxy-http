@@ -270,7 +270,7 @@ public class HttpRequestParserImplTest {
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void OutputBufferTooSmallTest() throws UnsupportedEncodingException, ParserFormatException {
+	public void outputBufferTooSmallTest () throws UnsupportedEncodingException, ParserFormatException {
 		String longHost = "http://www.google.com.www.google.com.www.google.com.www.google.com.www.google.com";
 
 
