@@ -17,10 +17,10 @@ import static org.junit.Assert.assertTrue;
 
 public class HttpResponseParserTest {
 
-    private String message, responseLine, emptyHeaders, contentHeaders;
+    private String message, responseLine, contentHeaders;
     private int statusCode;
     private HttpResponseParser parser;
-    private ByteBuffer output, emptyHeadersInput, fullHeadersInput;
+    private ByteBuffer output, fullHeadersInput;
 
     private static final Charset charset = ProxyProperties.getInstance().getCharset();
 
@@ -29,7 +29,6 @@ public class HttpResponseParserTest {
         statusCode = new Random().nextInt(999);
         message = "Hi I'm a responseLine message";
         responseLine = "HTTP/1.1 " + statusCode + " " + message + "\r\n";
-        emptyHeaders = "\r\n";
         contentHeaders = "Host: google.com\r\n"
             + "user-agent: internet explorer 2\r\n"
             + "connection: close\r\n"
@@ -39,7 +38,6 @@ public class HttpResponseParserTest {
 
         parser = HttpResponseParserFactory.getInstance().getResponseParser(Method.HEAD);
         output = ByteBuffer.allocate(1024);
-        emptyHeadersInput = ByteBuffer.wrap((responseLine + emptyHeaders).getBytes(charset));
         fullHeadersInput = ByteBuffer.wrap((responseLine + contentHeaders).getBytes(charset));
     }
 

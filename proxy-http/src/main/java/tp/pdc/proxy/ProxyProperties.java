@@ -43,6 +43,8 @@ public class ProxyProperties {
 		acceptedCharsets.add(ArrayUtils.EMPTY_BYTE_ARRAY);
 		acceptedCharsets.add("utf-8".getBytes(getCharset()));
 		acceptedCharsets.add("iso-".getBytes(getCharset()));
+		acceptedCharsets.add("ascii".getBytes(getCharset()));
+		acceptedCharsets.add("us-ascii".getBytes(getCharset()));
 	}
 	
 	public static final ProxyProperties getInstance() {
