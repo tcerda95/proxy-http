@@ -6,6 +6,10 @@ import java.nio.channels.SelectionKey;
 import tp.pdc.proxy.handler.HttpServerProxyHandler;
 import tp.pdc.proxy.handler.interfaces.HttpServerState;
 
+/**
+ * Server state that respresents the last time the proxy sends data to the server.
+ * Once it is sent, it sets the server state to {@link ReadResponseState}
+ */
 public class LastWriteState implements HttpServerState {
 	
 	private static final LastWriteState INSTANCE = new LastWriteState();

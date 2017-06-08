@@ -9,6 +9,12 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.handler.HttpServerProxyHandler;
 import tp.pdc.proxy.handler.interfaces.HttpServerState;
 
+/**
+ * Server state representing a request being sent to the server.
+ * It registers client for reading the server's response.
+ *
+ * @see LastWriteState
+ */
 public class SendingRequestState implements HttpServerState {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SendingRequestState.class);
