@@ -85,7 +85,6 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 	
 	private CrazyProtocolOutputGenerator outputGenerator;
 		
-	//TODO: no necesariamente el mismo máximo que el de los headers HTTP
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final int HEADER_NAME_SIZE = PROPERTIES.getProtocolHeaderNameBufferSize();
 	private static final int HEADER_CONTENT_SIZE = PROPERTIES.getProtocolHeaderContentBufferSize();

@@ -19,9 +19,9 @@ public class ProtocolHandler implements Handler {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolHandler.class);
 	
-	private ByteBuffer readBuffer;
-	private ByteBuffer writeBuffer;
-	private CrazyProtocolParser parser;
+	private final ByteBuffer readBuffer;
+	private final ByteBuffer writeBuffer;
+	private final CrazyProtocolParser parser;
 	private boolean clientClosedRead;
 	private boolean unrecuperableError;
 	
@@ -45,15 +45,16 @@ public class ProtocolHandler implements Handler {
 			}
 			else
 				LOGGER.info("Read {} bytes from protocol client", bytesRead);
+			
+			readBuffer.flip();
+			process(key);
+			readBuffer.compact();
+			
 		} catch (IOException e) {
 			LOGGER.warn("Failed to read from protocol client: {}", e.getMessage());
-			// TODO: agregar -end al final
+			trySocketClose(socketChannel);
 		}
 		
-		// TODO: analizar si debe estar dentro del try
-		readBuffer.flip();
-		process(key);
-		readBuffer.compact();		
 	}
 
 	private void process(SelectionKey key) {
@@ -102,7 +103,7 @@ public class ProtocolHandler implements Handler {
 			if (parser.hasFinished() || clientClosedRead || unrecuperableError) {
 				if (!writeBuffer.hasRemaining()) {
 					LOGGER.debug("Closing connection to protocol client: parser finished and no bytes left in writeBuffer");
-					socketChannel.close();
+					trySocketClose(socketChannel);
 				}
 				else {
 					LOGGER.debug("Registering protocol client for write: parser finished but not all bytes sent");
@@ -121,12 +122,16 @@ public class ProtocolHandler implements Handler {
 			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to write to protocol client: {}", e.getMessage());
-			try {
-				socketChannel.close();
-			} catch (IOException e1) {
-				LOGGER.error("Failed to close socket to protocol client: {}", e1.getMessage());
-				e1.printStackTrace();
-			}
+			trySocketClose(socketChannel);
 		}
+	}
+	
+	private void trySocketClose(SocketChannel socketChannel) {
+		try {
+			socketChannel.close();
+		} catch (IOException e1) {
+			LOGGER.error("Failed to close socket to protocol client: {}", e1.getMessage());
+			e1.printStackTrace();
+		}		
 	}
 }
