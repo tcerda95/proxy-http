@@ -133,7 +133,7 @@ public class HttpBodyParserFactoryTest {
 			.thenReturn("5".getBytes(Charset.forName("ASCII")));
 		when(requestParserMock.hasHeaderValue(Header.CONTENT_TYPE)).thenReturn(true);
 		when(requestParserMock.getHeaderValue(Header.CONTENT_TYPE))
-			.thenReturn("text/plain; charset=utf8".getBytes(Charset.forName("ASCII")));
+			.thenReturn("text/plain; charset=utf-8".getBytes(Charset.forName("ASCII")));
 		when(requestParserMock.hasMethod()).thenReturn(true);
 		when(requestParserMock.getMethod()).thenReturn(Method.POST);
 
