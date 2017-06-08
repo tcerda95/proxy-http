@@ -6,6 +6,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+/**
+ * An {@link AbstractQueue} implemented with and array.
+ * This implementation has a fixed length and works as a circular queue.
+ * @param <T>
+ * @see FixedLengthQueue
+ */
 public class ArrayQueue <T> extends AbstractQueue<T> implements FixedLengthQueue<T> {
 
 	public T arr[];

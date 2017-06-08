@@ -2,6 +2,9 @@ package tp.pdc.proxy;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Creates a {@link ByteBuffer} for the proxy.
+ */
 public class ByteBufferFactory {
 
 	public static final int MIN_PROXY_SIZE = 512;
