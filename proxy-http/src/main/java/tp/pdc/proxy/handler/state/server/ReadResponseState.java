@@ -15,6 +15,15 @@ import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 
+/**
+ * Server state in which a response from the server is being read and send to the client.
+ * Once server response is fully processed it signals the client to send last write.
+ * If the connection to the server should be kept alive it stores the connection in a queue for future uses.
+ * If not, it closes the connection to the server.
+ *
+ * @see {@link tp.pdc.proxy.handler.state.client.LastWriteKeepConnection}
+ * @see {@link tp.pdc.proxy.handler.state.client.LastWriteCloseConnection}
+ */
 public class ReadResponseState implements HttpServerState {
 
 	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
