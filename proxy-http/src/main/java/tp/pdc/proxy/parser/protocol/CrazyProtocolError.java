@@ -12,15 +12,17 @@ public enum CrazyProtocolError {
 	private String output;
 	private byte[] outputBytes;
 
-	CrazyProtocolError(String output) {
+	CrazyProtocolError (String output) {
 		this.output = output;
 		outputBytes = output.getBytes(ProxyProperties.getInstance().getCharset());
 	}
 
 	@Override
-	public String toString() {
+	public String toString () {
 		return output;
 	}
-	
-	public byte[] getBytes() { return outputBytes; }
+
+	public byte[] getBytes () {
+		return outputBytes;
+	}
 }

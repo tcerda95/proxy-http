@@ -1,9 +1,9 @@
 package tp.pdc.proxy.handler.state.client;
 
-import java.nio.channels.SelectionKey;
-
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
+
+import java.nio.channels.SelectionKey;
 
 /**
  * Transitional client state which represent the connection process of a client and a server.
@@ -11,18 +11,18 @@ import tp.pdc.proxy.handler.interfaces.HttpClientState;
  * After this state, it sets client's state to {@link ConnectedState}.
  */
 public class ConnectingState implements HttpClientState {
-	
+
 	private static final ConnectingState INSTANCE = new ConnectingState();
-	
-	private ConnectingState() {
+
+	private ConnectingState () {
 	}
-	
-	public static ConnectingState getInstance() {
+
+	public static ConnectingState getInstance () {
 		return INSTANCE;
 	}
-	
+
 	@Override
-	public void handle(HttpClientProxyHandler httpHandler, SelectionKey key) {
+	public void handle (HttpClientProxyHandler httpHandler, SelectionKey key) {
 		throw new UnsupportedOperationException("Connecting state handler should never be called");
 	}
 

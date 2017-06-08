@@ -1,24 +1,24 @@
 package tp.pdc.proxy.parser.body;
 
-import java.nio.ByteBuffer;
-
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 
+import java.nio.ByteBuffer;
+
 public class HttpConnectionCloseParser implements HttpBodyParser {
-	
+
 	private static final HttpConnectionCloseParser INSTANCE = new HttpConnectionCloseParser();
-	
-	private HttpConnectionCloseParser() {
+
+	private HttpConnectionCloseParser () {
 	}
-	
-	public static final HttpConnectionCloseParser getInstance() {
+
+	public static final HttpConnectionCloseParser getInstance () {
 		return INSTANCE;
 	}
-	
+
 	@Override
-	public boolean parse(ByteBuffer input, ByteBuffer output) throws ParserFormatException {
+	public boolean parse (ByteBuffer input, ByteBuffer output) throws ParserFormatException {
 		if (output.remaining() >= input.remaining())
 			output.put(input);
 		else
@@ -27,7 +27,7 @@ public class HttpConnectionCloseParser implements HttpBodyParser {
 	}
 
 	@Override
-	public boolean hasFinished() {
+	public boolean hasFinished () {
 		return false;
 	}
 

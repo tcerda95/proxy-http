@@ -2,13 +2,13 @@ package tp.pdc.proxy.parser.interfaces;
 
 public interface HttpVersionParser extends Parser, Reseteable {
 
-    boolean readMinorVersion();
+	boolean readMinorVersion ();
 
-    boolean readMajorVersion();
+	boolean readMajorVersion ();
 
-    int getMajorHttpVersion();
+	int getMajorHttpVersion ();
 
-    int getMinorHttpVersion();
+	int getMinorHttpVersion ();
 
-    byte[] getWholeVersionBytes();
+	byte[] getWholeVersionBytes ();
 }

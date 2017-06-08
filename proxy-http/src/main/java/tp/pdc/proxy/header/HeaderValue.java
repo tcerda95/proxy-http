@@ -5,16 +5,16 @@ import tp.pdc.proxy.ProxyProperties;
 public enum HeaderValue {
 	CHUNKED("chunked"),
 	CLOSE("close"),
-	TEXT_PLAIN("text/plain"), 
+	TEXT_PLAIN("text/plain"),
 	KEEP_ALIVE("keep-alive");
-	
+
 	private byte[] value;
-	
-	private HeaderValue(String str) {
+
+	private HeaderValue (String str) {
 		this.value = str.getBytes(ProxyProperties.getInstance().getCharset());
 	}
-	
-	public byte[] getValue() {
+
+	public byte[] getValue () {
 		return value;
 	}
 }

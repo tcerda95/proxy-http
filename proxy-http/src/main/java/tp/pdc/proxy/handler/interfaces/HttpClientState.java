@@ -1,9 +1,9 @@
 package tp.pdc.proxy.handler.interfaces;
 
-import java.nio.channels.SelectionKey;
-
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 
+import java.nio.channels.SelectionKey;
+
 public interface HttpClientState {
-	public void handle(HttpClientProxyHandler httpHandler, SelectionKey key);
+	public void handle (HttpClientProxyHandler httpHandler, SelectionKey key);
 }
