@@ -16,6 +16,12 @@ import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.HostParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 
+/**
+ * Client state in which a client has not yet established a connection to any server.
+ * In case a host is detected in the request it tries to connect to the corresponding address.
+ * in case no host is detected in the request or it is invalid the proper error response is sent to the client.
+ * Once it tries to connect (address is resolved), it sets client's state to {@link ConnectingState}
+ */
 public class NotConnectedState implements HttpClientState {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NotConnectedState.class);
 	private static final HostParser HOST_PARSER = new HostParser();

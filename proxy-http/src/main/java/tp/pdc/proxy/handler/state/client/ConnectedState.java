@@ -9,6 +9,10 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
 
+/**
+ * Client state in which a client has established a connection to a server.
+ * Once parsing the request has finished, it sets client state to {@link RequestProcessedState}
+ */
 public class ConnectedState implements HttpClientState {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConnectedState.class);

@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
 
+/**
+ * Client state representing the last time the proxy is writing to the client the response from the server.
+ * Once the response is sent it closes the connection between the proxy and the client.
+ */
 public class LastWriteCloseConnection implements HttpClientState {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LastWriteCloseConnection.class);
