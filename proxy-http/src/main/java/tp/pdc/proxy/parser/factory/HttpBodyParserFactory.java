@@ -24,7 +24,7 @@ import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 
 public class HttpBodyParserFactory {
-	
+		
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 	private static final HttpBodyParserFactory INSTANCE = new HttpBodyParserFactory();
 	
@@ -125,13 +125,14 @@ public class HttpBodyParserFactory {
 		return false;
 	}
 
-	private boolean isAcceptedCharset(byte[] charset) {
+	private boolean isAcceptedCharset(byte[] charset) {		
 		if (charset.length == 0)
 			return true;
 		
 		for (byte[] accepted : acceptedCharsets)
-			if (BytesUtils.equalsBytes(charset, accepted, accepted.length))
+			if (BytesUtils.equalsBytes(charset, accepted, charset.length, BytesUtils.TO_LOWERCASE))
 				return true;
+		
 		return false;
 	}
 	
