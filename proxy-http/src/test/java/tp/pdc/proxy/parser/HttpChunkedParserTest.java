@@ -28,11 +28,11 @@ public class HttpChunkedParserTest {
 
 	@Test
 	public void testFinished() throws ParserFormatException, UnsupportedEncodingException {
-		String chunked =   "7\r\n"
+		String chunked =   "0007\r\n"
 						 + "hola co\r\n"
-						 + "8\r\n"
+						 + "08\r\n"
 						 + "mo te va\r\n"
-						 + "0\r\n"
+						 + "0000\r\n"
 						 + "\r\n";
 		
 		inputBuffer = ByteBuffer.wrap(chunked.getBytes("ASCII"));
@@ -59,7 +59,7 @@ public class HttpChunkedParserTest {
 	public void testIncludeCRLF() throws ParserFormatException, UnsupportedEncodingException {
 		String chunked = "7\r\n"
 				 + "hola co\r\n"
-				 + "A\r\n"
+				 + "000A\r\n"
 				 + "mo te va\r\n\r\n"
 				 + "0\r\n"
 				 + "\r\n";
@@ -74,7 +74,7 @@ public class HttpChunkedParserTest {
 	public void testHexaSizeValues() throws ParserFormatException, UnsupportedEncodingException {
 		String chunked = "a\r\n"
 				 + "hola como \r\n"
-				 + "E\r\n"
+				 + "0E\r\n"
 				 + "andas en el di\r\n"
 				 + "11\r\n"
 				 + "a de hoy, queria \r\n"

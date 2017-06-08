@@ -111,4 +111,12 @@ public class ProxyProperties {
 		return Integer.parseInt(properties.getProperty("connection.clean.rate"));
 	}
 
+	public int getProtocolHeaderNameBufferSize() {
+		return Integer.parseInt(properties.getProperty("protocol.parser.headerNameBufferSize"));
+	}
+
+	public int getProtocolHeaderContentBufferSize() {
+		return Integer.parseInt(properties.getProperty("protocol.parser.headerContentBufferSize"));
+	}
+
 }

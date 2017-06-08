@@ -87,11 +87,11 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		
 	//TODO: no necesariamente el mismo máximo que el de los headers HTTP
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
-	private static final int HEADER_NAME_SIZE = PROPERTIES.getHeaderNameBufferSize();
-    private static final int HEADER_CONTENT_SIZE = PROPERTIES.getHeaderContentBufferSize();
+	private static final int HEADER_NAME_SIZE = PROPERTIES.getProtocolHeaderNameBufferSize();
+	private static final int HEADER_CONTENT_SIZE = PROPERTIES.getProtocolHeaderContentBufferSize();
     
-    public CrazyProtocolParserImpl(ClientMetric clientMetrics, ServerMetric serverMetrics) {
-    	parserState = ParserState.READ_HEADER;
+	public CrazyProtocolParserImpl(ClientMetric clientMetrics, ServerMetric serverMetrics) {
+		parserState = ParserState.READ_HEADER;
     	headerState = HeaderState.START;
     	argumentCountState = ArgumentCountState.NOT_READ_YET;
     	contentState = ContentState.NOT_READ_YET;
