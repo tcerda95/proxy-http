@@ -142,11 +142,11 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     				headerState = HeaderState.END_LINE_CR;
     			else {
     				if (!ParseUtils.isAlphaNumerical(c) && c != US.getValue())
-        				NotRecoverableError(headerName, c, CrazyProtocolError.NOT_VALID, output);
+        				notRecoverableError(headerName, c, CrazyProtocolError.NOT_VALID, output);
     				
     				//to avoid buffer overflow
     				if (headerName.position() >= MAX_CRAZYPROTOCOL_HEADER_LEN)
-        				NotRecoverableError(headerName, c, CrazyProtocolError.TOO_LONG, output);
+        				notRecoverableError(headerName, c, CrazyProtocolError.TOO_LONG, output);
 
     				headerName.put((byte) Character.toLowerCase(c));
     			}
@@ -157,7 +157,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
     			
     			if (c != LF.getValue()) {
     				headerName.put(CR.getValue());
-    				NotRecoverableError(headerName, c, CrazyProtocolError.NOT_VALID, output);
+    				notRecoverableError(headerName, c, CrazyProtocolError.NOT_VALID, output);
     			}
     			
     			headerName.flip();
@@ -205,7 +205,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			case START:
 				
 				if (c != AS.getValue())
-					NotRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
+					notRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
 				
 				argumentCount.put(c);
 
@@ -220,13 +220,13 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				else {
 					
 					if (!ParseUtils.isDigit(c))
-						NotRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
+						notRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
 
 					argumentNumber = argumentNumber*DECIMAL_BASE_VALUE.getValue() + c - '0';
 					
 					if (argumentNumber > MAX_ARG_COUNT || ( argumentNumber > 1 &&
 							currentHeader == CrazyProtocolHeader.SET_PROXY_BUF_SIZE ))
-						NotRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
+						notRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
 					
 					if (argumentNumber != 0)
 						argumentCount.put(c);
@@ -241,7 +241,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				
 				if (c != LF.getValue()) {
 					argumentCount.put(CR.getValue());
-					NotRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
+					notRecoverableError(argumentCount, c, CrazyProtocolError.NOT_VALID, output);
 				}
 				argumentCount.flip();
 				outputGenerator.generateOutput(argumentCount, output);
@@ -289,14 +289,14 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 			else {
 				
 				if (!ParseUtils.isDigit(c))
-					NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+					notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 
 				int digit = c - '0';
 				
 				bufferSize = bufferSize*10 + digit;
 				
 				if (bufferSize > ByteBufferFactory.MAX_PROXY_SIZE)
-					NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+					notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 				
 				if (bufferSize != 0)
 					currentArgument.put(c);
@@ -312,17 +312,17 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				else {
 					
 					if (!ParseUtils.isDigit(c))
-						NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+						notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 
 					int digit = c - '0';
 					
 					int statusLen = currentArgument.position();
 					
 					if (statusLen >= HTTP_STATUSCODE_LEN)
-						NotRecoverableError(currentArgument, c, CrazyProtocolError.TOO_LONG, output);
+						notRecoverableError(currentArgument, c, CrazyProtocolError.TOO_LONG, output);
 										
 					if (statusLen == 0 && digit > MAX_FIRST_STATUSCODE_DIGIT)
-						NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+						notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 				
 					statusCodeNumber = statusCodeNumber*10 + digit;
 					
@@ -340,11 +340,11 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				else {
 					
 					if (!ParseUtils.isAlphabetic(c))
-						NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+						notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 					
 					//to avoid buffer overflow
 					if (currentArgument.position() >= MAX_METHOD_LEN)
-						NotRecoverableError(currentArgument, c, CrazyProtocolError.TOO_LONG, output);
+						notRecoverableError(currentArgument, c, CrazyProtocolError.TOO_LONG, output);
 
 					currentArgument.put((byte) Character.toUpperCase(c));	
 				}
@@ -367,7 +367,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				
 				if (c != LF.getValue()) {
 					currentArgument.put(CR.getValue());
-					NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+					notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 				}
 				
 				if (bufferSize < ByteBufferFactory.MIN_PROXY_SIZE)
@@ -390,7 +390,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				
 				if (c != LF.getValue()) {
 					currentArgument.put(CR.getValue());
-					NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+					notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 				}
     	       
     	        outputGenerator.generateOutput(statusCodeNumber, output, currentHeader);
@@ -404,7 +404,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 				
 				if (c != LF.getValue()) {
 					currentArgument.put(CR.getValue());
-					NotRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
+					notRecoverableError(currentArgument, c, CrazyProtocolError.NOT_VALID, output);
 				}
 				
 				currentArgument.flip();
@@ -463,7 +463,7 @@ public class CrazyProtocolParserImpl implements CrazyProtocolParser {
 		statusCodeNumber = 0;
 	}
 	
-	private void NotRecoverableError(ByteBuffer input,byte c, CrazyProtocolError errorCode, 
+	private void notRecoverableError(ByteBuffer input,byte c, CrazyProtocolError errorCode, 
 			ByteBuffer output) 
 			throws ParserFormatException {
 

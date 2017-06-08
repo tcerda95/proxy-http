@@ -22,8 +22,8 @@ public enum CrazyProtocolHeader {
 	PING("ping"),
 	END("end");
 
-	private String headerName;
-	private byte[] headerBytes;
+	private final String headerName;
+	private final byte[] headerBytes;
 
 	public static CrazyProtocolHeader getHeaderByBytes (ByteBuffer bytes, int length) {
 		for (CrazyProtocolHeader header : values())
@@ -32,7 +32,7 @@ public enum CrazyProtocolHeader {
 		return null;
 	}
 	
-	CrazyProtocolHeader(String header) {
+	private CrazyProtocolHeader(String header) {
 		headerName = header;
 		headerBytes = header.getBytes(ProxyProperties.getInstance().getCharset());
 	}
@@ -42,7 +42,9 @@ public enum CrazyProtocolHeader {
 		return headerName;
 	}
 
-	public byte[] getBytes() { return headerBytes; }
+	public byte[] getBytes() { 
+		return headerBytes; 
+	}
 	
 	public static int maxHeaderLen() {	
 		int maxLength = 0;
