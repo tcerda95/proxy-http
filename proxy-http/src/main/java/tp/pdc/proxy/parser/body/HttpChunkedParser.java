@@ -12,6 +12,9 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.LF;
 import static tp.pdc.proxy.parser.utils.DecimalConstants.A_DECIMAL_VALUE;
 import static tp.pdc.proxy.parser.utils.DecimalConstants.HEXA_BASE_VALUE;
 
+/**
+ * Body parser for Chunked
+ */
 public class HttpChunkedParser implements HttpBodyParser {
 
 	private ParserState parserState;
