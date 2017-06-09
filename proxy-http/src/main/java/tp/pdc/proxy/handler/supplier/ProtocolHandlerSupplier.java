@@ -7,6 +7,9 @@ import tp.pdc.proxy.handler.ProtocolHandler;
 
 import java.util.function.Supplier;
 
+/**
+ * Encapsulates proxy configuration for the protocol
+ */
 public class ProtocolHandlerSupplier implements Supplier<ProtocolHandler> {
 	private static final ProtocolHandlerSupplier INSTANCE = new ProtocolHandlerSupplier();
 

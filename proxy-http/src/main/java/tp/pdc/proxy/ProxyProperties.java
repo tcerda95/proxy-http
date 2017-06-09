@@ -10,6 +10,9 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.*;
 
+/**
+ * Configuration properties for the HTTP proxy
+ */
 public class ProxyProperties {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyProperties.class);

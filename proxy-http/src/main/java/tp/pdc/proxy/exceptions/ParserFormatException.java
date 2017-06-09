@@ -2,6 +2,11 @@ package tp.pdc.proxy.exceptions;
 
 import tp.pdc.proxy.HttpErrorCode;
 
+/**
+ * Exception for errors ocurred while parsing.
+ * Sets a Bad Request error code.
+ * @see HttpErrorCode
+ */
 @SuppressWarnings("serial")
 public class ParserFormatException extends Exception {
 

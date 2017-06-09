@@ -6,6 +6,9 @@ import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Body parser for Content length and l33t flag not activated
+ */
 public class HttpContentLengthParser implements HttpBodyParser {
 
 	private int contentLength;

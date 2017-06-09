@@ -2,6 +2,15 @@ package tp.pdc.proxy.parser.encoders;
 
 import tp.pdc.proxy.parser.interfaces.l33tEncoder;
 
+/**
+ * L33t Encoder
+ * transforms:<br>
+ * 'a' to 4<br>
+ * 'e' to 3<br>
+ * 'i' to 1<br>
+ * 'o' to 0<br>
+ * 'c' to <
+ */
 public class StaticL33tEncoder implements l33tEncoder {
 	private static byte[] encode;
 	private static byte[] decode;

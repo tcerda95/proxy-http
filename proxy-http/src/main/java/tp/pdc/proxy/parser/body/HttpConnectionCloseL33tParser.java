@@ -6,6 +6,9 @@ import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Body parser for Connection Close with the l33t flag activated
+ */
 public class HttpConnectionCloseL33tParser implements HttpBodyParser {
 
 	private static final HttpConnectionCloseL33tParser INSTANCE =

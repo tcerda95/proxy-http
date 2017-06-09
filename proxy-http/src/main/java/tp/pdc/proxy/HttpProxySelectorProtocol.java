@@ -18,6 +18,10 @@ public class HttpProxySelectorProtocol {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpProxySelectorProtocol.class);
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 
+	/**
+	 * Handles accepting a client connection
+	 * @param key client's key
+     */
 	public void handleAccept (SelectionKey key) {
 		Supplier<?> supplier = (Supplier<?>) key.attachment();
 
@@ -30,11 +34,19 @@ public class HttpProxySelectorProtocol {
 		}
 	}
 
+	/**
+	 * Handles reading
+	 * @param key
+     */
 	public void handleRead (SelectionKey key) {
 		Handler handler = (Handler) key.attachment();
 		handler.handleRead(key);
 	}
 
+	/**
+	 * Handles connecting to server
+	 * @param key server's key
+     */
 	public void handleConnect (SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		HttpClientProxyHandler clientHandler = clientHandlerFromServerKey(key);
@@ -55,16 +67,30 @@ public class HttpProxySelectorProtocol {
 		}
 	}
 
+	/**
+	 * Handles write
+	 * @param key
+     */
 	public void handleWrite (SelectionKey key) {
 		Handler handler = (Handler) key.attachment();
 		handler.handleWrite(key);
 	}
 
+	/**
+	 * Gets the client's {@link SelectionKey} from the server's selection key
+	 * @param key server's selection key
+	 * @return client's {@link SelectionKey}
+     */
 	private SelectionKey clientKeyFromServerKey (SelectionKey key) {
 		HttpHandler serverHandler = (HttpHandler) key.attachment();
 		return serverHandler.getConnectedPeerKey();
 	}
 
+	/**
+	 * Gets the server's {@link SelectionKey} from the client's selection key
+	 * @param key client's selection key
+	 * @return server's {@link SelectionKey}
+     */
 	private HttpClientProxyHandler clientHandlerFromServerKey (SelectionKey key) {
 		HttpHandler serverHandler = (HttpHandler) key.attachment();
 		SelectionKey clientKey = serverHandler.getConnectedPeerKey();

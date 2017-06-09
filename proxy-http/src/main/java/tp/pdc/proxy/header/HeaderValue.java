@@ -2,6 +2,9 @@ package tp.pdc.proxy.header;
 
 import tp.pdc.proxy.ProxyProperties;
 
+/**
+ * Enum containing http header values
+ */
 public enum HeaderValue {
 	CHUNKED("chunked"),
 	CLOSE("close"),

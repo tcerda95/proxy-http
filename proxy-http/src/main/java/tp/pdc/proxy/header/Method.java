@@ -5,6 +5,9 @@ import tp.pdc.proxy.ProxyProperties;
 import java.nio.ByteBuffer;
 
 
+/**
+ * Enum containing every http method
+ */
 public enum Method {
 	GET("GET"), POST("POST"), HEAD("HEAD"), OPTIONS("OPTIONS"), PUT("PUT"),
 	DELETE("DELETE"), TRACE("TRACE"), CONNECT("CONNECT");

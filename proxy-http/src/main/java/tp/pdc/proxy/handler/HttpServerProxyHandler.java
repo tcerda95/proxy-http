@@ -26,7 +26,13 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 
+	/**
+	 * Current server state
+	 */
 	private HttpServerState state;
+	/**
+	 * Flag indicating if an error has ocurred
+	 */
 	private boolean errorState;
 	private HttpResponseParser responseParser;
 	private boolean responseCodeRecorded;
@@ -38,6 +44,10 @@ public class HttpServerProxyHandler extends HttpHandler {
 		this.state = SendingRequestState.getInstance();
 	}
 
+	/**
+	 * Resets the handlers attributes to it's initial values.
+	 * @param key to reset the connected peer and to set an interest to read
+	 */
 	public void reset (SelectionKey key) {
 		key.interestOps(0);
 
@@ -51,6 +61,10 @@ public class HttpServerProxyHandler extends HttpHandler {
 		responseCodeRecorded = false;
 	}
 
+	/**
+	 * Sets client method requested
+	 * @param method sent by client
+     */
 	public void setClientMethod (Method method) {
 		responseParser.setClientMethod(method);
 	}
@@ -130,6 +144,12 @@ public class HttpServerProxyHandler extends HttpHandler {
 			state.handle(this, key);
 	}
 
+	/**
+	 * Parses a response
+	 * @param inputBuffer buffer to read from server
+	 * @param outputBuffer buffer to put processed response
+	 * @param key
+     */
 	private void processResponse (ByteBuffer inputBuffer, ByteBuffer outputBuffer,
 		SelectionKey key) {
 		try {
@@ -146,15 +166,27 @@ public class HttpServerProxyHandler extends HttpHandler {
 		}
 	}
 
+	/**
+	 * Indicates if the status code should be recorded
+	 * @return true if the status code should be recorded
+     */
 	private boolean shouldRecordStatusCode () {
 		return responseParser.hasStatusCode() && !responseCodeRecorded;
 	}
 
+	/**
+	 * Adds to the metric the status code that server sends
+	 */
 	private void recordStatusCode () {
 		SERVER_METRICS.addResponseCodeCount(responseParser.getStatusCode());
 		responseCodeRecorded = true;
 	}
 
+	/**
+	 * In case of error ir closes the connection to the server
+	 * @param key server's key
+	 * @param message message to log
+     */
 	private void setResponseError (SelectionKey key, String message) {
 		LOGGER.warn("Closing Connection to server: {}", message);
 		errorState = true;
@@ -164,22 +196,42 @@ public class HttpServerProxyHandler extends HttpHandler {
 		getClientHandler().setErrorState(this.getConnectedPeerKey(), message);
 	}
 
+	/**
+	 * Gets the corresponding {@link HttpClientProxyHandler}.
+	 * @return client's handler
+     */
 	public HttpClientProxyHandler getClientHandler () {
 		return (HttpClientProxyHandler) this.getConnectedPeerKey().attachment();
 	}
 
+	/**
+	 * Gets the {@link HttpResponseParser}
+	 * @return response parser
+     */
 	public HttpResponseParser getResponseParser () {
 		return responseParser;
 	}
 
+	/**
+	 * Signals tha the request is processed and changes state to {@link LastWriteState}
+	 */
 	public void signalRequestProcessed () {
 		this.state = LastWriteState.getInstance();
 	}
 
+	/**
+	 * Checks if the parser has finished processing the response
+	 * @return true if the parse has finished, false if not.
+     */
 	public boolean hasFinishedProcessing () {
 		return responseParser.hasFinished();
 	}
 
+	/**
+	 * Sets the {@link HttpServerState} to {@link ReadResponseState}.
+	 * Unregisters server from write and registers for read because the whole client request was sent
+	 * @param key server's key
+     */
 	public void setReadResponseState (SelectionKey key) {
 		LOGGER.debug(
 			"Unregistering server from write and registering for read: whole client request sent");
