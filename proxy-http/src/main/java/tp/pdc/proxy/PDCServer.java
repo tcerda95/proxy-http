@@ -1,5 +1,16 @@
 package tp.pdc.proxy;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,15 +19,6 @@ import tp.pdc.proxy.handler.SelectorHandler;
 import tp.pdc.proxy.handler.interfaces.Handler;
 import tp.pdc.proxy.handler.supplier.HttpClientProxyHandlerSupplier;
 import tp.pdc.proxy.handler.supplier.ProtocolHandlerSupplier;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.function.Supplier;
 
 public class PDCServer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PDCServer.class);
@@ -55,6 +57,7 @@ public class PDCServer {
 
 		while (true) {
 			if (selector.select(CONNECTION_MANAGER.getCleanRate()) == 0) {
+				logSelectorState();
 				CONNECTION_MANAGER.clean();
 				continue;
 			}
@@ -80,6 +83,25 @@ public class PDCServer {
 			}
 
 			CONNECTION_MANAGER.clean();
+		}
+	}
+
+	private void logSelectorState() {
+		Set<SelectionKey> keySet = selector.keys();
+		Map<Integer, Integer> quantity = new HashMap<>();
+		
+		quantity.put(0, 0);
+		quantity.put(SelectionKey.OP_ACCEPT, 0);
+		quantity.put(SelectionKey.OP_CONNECT, 0);
+		quantity.put(SelectionKey.OP_READ, 0);
+		quantity.put(SelectionKey.OP_WRITE, 0);
+		
+		for (SelectionKey key : keySet) {
+			quantity.put(key.interestOps(), quantity.get(key.interestOps()) + 1);
+		}
+		
+		for (Map.Entry<Integer, Integer> entry : quantity.entrySet()) {
+			LOGGER.debug("Interest {}: {}", entry.getKey(), entry.getValue());
 		}
 	}
 }

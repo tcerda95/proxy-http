@@ -32,8 +32,9 @@ public class HttpContentLengthParserBugged implements HttpBodyParser {
 			contentLength -= input.remaining();
 			output.put(input);
 		} else if (output.remaining() < input.remaining() && output.remaining() <= contentLength) {
-			LOGGER.debug("output.remaining() < input.remaining() && input.remaining() <= contentLength");
+			LOGGER.debug("output.remaining() < input.remaining() && output.remaining() <= contentLength");
 			lengthPut(input, output, output.remaining());
+			
 		} else if (output.remaining() >= input.remaining() && input.remaining() > contentLength) {
 			LOGGER.debug("output.remaining() >= input.remaining() && input.remaining() > contentLength");
 
