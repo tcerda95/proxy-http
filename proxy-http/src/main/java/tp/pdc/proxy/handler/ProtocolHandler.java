@@ -22,6 +22,10 @@ public class ProtocolHandler implements Handler {
 	private final ByteBuffer writeBuffer;
 	private final CrazyProtocolParser parser;
 	private boolean clientClosedRead;
+
+	/**
+	 * Flag to indicate an unrecuperable error has ocurred
+	 */
 	private boolean unrecuperableError;
 
 	public ProtocolHandler (int bufferSize) {
@@ -56,6 +60,10 @@ public class ProtocolHandler implements Handler {
 
 	}
 
+	/**
+	 * Parses the request for the protocol
+	 * @param key client's key
+     */
 	private void process (SelectionKey key) {
 		try {
 			parser.parse(readBuffer, writeBuffer);
@@ -91,6 +99,10 @@ public class ProtocolHandler implements Handler {
 		readBuffer.compact();
 	}
 
+	/**
+	 * Sends the protocol's response to the client
+	 * @param key client's key
+     */
 	private void write (SelectionKey key) {
 		final SocketChannel socketChannel = (SocketChannel) key.channel();
 
@@ -125,6 +137,10 @@ public class ProtocolHandler implements Handler {
 		}
 	}
 
+	/**
+	 * Closes socket to protocol client
+	 * @param socketChannel channel to close
+     */
 	private void trySocketClose (SocketChannel socketChannel) {
 		try {
 			socketChannel.close();

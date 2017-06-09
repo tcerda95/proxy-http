@@ -23,6 +23,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 
+/**
+ * Handler for a client interacting with the proxy
+ */
 public class HttpClientProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
@@ -33,8 +36,14 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private final HttpRequestParser requestParser;
 	private final Set<Method> acceptedMethods;
 	private boolean methodRecorded;
+	/**
+	 * Flag indicating if an error has ocurred
+	 */
 	private boolean errorState;
 
+	/**
+	 * Current client's state
+	 */
 	private HttpClientState state;
 
 	public HttpClientProxyHandler (Set<Method> acceptedMethods) {
@@ -44,6 +53,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 		this.requestParser = REQUEST_PARSER_FACTORY.getRequestParser();
 	}
 
+	/**
+	 * Resets the handlers attributes to it's initial values.
+	 * @param key to reset the connected peer and to set an interest to read
+     */
 	public void reset (SelectionKey key) {
 		this.state = NotConnectedState.getInstance();
 		this.methodRecorded = false;
@@ -54,6 +67,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 		key.interestOps(SelectionKey.OP_READ);
 	}
 
+	/**
+	 * Checks if the {@link HttpRequestParser}has finished processing the request
+	 * @return true if the parser has finished, false on the contrary
+     */
 	public boolean hasFinishedProcessing () {
 		return requestParser.hasFinished();
 	}
@@ -62,6 +79,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 		return requestParser;
 	}
 
+	/**
+	 * Sends a signal to tell the response is processed.
+	 * Sets the {@link HttpClientState} to {@link LastWriteCloseConnection} or {@link LastWriteKeepConnection}
+	 * @param closeConnectionToClient
+     */
 	public void signalResponseProcessed (boolean closeConnectionToClient) {
 		if (closeConnectionToClient || !shouldKeepConnectionAlive())
 			this.state = LastWriteCloseConnection.getInstance();
@@ -69,6 +91,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 			this.state = LastWriteKeepConnection.getInstance();
 	}
 
+	/**
+	 * Checks if the request header connection or proxy connection is keep alive or not.
+	 * @return true if the connection should be kept alive
+     */
 	private boolean shouldKeepConnectionAlive () {
 		if (requestParser.hasHeaderValue(Header.CONNECTION))
 			return BytesUtils.equalsBytes(requestParser.getHeaderValue(Header.CONNECTION),
@@ -79,16 +105,28 @@ public class HttpClientProxyHandler extends HttpHandler {
 		return false;
 	}
 
+	/**
+	 * Set the {@link HttpClientState} to {@link SendingResponseState} once the request is sent.
+	 */
 	public void signalRequestSent () {
 		this.state = SendingResponseState.getInstance();
 	}
 
+	/**
+	 * Sets {@link HttpClientState} to Connecting
+	 * @param key client key to unregister
+     */
 	public void setConnectingState (SelectionKey key) {
 		LOGGER.debug("Unregistering client key: connecting");
 		key.interestOps(0);
 		this.state = ConnectingState.getInstance();
 	}
 
+	/**
+	 * If the parser has finished processing the request, it sets the {@link HttpClientState} to
+	 * {@link RequestProcessedState}. If not, it sets to {@link ConnectedState}.
+	 * @param key
+     */
 	public void handleConnect (SelectionKey key) {
 		if (hasFinishedProcessing())
 			setRequestProcessedState(key);
@@ -96,6 +134,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 			setConnectedState(key);
 	}
 
+	/**
+	 * Sets to {@link RequestProcessedState}. Unregisters client from read and registers
+	 * server for write and signals end of request.
+	 * @param key client key
+     */
 	public void setRequestProcessedState (SelectionKey key) {
 		LOGGER.debug("Unregistering client from read: request processed");
 		key.interestOps(0);
@@ -107,6 +150,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 		getServerHandler().signalRequestProcessed();
 	}
 
+	/**
+	 * Sets {@link HttpClientState} to {@link ConnectedState} and registers client for read
+	 * and server for write.
+	 * @param key client key
+     */
 	public void setConnectedState (SelectionKey key) {
 		this.state = ConnectedState.getInstance();
 		LOGGER.debug("Registering client for read and server for write: client in connected state");
@@ -168,6 +216,12 @@ public class HttpClientProxyHandler extends HttpHandler {
 			state.handle(this, key);
 	}
 
+	/**
+	 * Parses a request
+	 * @param inputBuffer buffer to read from client
+	 * @param outputBuffer buffer to put processed request after parsing
+	 * @param key client's key
+     */
 	private void processRequest (ByteBuffer inputBuffer, ByteBuffer outputBuffer,
 		SelectionKey key) {
 		try {
@@ -184,6 +238,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 
+	/**
+	 * Gets the method from the request sent by the client and checks if it's accepted by the proxy.
+	 * @param key client's key
+     */
 	private void recordAndValidateMethod (SelectionKey key) {
 		if (requestParser.hasMethod() && !methodRecorded) {
 			Method method = requestParser.getMethod();
@@ -192,12 +250,21 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 
+	/**
+	 * Counts the method to fill the metrics
+	 * @param method methos to be recorded
+     */
 	private void recordMethod (Method method) {
 		LOGGER.info("Method recorded: {}", method.toString());
 		methodRecorded = true;
 		CLIENT_METRICS.addMethodCount(method);
 	}
 
+	/**
+	 * Check if the method in a request is accepted by the proxy
+	 * @param method method to be validated
+	 * @param key client's key
+     */
 	private void validateMethod (Method method, SelectionKey key) {
 		if (!acceptedMethods.contains(method)) {
 			LOGGER.warn("Client's method not supported: {}", requestParser.getMethod());
@@ -205,15 +272,26 @@ public class HttpClientProxyHandler extends HttpHandler {
 		}
 	}
 
+	/**
+	 * Closes the server channel
+	 */
 	private void closeServerChannel () {
 		if (isServerChannelOpen())
 			getServerHandler().closeChannel(this.getConnectedPeerKey().channel());
 	}
 
+	/**
+	 * Checks if the server channel is open
+	 * @return true if the server channel if open, false if not
+     */
 	private boolean isServerChannelOpen () {
 		return this.getConnectedPeerKey() != null && this.getConnectedPeerKey().channel().isOpen();
 	}
 
+	/**
+	 * Gets the corresponding {@link HttpServerProxyHandler}
+	 * @return Server Proxy Handler
+     */
 	public HttpServerProxyHandler getServerHandler () {
 
 		if (this.getConnectedPeerKey() == null) {
@@ -225,10 +303,21 @@ public class HttpClientProxyHandler extends HttpHandler {
 		return (HttpServerProxyHandler) this.getConnectedPeerKey().attachment();
 	}
 
+	/**
+	 * Indicates an error has ocurred
+	 * @param key client's key
+	 * @param errorResponse {@link HttpErrorCode}
+     */
 	public void setErrorState (SelectionKey key, HttpErrorCode errorResponse) {
 		setErrorState(key, errorResponse, StringUtils.EMPTY);
 	}
 
+	/**
+	 * Indicates an error has ocurred
+	 * @param key client's key
+	 * @param errorResponse {@link HttpErrorCode}
+	 * @param logErrorMessage Error message to log
+     */
 	public void setErrorState (SelectionKey key, HttpErrorCode errorResponse,
 		String logErrorMessage) {
 		ByteBuffer writeBuffer = this.getWriteBuffer();
@@ -238,6 +327,11 @@ public class HttpClientProxyHandler extends HttpHandler {
 		setErrorState(key, errorResponse.getErrorMessage(), logErrorMessage);
 	}
 
+    /**
+	 * Indicates an error has ocurred
+	 * @param key client's key
+	 * @param logErrorMessages messages to log
+     */
 	public void setErrorState (SelectionKey key, String... logErrorMessages) {
 		logError(key, logErrorMessages);
 

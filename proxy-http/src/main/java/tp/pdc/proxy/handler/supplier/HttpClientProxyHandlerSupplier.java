@@ -11,12 +11,19 @@ import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import java.util.Set;
 import java.util.function.Supplier;
 
+/**
+ * Encapsulates proxy configuration with clients, such as methods accepted and metrics.
+ */
 public class HttpClientProxyHandlerSupplier implements Supplier<HttpClientProxyHandler> {
 	private static final HttpClientProxyHandlerSupplier INSTANCE =
 		new HttpClientProxyHandlerSupplier();
 
 	private final Logger logger = LoggerFactory.getLogger(HttpClientProxyHandlerSupplier.class);
 	private final ClientMetric metrics = ClientMetricImpl.getInstance();
+
+	/**
+	 * Methods the procy accepts from a client.
+	 */
 	private final Set<Method> acceptedMethods;
 
 	private HttpClientProxyHandlerSupplier () {
