@@ -47,11 +47,11 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="tp.pdc.proxy.ProxyLogger" level="INFO" additivity="false">
+    <logger name="tp.pdc.proxy.log.ProxyLogger" level="INFO" additivity="false">
         <appender-ref ref="proxy-error-appender"/>
         <appender-ref ref="proxy-access-appender"/>
     </logger>
-    
+
     <logger name="tp.pdc.proxy.PDCServer" level="INFO" additivity="false">
     	<appender-ref ref="STDOUT" />
     </logger>
