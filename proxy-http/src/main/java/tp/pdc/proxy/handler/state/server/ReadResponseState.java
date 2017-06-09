@@ -50,8 +50,8 @@ public class ReadResponseState implements HttpServerState {
 		if (handler.hasFinishedProcessing()) {
 			LOGGER.debug("Server response processed");
 			LOGGER.debug("Signaling client to send last write and keep connection");
-			handler.getClientHandler()
-				.signalResponseProcessed(false); // Client should attempt to store connection
+			
+			handler.getClientHandler().signalResponseProcessed(false); // Client should attempt to store connection
 
 			try {
 				handler.logAccess(key);
@@ -60,8 +60,7 @@ public class ReadResponseState implements HttpServerState {
 				else
 					key.channel().close();
 			} catch (IOException e) {
-				LOGGER.error("Failed to store server's connection on response processed: {}",
-					e.getMessage());
+				LOGGER.error("Failed to store server's connection on response processed: {}", e.getMessage());
 				e.printStackTrace();
 			}
 		} else if (!processedBuffer.hasRemaining()) {

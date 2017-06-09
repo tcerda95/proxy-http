@@ -214,8 +214,7 @@ public class ConnectionManager {
 			connections.put(remoteAddress, connectionQueue);
 		}
 
-		connectionQueue
-			.add(new ExpirableContainer<SelectionKey>(serverKey, CONNECTION_TTL, TimeUnit.SECONDS));
+		connectionQueue.add(new ExpirableContainer<SelectionKey>(serverKey, CONNECTION_TTL, TimeUnit.SECONDS));
 	}
 
 	/**

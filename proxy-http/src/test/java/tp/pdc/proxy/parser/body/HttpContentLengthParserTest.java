@@ -1,21 +1,24 @@
 package tp.pdc.proxy.parser.body;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.nio.ByteBuffer;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.body.HttpContentLengthParser;
+import tp.pdc.proxy.parser.interfaces.Parser;
 import tp.pdc.proxy.properties.ProxyProperties;
-
-import java.nio.ByteBuffer;
-
-import static org.junit.Assert.*;
 
 public class HttpContentLengthParserTest {
 
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 
-	private HttpContentLengthParser parser;
+	private Parser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	private String body;
@@ -73,7 +76,7 @@ public class HttpContentLengthParserTest {
 
 	@Test
 	public void testShortOutputBuffer () throws ParserFormatException {
-		parser = new HttpContentLengthParser(body.length());
+		parser = new HttpContentLengthParserBugged(body.length());
 		outputBuffer = ByteBuffer.allocate(4);
 
 		assertFalse(parser.parse(inputBuffer, outputBuffer));
@@ -96,9 +99,21 @@ public class HttpContentLengthParserTest {
 		assertEquals(1, outputBuffer.remaining());
 		assertEquals(" va", byteBufferToString(outputBuffer));
 	}
+	
+	@Test
+	public void testLongerContentThanContentLength() throws ParserFormatException {
+		parser = new HttpContentLengthParserBugged(body.length());
+		inputBuffer = ByteBuffer.wrap((body + body).getBytes(PROPERTIES.getCharset()));
+		
+		parser.parse(inputBuffer, outputBuffer);
+		assertEquals(body, byteBufferToString(outputBuffer));
+		assertTrue(parser.hasFinished());
+		assertTrue(inputBuffer.hasRemaining());
+		assertTrue(inputBuffer.remaining() == body.length());
+		parser.parse(inputBuffer, outputBuffer);
+	}
 
 	private String byteBufferToString (ByteBuffer buffer) {
-		return new String(outputBuffer.array(), 0, outputBuffer.position(),
-			PROPERTIES.getCharset());
+		return new String(buffer.array(), 0, buffer.position(), PROPERTIES.getCharset());
 	}
 }

@@ -1,5 +1,7 @@
 package tp.pdc.proxy.parser.factory;
 
+import java.util.List;
+
 import tp.pdc.proxy.bytes.BytesUtils;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.flag.L33tFlag;
@@ -8,15 +10,18 @@ import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.HttpErrorCode;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.CharsetParser;
-import tp.pdc.proxy.parser.body.*;
+import tp.pdc.proxy.parser.body.HttpChunkedParser;
+import tp.pdc.proxy.parser.body.HttpConnectionCloseL33tParser;
+import tp.pdc.proxy.parser.body.HttpConnectionCloseParser;
+import tp.pdc.proxy.parser.body.HttpContentLengthLeetParser;
+import tp.pdc.proxy.parser.body.HttpContentLengthParserBugged;
+import tp.pdc.proxy.parser.body.HttpNoBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
 import tp.pdc.proxy.properties.ProxyProperties;
-
-import java.util.List;
 
 public class HttpBodyParserFactory {
 
@@ -80,8 +85,7 @@ public class HttpBodyParserFactory {
 	}
 
 	// It is imperative to prioritize Chunked over Content-Length parsing: RFC 2616 4.4.3
-	private HttpBodyParser buildBodyParser (HttpHeaderParser headersParser)
-		throws ParserFormatException {
+	private HttpBodyParser buildBodyParser (HttpHeaderParser headersParser) throws ParserFormatException {
 		try {
 			if (shouldL33t(headersParser)) {
 				if (hasChunked(headersParser))
@@ -94,12 +98,10 @@ public class HttpBodyParserFactory {
 					return new HttpChunkedParser(false);
 
 				else if (hasContentLength(headersParser))
-					return new HttpContentLengthParser(
-						ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
+					return new HttpContentLengthParserBugged(ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
 			}
 		} catch (NumberFormatException e) {
-			throw new ParserFormatException("Invalid content-length value: illegal number format",
-				HttpErrorCode.BAD_HOST_FORMAT_400);
+			throw new ParserFormatException("Invalid content-length value: illegal number format", HttpErrorCode.BAD_HOST_FORMAT_400);
 		}
 
 		return null;
