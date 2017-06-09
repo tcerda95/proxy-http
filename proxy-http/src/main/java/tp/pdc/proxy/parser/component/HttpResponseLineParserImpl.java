@@ -10,6 +10,9 @@ import java.util.NoSuchElementException;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
+/**
+ * Parses the first line of an http response. It gets the status code and http version.
+ */
 public class HttpResponseLineParserImpl implements HttpResponseLineParser {
 
 	private HttpVersionParser versionParser;

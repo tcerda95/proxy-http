@@ -8,6 +8,9 @@ import tp.pdc.proxy.parser.utils.ParseUtils;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
+/**
+ * Parses the http version
+ */
 public class HttpVersionParserImpl implements HttpVersionParser {
 
 	private int minorVersion, majorVersion;

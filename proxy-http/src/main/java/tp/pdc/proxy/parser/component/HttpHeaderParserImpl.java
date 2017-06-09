@@ -17,6 +17,11 @@ import java.util.Set;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
+/**
+ * Parses a header line of an http request to get the header name and its value
+ * In case some useful headers are missing, it adds them to the request.
+ * And in case some headers should be removed from the request it eliminates them.
+ */
 public class HttpHeaderParserImpl implements HttpHeaderParser {
 
 	private static final int HEADER_NAME_SIZE =
@@ -195,6 +200,11 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
 		headerValue.put(b);
 	}
 
+	/**
+	 * Decides if a {@link Header} found in a request should be ignored, removed or saved.
+	 * @param c last byte of the header
+	 * @param outputBuffer buffer to put the current header
+     */
 	private void handleHeaderName (byte c, ByteBuffer outputBuffer) {
 		headerName.flip();
 		int nameLen = headerName.remaining();
@@ -221,6 +231,10 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
 			throw new IllegalArgumentException("Output buffer too small");
 	}
 
+	/**
+	 * Adds every necessary header to the request
+	 * @param output processed request with the new header
+     */
 	private void addHeaders (ByteBuffer output) {
 		// Si no lo pude meter antes quedó acá guardado
 		if (nextToAdd != null && headerFitsBuffer(nextToAdd.getKey(), nextToAdd.getValue(), output))
@@ -241,6 +255,12 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
 		}
 	}
 
+	/**
+	 * Adds in the request an specific {@link Header} with its value as
+	 * @param header header to add
+	 * @param value value of the header
+	 * @param buffer output buffer to put the header and it's value
+     */
 	private void putHeaderInBuffer (Header header, byte[] value, ByteBuffer buffer) {
 		buffer.put(header.getBytes()).put((byte) ':').put(SP.getValue()).put(value)
 			.put(CR.getValue()).put(LF.getValue());

@@ -13,6 +13,9 @@ import java.util.NoSuchElementException;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
+/**
+ * Parses the first line of the request to get the method, host and http version
+ */
 public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
 	private static final int METHOD_NAME_SIZE = ProxyProperties.getInstance().getMethodBufferSize();
