@@ -33,8 +33,7 @@ public class SendingRequestState implements HttpServerState {
 
 		LOGGER.debug("Registering client for read: whole request not processed yet");
 		handler.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
-		handler.getClientHandler().handleProcess(handler
-			.getConnectedPeerKey());  // Free space in client processedBuffer --> client can process
+		handler.getClientHandler().handleProcess(handler.getConnectedPeerKey(), writeBuffer);  // Free space in client processedBuffer --> client can process
 
 		if (!writeBuffer.hasRemaining()) {
 			LOGGER.debug("Unregistering server from write: nothing left in server write buffer");

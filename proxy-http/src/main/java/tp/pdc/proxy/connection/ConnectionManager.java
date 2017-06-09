@@ -121,7 +121,7 @@ public class ConnectionManager {
 				SocketChannel serverSocket = (SocketChannel) key.channel();
 				ByteBuffer serverReadBuffer =
 					((HttpServerProxyHandler) key.attachment()).getReadBuffer();
-				if (serverSocket.read(serverReadBuffer) != -1)
+				if (serverSocket.read(serverReadBuffer) == 0)
 					return key;
 				else
 					serverSocket.close();
