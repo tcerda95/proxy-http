@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.parser.body.HttpContentLengthParser;
 import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.nio.ByteBuffer;
@@ -13,7 +12,7 @@ import static org.junit.Assert.*;
 
 public class HttpContentLengthParserTest {
 
-	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 
 	private HttpContentLengthParser parser;
 	private ByteBuffer inputBuffer;
@@ -58,6 +57,25 @@ public class HttpContentLengthParserTest {
 	}
 
 	@Test
+	public void testLeftoverByte() throws ParserFormatException {
+		parser = new HttpContentLengthParser(body.length() + 1);
+
+		parser.parse(inputBuffer, outputBuffer);
+		assertFalse(parser.hasFinished());
+		assertEquals(body, byteBufferToString(outputBuffer));
+	}
+
+	@Test
+	public void testMinusOneByte() throws ParserFormatException {
+		parser = new HttpContentLengthParser(body.length() - 1);
+
+		parser.parse(inputBuffer, outputBuffer);
+		assertTrue(parser.hasFinished());
+		assertEquals("hola como te v", byteBufferToString(outputBuffer));
+		assertEquals(1, inputBuffer.remaining());
+	}
+
+	@Test
 	public void testFinishedShorterContentLength () throws ParserFormatException {
 		parser = new HttpContentLengthParser(body.length() - 2);
 
@@ -97,8 +115,18 @@ public class HttpContentLengthParserTest {
 		assertEquals(" va", byteBufferToString(outputBuffer));
 	}
 
+	@Test
+	public void multipleParseTest() throws ParserFormatException {
+		parser = new HttpContentLengthParser(body.length());
+
+		parser.parse(inputBuffer, outputBuffer);
+		assertTrue(parser.hasFinished());
+		parser.parse(inputBuffer, outputBuffer);
+		assertTrue(parser.hasFinished());
+	}
+
 	private String byteBufferToString (ByteBuffer buffer) {
-		return new String(outputBuffer.array(), 0, outputBuffer.position(),
+		return new String(buffer.array(),  0, buffer.position(),
 			PROPERTIES.getCharset());
 	}
 }
