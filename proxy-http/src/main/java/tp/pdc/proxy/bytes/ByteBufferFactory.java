@@ -1,6 +1,8 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.bytes;
 
 import java.nio.ByteBuffer;
+
+import tp.pdc.proxy.properties.ProxyProperties;
 
 /**
  * Creates a {@link ByteBuffer} for the proxy.

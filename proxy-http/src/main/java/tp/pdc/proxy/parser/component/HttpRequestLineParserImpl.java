@@ -1,12 +1,12 @@
 package tp.pdc.proxy.parser.component;
 
-import tp.pdc.proxy.HttpErrorCode;
-import tp.pdc.proxy.ProxyProperties;
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.header.HttpErrorCode;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestLineParser;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;

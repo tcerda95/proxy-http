@@ -1,14 +1,15 @@
-package tp.pdc.proxy.parser;
+package tp.pdc.proxy.parser.main;
 
 import org.junit.Before;
 import org.junit.Test;
-import tp.pdc.proxy.ProxyProperties;
+
+import tp.pdc.proxy.bytes.BytesUtils;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.Parser;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

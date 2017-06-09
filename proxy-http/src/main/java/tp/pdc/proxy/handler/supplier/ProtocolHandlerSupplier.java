@@ -1,14 +1,16 @@
 package tp.pdc.proxy.handler.supplier;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import tp.pdc.proxy.ProxyProperties;
-import tp.pdc.proxy.handler.ProtocolHandler;
-
 import java.util.function.Supplier;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import tp.pdc.proxy.handler.ProtocolHandler;
+import tp.pdc.proxy.properties.ProxyProperties;
+
 /**
- * Encapsulates proxy configuration for the protocol
+ * Encapsulates proxy configuration for the protocol.
+ * Serves as a {@link ProtocolHandler} factory when a connection is accepted on the corresponding protocol port.
  */
 public class ProtocolHandlerSupplier implements Supplier<ProtocolHandler> {
 	private static final ProtocolHandlerSupplier INSTANCE = new ProtocolHandlerSupplier();

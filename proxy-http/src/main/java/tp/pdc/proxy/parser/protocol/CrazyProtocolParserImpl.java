@@ -1,7 +1,6 @@
 package tp.pdc.proxy.parser.protocol;
 
-import tp.pdc.proxy.ByteBufferFactory;
-import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.bytes.ByteBufferFactory;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
@@ -9,6 +8,7 @@ import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.nio.ByteBuffer;
 

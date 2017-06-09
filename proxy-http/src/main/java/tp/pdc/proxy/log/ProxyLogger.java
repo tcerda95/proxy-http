@@ -1,12 +1,14 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.log;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;

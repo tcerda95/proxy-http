@@ -1,4 +1,4 @@
-package tp.pdc.proxy.header;
+package tp.pdc.proxy.bytes;
 
 
 public interface ByteOperation {

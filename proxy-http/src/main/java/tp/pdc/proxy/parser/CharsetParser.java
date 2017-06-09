@@ -1,8 +1,9 @@
 package tp.pdc.proxy.parser;
 
 import org.apache.commons.lang3.ArrayUtils;
-import tp.pdc.proxy.ProxyProperties;
-import tp.pdc.proxy.header.BytesUtils;
+
+import tp.pdc.proxy.bytes.BytesUtils;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.nio.ByteBuffer;
 

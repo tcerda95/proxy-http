@@ -1,4 +1,4 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.properties;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;

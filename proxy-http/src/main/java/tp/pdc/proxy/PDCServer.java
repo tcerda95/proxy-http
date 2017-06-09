@@ -2,6 +2,9 @@ package tp.pdc.proxy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import tp.pdc.proxy.connection.ConnectionManager;
+import tp.pdc.proxy.handler.SelectorHandler;
 import tp.pdc.proxy.handler.interfaces.Handler;
 import tp.pdc.proxy.handler.supplier.HttpClientProxyHandlerSupplier;
 import tp.pdc.proxy.handler.supplier.ProtocolHandlerSupplier;
@@ -15,17 +18,16 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Supplier;
 
-public class Pruebita {
-	private static final Logger LOGGER = LoggerFactory.getLogger(Pruebita.class);
-	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+public class PDCServer {
+	private static final Logger LOGGER = LoggerFactory.getLogger(PDCServer.class);
 	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
 
 	private final Selector selector;
 	private final int proxyPort;
 	private final int protocolPort;
 
-	public Pruebita (int proxyPort, int protocolPort) throws IOException {
-		LOGGER.info("Setting up proxy...");
+	public PDCServer (int proxyPort, int protocolPort) throws IOException {
+		LOGGER.info("Setting up PDC server...");
 
 		this.selector = Selector.open();
 		this.proxyPort = proxyPort;
@@ -37,10 +39,6 @@ public class Pruebita {
 		LOGGER.info("Setup done");
 	}
 
-	public static void main (String[] args) throws IOException {
-		new Pruebita(PROPERTIES.getProxyPort(), PROPERTIES.getProtocolPort()).run();
-	}
-
 	private void registerChannel (int port, Supplier<? extends Handler> supplier)
 		throws IOException {
 		ServerSocketChannel serverChannel = ServerSocketChannel.open();
@@ -50,9 +48,9 @@ public class Pruebita {
 	}
 
 	public void run () throws IOException {
-		final HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol();
+		final SelectorHandler protocol = new SelectorHandler();
 
-		LOGGER.info("Accepting proxy connections from port: {}", proxyPort);
+		LOGGER.info("Accepting HTTP proxy connections from port: {}", proxyPort);
 		LOGGER.info("Accepting protocol connections from port: {}", protocolPort);
 
 		while (true) {
@@ -68,21 +66,17 @@ public class Pruebita {
 				SelectionKey key = keyIter.next();
 				keyIter.remove();
 
-				if (key.isValid() && key.isAcceptable()) {
+				if (key.isValid() && key.isAcceptable())
 					protocol.handleAccept(key);
-				}
 
-				if (key.isValid() && key.isConnectable()) {
+				if (key.isValid() && key.isConnectable())
 					protocol.handleConnect(key);
-				}
 
-				if (key.isValid() && key.isReadable()) {
+				if (key.isValid() && key.isReadable())
 					protocol.handleRead(key);
-				}
 
-				if (key.isValid() && key.isWritable()) {  // OJO: tratar casos en los que el servidor pudo haber cerrado la conexión
+				if (key.isValid() && key.isWritable())
 					protocol.handleWrite(key);
-				}
 			}
 
 			CONNECTION_MANAGER.clean();

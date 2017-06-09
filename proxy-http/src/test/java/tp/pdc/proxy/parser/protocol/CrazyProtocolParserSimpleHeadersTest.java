@@ -2,7 +2,7 @@ package tp.pdc.proxy.parser.protocol;
 
 import org.junit.Before;
 import org.junit.Test;
-import tp.pdc.proxy.ProxyProperties;
+
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
@@ -10,6 +10,7 @@ import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.metric.stub.ClientMetricStub;
 import tp.pdc.proxy.metric.stub.ServerMetricStub;
 import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

@@ -43,7 +43,7 @@
                     <manifest>
                         <addClasspath>true</addClasspath>
                         <classpathPrefix>lib</classpathPrefix>
-                        <mainClass>tp.pdc.proxy.Pruebita</mainClass>
+                        <mainClass>tp.pdc.proxy.EntryPoint</mainClass>
                     </manifest>
                 </archive>
                 <excludes>

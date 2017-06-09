@@ -1,6 +1,6 @@
 package tp.pdc.proxy.parser.protocol;
 
-import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 public enum CrazyProtocolError {
 

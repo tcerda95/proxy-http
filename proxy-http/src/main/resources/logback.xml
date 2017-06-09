@@ -51,4 +51,8 @@
         <appender-ref ref="proxy-error-appender"/>
         <appender-ref ref="proxy-access-appender"/>
     </logger>
+    
+    <logger name="tp.pdc.proxy.PDCServer" level="INFO" additivity="false">
+    	<appender-ref ref="STDOUT" />
+    </logger>
 </configuration>

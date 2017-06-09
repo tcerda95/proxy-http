@@ -1,6 +1,6 @@
 package tp.pdc.proxy.parser.factory;
 
-import tp.pdc.proxy.L33tFlag;
+import tp.pdc.proxy.flag.L33tFlag;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;

@@ -2,7 +2,8 @@ package tp.pdc.proxy.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tp.pdc.proxy.ByteBufferFactory;
+
+import tp.pdc.proxy.bytes.ByteBufferFactory;
 import tp.pdc.proxy.handler.interfaces.Handler;
 
 import java.io.IOException;

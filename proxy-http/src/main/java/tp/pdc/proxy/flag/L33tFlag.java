@@ -1,4 +1,4 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.flag;
 
 /**
  * {@link L33tFlag} is in charge of keeping a track if the l33t translation is activated or not in the proxy,

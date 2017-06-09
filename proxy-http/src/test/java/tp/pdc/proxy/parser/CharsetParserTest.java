@@ -3,7 +3,8 @@ package tp.pdc.proxy.parser;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Before;
 import org.junit.Test;
-import tp.pdc.proxy.ProxyProperties;
+
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.util.Arrays;
 import java.util.List;

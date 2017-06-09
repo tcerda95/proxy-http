@@ -5,8 +5,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import tp.pdc.proxy.L33tFlag;
+
 import tp.pdc.proxy.exceptions.ParserFormatException;
+import tp.pdc.proxy.flag.L33tFlag;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
 import tp.pdc.proxy.header.Method;
@@ -29,9 +30,11 @@ public class HttpBodyParserFactoryTest {
 
 	private final HttpBodyParserFactory bodyParserFactory = HttpBodyParserFactory.getInstance();
 
-	@Mock private HttpRequestParser requestParserMock;
+	@Mock 
+	private HttpRequestParser requestParserMock;
 
-	@Mock private HttpResponseParser responseParserMock;
+	@Mock 
+	private HttpResponseParser responseParserMock;
 
 	private L33tFlag l33tFlag = L33tFlag.getInstance();
 
@@ -131,9 +134,15 @@ public class HttpBodyParserFactoryTest {
 		when(requestParserMock.hasHeaderValue(Header.CONTENT_LENGTH)).thenReturn(true);
 		when(requestParserMock.getHeaderValue(Header.CONTENT_LENGTH))
 			.thenReturn("5".getBytes(Charset.forName("ASCII")));
+		
 		when(requestParserMock.hasHeaderValue(Header.CONTENT_TYPE)).thenReturn(true);
 		when(requestParserMock.getHeaderValue(Header.CONTENT_TYPE))
 			.thenReturn("text/plain; charset=utf-8".getBytes(Charset.forName("ASCII")));
+		
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_ENCODING)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_ENCODING))
+			.thenReturn(HeaderValue.IDENTITY.getValue());
+		
 		when(requestParserMock.hasMethod()).thenReturn(true);
 		when(requestParserMock.getMethod()).thenReturn(Method.POST);
 
@@ -141,7 +150,57 @@ public class HttpBodyParserFactoryTest {
 		assertNotNull(parser);
 		assertEquals(HttpContentLengthLeetParser.class, parser.getClass());
 	}
+	
+	@Test
+	public void testClientChunkedL33tParser () throws ParserFormatException {
+		l33tFlag.set();
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_LENGTH)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_LENGTH))
+			.thenReturn("5".getBytes(Charset.forName("ASCII")));
+		
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_TYPE)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_TYPE))
+			.thenReturn("text/plain; charset=utf-8".getBytes(Charset.forName("ASCII")));
+		
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_ENCODING)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_ENCODING))
+			.thenReturn(HeaderValue.IDENTITY.getValue());
+		
+		when(requestParserMock.hasHeaderValue(Header.TRANSFER_ENCODING)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.TRANSFER_ENCODING))
+			.thenReturn(HeaderValue.CHUNKED.getValue());
 
+		when(requestParserMock.hasMethod()).thenReturn(true);
+		when(requestParserMock.getMethod()).thenReturn(Method.POST);
+
+		HttpBodyParser parser = bodyParserFactory.getClientHttpBodyParser(requestParserMock);
+		assertNotNull(parser);
+		assertEquals(HttpChunkedParser.class, parser.getClass());
+	}
+
+	@Test
+	public void testClientContentLengthFlagSet () throws ParserFormatException {
+		l33tFlag.set();
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_LENGTH)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_LENGTH))
+			.thenReturn("5".getBytes(Charset.forName("ASCII")));
+		
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_TYPE)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_TYPE))
+			.thenReturn("text/plain; charset=utf-8".getBytes(Charset.forName("ASCII")));
+		
+		when(requestParserMock.hasHeaderValue(Header.CONTENT_ENCODING)).thenReturn(true);
+		when(requestParserMock.getHeaderValue(Header.CONTENT_ENCODING))
+			.thenReturn("gzip".getBytes(Charset.forName("ASCII")));
+
+		when(requestParserMock.hasMethod()).thenReturn(true);
+		when(requestParserMock.getMethod()).thenReturn(Method.POST);
+
+		HttpBodyParser parser = bodyParserFactory.getClientHttpBodyParser(requestParserMock);
+		assertNotNull(parser);
+		assertEquals(HttpContentLengthParser.class, parser.getClass());
+	}
+	
 	private void assertStatusCodeNoBodyParser (int statusCode) throws ParserFormatException {
 		when(responseParserMock.getStatusCode()).thenReturn(statusCode);
 		HttpBodyParser parser =

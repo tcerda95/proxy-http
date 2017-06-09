@@ -3,15 +3,16 @@ package tp.pdc.proxy.handler;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tp.pdc.proxy.HttpErrorCode;
-import tp.pdc.proxy.ProxyLogger;
+
+import tp.pdc.proxy.bytes.BytesUtils;
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
 import tp.pdc.proxy.handler.state.client.*;
-import tp.pdc.proxy.header.BytesUtils;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
+import tp.pdc.proxy.header.HttpErrorCode;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.log.ProxyLogger;
 import tp.pdc.proxy.metric.ClientMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.parser.factory.HttpRequestParserFactory;
@@ -24,7 +25,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 
 /**
- * Handler for a client interacting with the proxy
+ * Handler for a client interacting with the proxy.
  */
 public class HttpClientProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
@@ -36,14 +37,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	private final HttpRequestParser requestParser;
 	private final Set<Method> acceptedMethods;
 	private boolean methodRecorded;
-	/**
-	 * Flag indicating if an error has ocurred
-	 */
 	private boolean errorState;
-
-	/**
-	 * Current client's state
-	 */
 	private HttpClientState state;
 
 	public HttpClientProxyHandler (Set<Method> acceptedMethods) {
@@ -68,7 +62,7 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 
 	/**
-	 * Checks if the {@link HttpRequestParser}has finished processing the request
+	 * Checks if the {@link HttpRequestParser} has finished processing the request
 	 * @return true if the parser has finished, false on the contrary
      */
 	public boolean hasFinishedProcessing () {
@@ -290,36 +284,39 @@ public class HttpClientProxyHandler extends HttpHandler {
 
 	/**
 	 * Gets the corresponding {@link HttpServerProxyHandler}
-	 * @return Server Proxy Handler
+	 * @return The server proxy pandler associated with this client.
      */
 	public HttpServerProxyHandler getServerHandler () {
 
 		if (this.getConnectedPeerKey() == null) {
 			LOGGER.error("Asking for server handler when there is none!");
-			throw new IllegalStateException(
-				"Connection not established yet, no server handler available");
+			throw new IllegalStateException("Connection not established yet, no server handler available");
 		}
 
 		return (HttpServerProxyHandler) this.getConnectedPeerKey().attachment();
 	}
 
 	/**
-	 * Indicates an error has ocurred
+	 * Indicates an error has ocurred to the client with the given {@link HttpErrorCode}.
+	 * Sets handler to {@link LastWriteCloseConnection} state. <p>
+	 * The error is logged to the error logs.
 	 * @param key client's key
-	 * @param errorResponse {@link HttpErrorCode}
+	 * @param errorResponse error code to notify the client
      */
 	public void setErrorState (SelectionKey key, HttpErrorCode errorResponse) {
 		setErrorState(key, errorResponse, StringUtils.EMPTY);
 	}
 
 	/**
-	 * Indicates an error has ocurred
+	 * Indicates an error has ocurred to the client with the given {@link HttpErrorCode}.
+	 * Sets handler to {@link LastWriteCloseConnection} state. <p>
+	 * The error is logged to the error logs with a message which sepcifies more information
+	 * about the error.
 	 * @param key client's key
 	 * @param errorResponse {@link HttpErrorCode}
-	 * @param logErrorMessage Error message to log
+	 * @param logErrorMessage Extra error message to log
      */
-	public void setErrorState (SelectionKey key, HttpErrorCode errorResponse,
-		String logErrorMessage) {
+	public void setErrorState (SelectionKey key, HttpErrorCode errorResponse, String logErrorMessage) {
 		ByteBuffer writeBuffer = this.getWriteBuffer();
 		writeBuffer.clear();
 		writeBuffer.put(errorResponse.getBytes());
@@ -328,7 +325,10 @@ public class HttpClientProxyHandler extends HttpHandler {
 	}
 
     /**
-	 * Indicates an error has ocurred
+	 * Indicates an error has ocurred to the client. Sets handler to {@link LastWriteCloseConnection} state. 
+	 * No {@link HttpErrorCode} is sent to the client. This method should be used on server errors once a portion
+	 * of the answer had already been sent to the client. <p>
+	 * The error is logged to the error logs with a message which sepcifies more information about the error.
 	 * @param key client's key
 	 * @param logErrorMessages messages to log
      */

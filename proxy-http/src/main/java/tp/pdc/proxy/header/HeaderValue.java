@@ -1,6 +1,6 @@
 package tp.pdc.proxy.header;
 
-import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 /**
  * Enum containing http header values

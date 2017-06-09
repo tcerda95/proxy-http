@@ -1,4 +1,4 @@
-package tp.pdc.proxy;
+package tp.pdc.proxy.connection;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -20,6 +20,7 @@ import tp.pdc.proxy.handler.HttpServerProxyHandler;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
+import tp.pdc.proxy.properties.ProxyProperties;
 import tp.pdc.proxy.structures.ArrayQueue;
 import tp.pdc.proxy.time.ExpirableContainer;
 

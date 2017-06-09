@@ -1,11 +1,12 @@
-package tp.pdc.proxy.parser;
+package tp.pdc.proxy.parser.component;
 
 import org.junit.Before;
 import org.junit.Test;
-import tp.pdc.proxy.ProxyProperties;
+
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.parser.component.HttpVersionParserImpl;
 import tp.pdc.proxy.parser.interfaces.HttpVersionParser;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

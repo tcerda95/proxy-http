@@ -2,13 +2,14 @@ package tp.pdc.proxy.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tp.pdc.proxy.ProxyLogger;
+
 import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.HttpServerState;
 import tp.pdc.proxy.handler.state.server.LastWriteState;
 import tp.pdc.proxy.handler.state.server.ReadResponseState;
 import tp.pdc.proxy.handler.state.server.SendingRequestState;
 import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.log.ProxyLogger;
 import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.factory.HttpResponseParserFactory;
@@ -19,26 +20,21 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+/**
+ * Handler for a server interacting with the proxy.
+ */
 public class HttpServerProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpServerProxyHandler.class);
-	private static final HttpResponseParserFactory RESPONSE_PARSER_FACTORY =
-		HttpResponseParserFactory.getInstance();
+	private static final HttpResponseParserFactory RESPONSE_PARSER_FACTORY = HttpResponseParserFactory.getInstance();
 	private static final ServerMetric SERVER_METRICS = ServerMetricImpl.getInstance();
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 
-	/**
-	 * Current server state
-	 */
 	private HttpServerState state;
-	/**
-	 * Flag indicating if an error has ocurred
-	 */
 	private boolean errorState;
 	private HttpResponseParser responseParser;
 	private boolean responseCodeRecorded;
 
-	public HttpServerProxyHandler (ByteBuffer writeBuffer, ByteBuffer processedBuffer,
-		Method clientMethod) {
+	public HttpServerProxyHandler (ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
 		super(writeBuffer, processedBuffer);
 		this.responseParser = RESPONSE_PARSER_FACTORY.getResponseParser(clientMethod);
 		this.state = SendingRequestState.getInstance();
@@ -233,8 +229,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 	 * @param key server's key
      */
 	public void setReadResponseState (SelectionKey key) {
-		LOGGER.debug(
-			"Unregistering server from write and registering for read: whole client request sent");
+		LOGGER.debug("Unregistering server from write and registering for read: whole client request sent");
 		key.interestOps(SelectionKey.OP_READ);
 		this.state = ReadResponseState.getInstance();
 	}

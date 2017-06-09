@@ -1,6 +1,7 @@
 package tp.pdc.proxy.header;
 
-import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.bytes.BytesUtils;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.nio.ByteBuffer;
 

@@ -1,12 +1,11 @@
 package tp.pdc.proxy.parser.factory;
 
-import tp.pdc.proxy.HttpErrorCode;
-import tp.pdc.proxy.L33tFlag;
-import tp.pdc.proxy.ProxyProperties;
+import tp.pdc.proxy.bytes.BytesUtils;
 import tp.pdc.proxy.exceptions.ParserFormatException;
-import tp.pdc.proxy.header.BytesUtils;
+import tp.pdc.proxy.flag.L33tFlag;
 import tp.pdc.proxy.header.Header;
 import tp.pdc.proxy.header.HeaderValue;
+import tp.pdc.proxy.header.HttpErrorCode;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.CharsetParser;
 import tp.pdc.proxy.parser.body.*;
@@ -15,6 +14,7 @@ import tp.pdc.proxy.parser.interfaces.HttpHeaderParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.parser.utils.ParseUtils;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.util.List;
 
@@ -47,8 +47,7 @@ public class HttpBodyParserFactory {
 		HttpBodyParser parser = buildBodyParser(headersParser);
 
 		if (parser == null)
-			throw new ParserFormatException(
-				"Missing content-length and tranfser-encoding: chunked headers",
+			throw new ParserFormatException("Missing content-length and tranfser-encoding: chunked headers",
 				HttpErrorCode.LENGTH_REQUIRED_411);
 
 		return parser;
@@ -89,8 +88,7 @@ public class HttpBodyParserFactory {
 					return new HttpChunkedParser(true);
 
 				else if (hasContentLength(headersParser))
-					return new HttpContentLengthLeetParser(
-						ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
+					return new HttpContentLengthLeetParser(ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
 			} else {
 				if (hasChunked(headersParser))
 					return new HttpChunkedParser(false);

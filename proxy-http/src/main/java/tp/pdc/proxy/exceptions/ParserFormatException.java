@@ -1,6 +1,6 @@
 package tp.pdc.proxy.exceptions;
 
-import tp.pdc.proxy.HttpErrorCode;
+import tp.pdc.proxy.header.HttpErrorCode;
 
 /**
  * Exception for errors ocurred while parsing.

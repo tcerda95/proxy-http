@@ -2,10 +2,11 @@ package tp.pdc.proxy.handler.state.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tp.pdc.proxy.ConnectionManager;
-import tp.pdc.proxy.HttpErrorCode;
+
+import tp.pdc.proxy.connection.ConnectionManager;
 import tp.pdc.proxy.handler.HttpClientProxyHandler;
 import tp.pdc.proxy.handler.interfaces.HttpClientState;
+import tp.pdc.proxy.header.HttpErrorCode;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.HostParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
