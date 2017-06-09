@@ -4,6 +4,9 @@ import tp.pdc.proxy.ProxyProperties;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Enum containing every http header to be taken into account by the proxy
+ */
 public enum Header {
 	HOST("host"),
 	CONNECTION("connection"),

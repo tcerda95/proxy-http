@@ -5,6 +5,9 @@ import tp.pdc.proxy.header.BytesUtils;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Enum containing every header accepted by the protocol
+ */
 public enum CrazyProtocolHeader {
 	PROXY_BUF_SIZE("proxy_buf_size"),
 	SET_PROXY_BUF_SIZE("set_proxy_buf_size"),
