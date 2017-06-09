@@ -27,7 +27,7 @@ public class Pruebita {
 	public Pruebita (int proxyPort, int protocolPort) throws IOException {
 		LOGGER.info("Setting up proxy...");
 
-		selector = Selector.open();
+		this.selector = Selector.open();
 		this.proxyPort = proxyPort;
 		this.protocolPort = protocolPort;
 
@@ -49,18 +49,16 @@ public class Pruebita {
 		serverChannel.register(selector, SelectionKey.OP_ACCEPT, supplier);
 	}
 
-	public void run () {
-		HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol();
+	public void run () throws IOException {
+		final HttpProxySelectorProtocol protocol = new HttpProxySelectorProtocol();
 
 		LOGGER.info("Accepting proxy connections from port: {}", proxyPort);
 		LOGGER.info("Accepting protocol connections from port: {}", protocolPort);
 
 		while (true) {
-			try {
-				selector.select();
-			} catch (IOException e) {
-				e.printStackTrace();
-				break;
+			if (selector.select(CONNECTION_MANAGER.getCleanRate()) == 0) {
+				CONNECTION_MANAGER.clean();
+				continue;
 			}
 
 			Set<SelectionKey> keySet = selector.selectedKeys();
@@ -82,8 +80,7 @@ public class Pruebita {
 					protocol.handleRead(key);
 				}
 
-				if (key.isValid() && key
-					.isWritable()) {  // OJO: tratar casos en los que el servidor pudo haber cerrado la conexión
+				if (key.isValid() && key.isWritable()) {  // OJO: tratar casos en los que el servidor pudo haber cerrado la conexión
 					protocol.handleWrite(key);
 				}
 			}

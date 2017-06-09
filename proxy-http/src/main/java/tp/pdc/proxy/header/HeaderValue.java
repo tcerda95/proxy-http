@@ -6,7 +6,8 @@ public enum HeaderValue {
 	CHUNKED("chunked"),
 	CLOSE("close"),
 	TEXT_PLAIN("text/plain"),
-	KEEP_ALIVE("keep-alive");
+	KEEP_ALIVE("keep-alive"),
+	IDENTITY("identity");
 
 	private byte[] value;
 

@@ -1,15 +1,5 @@
 package tp.pdc.proxy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import tp.pdc.proxy.handler.HttpClientProxyHandler;
-import tp.pdc.proxy.handler.HttpServerProxyHandler;
-import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.metric.ServerMetricImpl;
-import tp.pdc.proxy.metric.interfaces.ServerMetric;
-import tp.pdc.proxy.structures.ArrayQueue;
-import tp.pdc.proxy.time.ExpirableContainer;
-
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -21,6 +11,17 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import tp.pdc.proxy.handler.HttpClientProxyHandler;
+import tp.pdc.proxy.handler.HttpServerProxyHandler;
+import tp.pdc.proxy.header.Method;
+import tp.pdc.proxy.metric.ServerMetricImpl;
+import tp.pdc.proxy.metric.interfaces.ServerMetric;
+import tp.pdc.proxy.structures.ArrayQueue;
+import tp.pdc.proxy.time.ExpirableContainer;
 
 public class ConnectionManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionManager.class);
@@ -42,6 +43,10 @@ public class ConnectionManager {
 
 	public static final ConnectionManager getInstance () {
 		return INSTANCE;
+	}
+	
+	public long getCleanRate() {
+		return cleanRate;
 	}
 
 	public boolean connect (Method method, SocketAddress address, SelectionKey clientKey)

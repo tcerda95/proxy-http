@@ -89,11 +89,12 @@ public class HttpServerProxyHandler extends HttpHandler {
 
 				this.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 
-				if (responseParser.hasHeadersFinished())
+				if (responseParser.hasHeadersFinished()) {
 					logAccess(key);
+				}
 				else {
-					LOGGER.warn("Sever sent EOF though headers not finished");
 					setResponseError(key, "Server EOF but headers not finished");
+					closeChannel(socketChannel);
 					return;
 				}
 
@@ -103,8 +104,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 					LOGGER.debug("Signaling client to send last write and not keep connection");
 					getClientHandler().signalResponseProcessed(true);
 				} else {
-					LOGGER.error(
-						"Read server EOF and processing had finished. Shouldn't be registered for reading.");
+					LOGGER.error("Read server EOF and processing had finished. Shouldn't be registered for reading.");
 					LOGGER.debug("Signaling client to send last write and keep connection");
 					getClientHandler().signalResponseProcessed(false);
 				}

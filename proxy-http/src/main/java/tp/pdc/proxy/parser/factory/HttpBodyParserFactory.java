@@ -124,7 +124,8 @@ public class HttpBodyParserFactory {
 			final byte[] contentTypeValue = headersParser.getHeaderValue(Header.CONTENT_TYPE);
 
 			return BytesUtils.equalsBytes(contentTypeValue, textPlain, textPlain.length)
-				&& isAcceptedCharset(charsetParser.extractCharset(contentTypeValue));
+				&& isAcceptedCharset(charsetParser.extractCharset(contentTypeValue))
+				&& noEncoding(headersParser);
 		}
 
 		return false;
@@ -141,4 +142,9 @@ public class HttpBodyParserFactory {
 		return false;
 	}
 
+	private boolean noEncoding (HttpHeaderParser headersParser) {
+		return !headersParser.hasHeaderValue(Header.CONTENT_ENCODING) || 
+				BytesUtils.equalsBytes(headersParser.getHeaderValue(Header.CONTENT_ENCODING), 
+						HeaderValue.IDENTITY.getValue(), BytesUtils.TO_LOWERCASE);
+	}
 }

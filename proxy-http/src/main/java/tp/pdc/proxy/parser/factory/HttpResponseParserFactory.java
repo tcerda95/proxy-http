@@ -22,7 +22,7 @@ public class HttpResponseParserFactory {
 		toAdd.put(Header.CONNECTION, HeaderValue.KEEP_ALIVE.getValue());
 
 		toSave = EnumSet.of(Header.CONNECTION, Header.CONTENT_LENGTH, Header.TRANSFER_ENCODING,
-			Header.CONTENT_TYPE, Header.SERVER);
+			Header.CONTENT_TYPE, Header.SERVER, Header.CONTENT_ENCODING);
 	}
 
 	public static HttpResponseParserFactory getInstance () {
