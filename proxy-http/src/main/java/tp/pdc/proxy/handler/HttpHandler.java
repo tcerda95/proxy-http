@@ -81,13 +81,11 @@ public abstract class HttpHandler implements Handler {
 		writeBuffer.compact();
 	}
 
-	public void handleProcess (SelectionKey key) {
+	public void handleProcess (SelectionKey key, ByteBuffer buffer) {
 		if (key.isValid() && readBuffer.position() != 0) {
-			processedBuffer.compact();
+			buffer.compact();
 			processReadBuffer(key);
-
-			if (processedBuffer != null)
-				processedBuffer.flip();
+			buffer.flip();
 		}
 	}
 

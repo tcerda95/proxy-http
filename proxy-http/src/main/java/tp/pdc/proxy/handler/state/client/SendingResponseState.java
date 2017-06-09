@@ -33,8 +33,7 @@ public class SendingResponseState implements HttpClientState {
 
 		LOGGER.debug("Registering server for read: server's response not processed yet");
 		httpHandler.getConnectedPeerKey().interestOps(SelectionKey.OP_READ);
-		httpHandler.getServerHandler().handleProcess(httpHandler
-			.getConnectedPeerKey());  // Espacio libre en processedBuffer ---> servidor puede procesar
+		httpHandler.getServerHandler().handleProcess(httpHandler.getConnectedPeerKey(), writeBuffer);  // Espacio libre en processedBuffer ---> servidor puede procesar
 
 		if (!writeBuffer.hasRemaining()) {
 			LOGGER.debug("Unregistering client from write: write buffer empty");
