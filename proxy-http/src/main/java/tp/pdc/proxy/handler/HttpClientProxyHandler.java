@@ -30,8 +30,7 @@ import java.util.Set;
 public class HttpClientProxyHandler extends HttpHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientProxyHandler.class);
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
-	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY =
-		HttpRequestParserFactory.getInstance();
+	private static final HttpRequestParserFactory REQUEST_PARSER_FACTORY = HttpRequestParserFactory.getInstance();
 	private static final ClientMetric CLIENT_METRICS = ClientMetricImpl.getInstance();
 
 	private final HttpRequestParser requestParser;

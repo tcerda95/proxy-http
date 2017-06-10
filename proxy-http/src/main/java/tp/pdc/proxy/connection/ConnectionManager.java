@@ -22,6 +22,7 @@ import tp.pdc.proxy.metric.ServerMetricImpl;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.properties.ProxyProperties;
 import tp.pdc.proxy.structures.ArrayQueue;
+import tp.pdc.proxy.structures.FixedLengthQueue;
 import tp.pdc.proxy.time.ExpirableContainer;
 
 /**
@@ -35,7 +36,7 @@ public class ConnectionManager {
 	private static final int QUEUE_LENGTH = PROPERTIES.getConnectionQueueLength();
 	private static final int CONNECTION_TTL = PROPERTIES.getConnectionTimeToLive();
 
-	private final Map<SocketAddress, Queue<ExpirableContainer<SelectionKey>>> connections;
+	private final Map<SocketAddress, FixedLengthQueue<ExpirableContainer<SelectionKey>>> connections;
 	private final long cleanRate;
 	private long cleanTime;
 
@@ -61,8 +62,7 @@ public class ConnectionManager {
 	 * @return true if the connection was successful, false if not
 	 * @throws IOException
      */
-	public boolean connect (Method method, SocketAddress address, SelectionKey clientKey)
-		throws IOException {
+	public boolean connect (Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
 		if (connections.containsKey(address)) {
 			LOGGER.debug("Attempting to reuse connection");
 			return reuseConnection(method, address, clientKey);
@@ -112,8 +112,7 @@ public class ConnectionManager {
 	 * @return {@link SelectionKey}
 	 * @throws IOException
      */
-	private SelectionKey retrieveValidKey (Queue<ExpirableContainer<SelectionKey>> connectionQueue)
-		throws IOException {
+	private SelectionKey retrieveValidKey (Queue<ExpirableContainer<SelectionKey>> connectionQueue) throws IOException {
 		while (!connectionQueue.isEmpty()) {
 			SelectionKey key = connectionQueue.remove().getElement();
 
@@ -172,9 +171,7 @@ public class ConnectionManager {
      */
 	private HttpServerProxyHandler buildHttpServerProxyHandler (
 		HttpClientProxyHandler clientHandler, Method method, SelectionKey clientKey) {
-		HttpServerProxyHandler handler =
-			new HttpServerProxyHandler(clientHandler.getProcessedBuffer(),
-				clientHandler.getWriteBuffer(), method);
+		HttpServerProxyHandler handler = new HttpServerProxyHandler(clientHandler.getProcessedBuffer(), clientHandler.getWriteBuffer(), method);
 		handler.setConnectedPeerKey(clientKey);
 		return handler;
 	}
@@ -205,7 +202,7 @@ public class ConnectionManager {
      */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private void storeKey (SocketAddress remoteAddress, SelectionKey serverKey) {
-		Queue<ExpirableContainer<SelectionKey>> connectionQueue;
+		FixedLengthQueue<ExpirableContainer<SelectionKey>> connectionQueue;
 
 		if (connections.containsKey(remoteAddress))
 			connectionQueue = connections.get(remoteAddress);
@@ -214,12 +211,14 @@ public class ConnectionManager {
 			connections.put(remoteAddress, connectionQueue);
 		}
 
-		connectionQueue
-			.add(new ExpirableContainer<SelectionKey>(serverKey, CONNECTION_TTL, TimeUnit.SECONDS));
+		if (connectionQueue.isFull())
+			unregisterKey(connectionQueue.remove().getElement());
+
+		connectionQueue.add(new ExpirableContainer<SelectionKey>(serverKey, CONNECTION_TTL, TimeUnit.SECONDS));
 	}
 
 	/**
-	 * It removes expired elements from the map
+	 * It removes expired elements from the map if it is clean time
 	 */
 	public void clean () {
 		long currentTime = System.currentTimeMillis();
@@ -229,8 +228,7 @@ public class ConnectionManager {
 
 			cleanTime = currentTime + cleanRate;
 
-			Iterator<Queue<ExpirableContainer<SelectionKey>>> iter =
-				connections.values().iterator();
+			Iterator<FixedLengthQueue<ExpirableContainer<SelectionKey>>> iter = connections.values().iterator();
 
 			while (iter.hasNext()) {
 				Queue<ExpirableContainer<SelectionKey>> queue = iter.next();
@@ -242,7 +240,7 @@ public class ConnectionManager {
 			}
 		}
 	}
-
+	
 	/**
 	 * Removes expired elements for the queue of an specific address
 	 * @param queue
@@ -253,12 +251,16 @@ public class ConnectionManager {
 
 			SelectionKey key = queue.remove().getElement();
 
-			try {
-				key.channel().close();
-			} catch (IOException e) {
-				LOGGER.error("Failed to close channel during conneciton clean");
-				e.printStackTrace();
-			}
+			unregisterKey(key);
+		}
+	}
+	
+	private void unregisterKey(SelectionKey key) {
+		try {
+			key.channel().close();
+		} catch (IOException e) {
+			LOGGER.error("Failed to close channel on connection manager");
+			e.printStackTrace();
 		}
 	}
 }
