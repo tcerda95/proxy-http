@@ -80,8 +80,7 @@ public class ConnectionManager {
 	 * @return true if connection was successful, false if not
 	 * @throws IOException
      */
-	private boolean reuseConnection (Method method, SocketAddress address, SelectionKey clientKey)
-		throws IOException {
+	private boolean reuseConnection (Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
 		Queue<ExpirableContainer<SelectionKey>> connectionQueue = connections.get(address);
 		SelectionKey serverKey = retrieveValidKey(connectionQueue);
 

@@ -1,18 +1,17 @@
 package tp.pdc.proxy.log;
 
+import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tp.pdc.proxy.header.Header;
-import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.properties.ProxyProperties;
-
-import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ProxyLogger {
 	private static final String SEPARATOR = ", ";
@@ -28,26 +27,32 @@ public class ProxyLogger {
 		return INSTANCE;
 	}
 
-	public void logAccess (HttpRequestParser requestParser, HttpResponseParser responseParser,
-		InetSocketAddress source, InetSocketAddress destination) {
-		byte[] userAgentBytes = requestParser.hasHeaderValue(Header.USER_AGENT) ?
-			requestParser.getHeaderValue(Header.USER_AGENT) :
-			ArrayUtils.EMPTY_BYTE_ARRAY;
-		byte[] serverBytes = responseParser.hasHeaderValue(Header.SERVER) ?
-			responseParser.getHeaderValue(Header.SERVER) :
-			ArrayUtils.EMPTY_BYTE_ARRAY;
-		Method method = requestParser.getMethod();
+	public void logAccess (HttpRequestParser requestParser, HttpResponseParser responseParser, InetSocketAddress source, InetSocketAddress destination) {
+		byte[] requestBytes = requestParser.hasRequestLineFinished() ? requestParser.getWholeRequestLine() : ArrayUtils.EMPTY_BYTE_ARRAY;
+		byte[] userAgentBytes = requestParser.hasHeaderValue(Header.USER_AGENT) ? requestParser.getHeaderValue(Header.USER_AGENT) : ArrayUtils.EMPTY_BYTE_ARRAY;
+		byte[] serverBytes = responseParser.hasHeaderValue(Header.SERVER) ? responseParser.getHeaderValue(Header.SERVER) : ArrayUtils.EMPTY_BYTE_ARRAY;
 		int statusCode = responseParser.getStatusCode();
 
 		loggerExecutor.execute(() -> {
+			String request = new String(requestBytes, PROPERTIES.getCharset());
 			String userAgent = new String(userAgentBytes, PROPERTIES.getCharset());
 			String server = new String(serverBytes, PROPERTIES.getCharset());
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(source.getHostString()).append(" - ").append(method).append(" [")
-				.append(destination.getHostString()).append(":").append(destination.getPort())
-				.append("]").append(" SC:").append(statusCode).append(" UA:").append(userAgent)
-				.append(" SV:").append(server);
+			builder
+				.append(source.getHostString())
+				.append(" - ")
+				.append(request)
+				.append(" [")
+				.append(destination.getHostString())
+				.append(":")
+				.append(destination.getPort())
+				.append("] ")
+				.append(statusCode)
+				.append(" UA:")
+				.append(userAgent)
+				.append(" SV:")
+				.append(server);
 
 			String log = builder.toString();
 
@@ -55,13 +60,9 @@ public class ProxyLogger {
 		});
 	}
 
-	public void logError (HttpRequestParser requestParser, InetSocketAddress source,
-		String... messages) {
-		byte[] requestBytes = requestParser.hasRequestLineFinished() ?
-			requestParser.getWholeRequestLine() :
-			ArrayUtils.EMPTY_BYTE_ARRAY;
-		byte[] destinationHostBytes =
-			requestParser.hasHost() ? requestParser.getHostValue() : ArrayUtils.EMPTY_BYTE_ARRAY;
+	public void logError (HttpRequestParser requestParser, InetSocketAddress source, String... messages) {
+		byte[] requestBytes = requestParser.hasRequestLineFinished() ? requestParser.getWholeRequestLine() : ArrayUtils.EMPTY_BYTE_ARRAY;
+		byte[] destinationHostBytes = requestParser.hasHost() ? requestParser.getHostValue() : ArrayUtils.EMPTY_BYTE_ARRAY;
 
 		loggerExecutor.execute(() -> {
 			String request = new String(requestBytes, PROPERTIES.getCharset());
