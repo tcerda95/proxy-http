@@ -118,9 +118,8 @@ public class ConnectionManager {
 
 			if (key.isValid()) {
 				SocketChannel serverSocket = (SocketChannel) key.channel();
-				ByteBuffer serverReadBuffer =
-					((HttpServerProxyHandler) key.attachment()).getReadBuffer();
-				if (serverSocket.read(serverReadBuffer) != -1)
+				ByteBuffer serverReadBuffer = ((HttpServerProxyHandler) key.attachment()).getReadBuffer();
+				if (serverSocket.read(serverReadBuffer) == 0) // Cached server connection shouldn't write anything and must not be EOF (-1)
 					return key;
 				else
 					serverSocket.close();

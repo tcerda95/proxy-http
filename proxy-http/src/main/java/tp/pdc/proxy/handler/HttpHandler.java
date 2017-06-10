@@ -71,7 +71,7 @@ public abstract class HttpHandler implements Handler {
 	public void handleRead (SelectionKey key) {
 		processRead(key);
 
-		if (key.isValid()) // in case of EOF was received
+		if (key.isValid()) // in case EOF was received
 			processReadBuffer(key);
 	}
 

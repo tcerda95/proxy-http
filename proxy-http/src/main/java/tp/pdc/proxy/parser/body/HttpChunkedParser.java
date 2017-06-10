@@ -80,9 +80,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 
 					c = (byte) Character.toUpperCase(c);
 					chunkSize =
-						chunkSize * HEXA_BASE_VALUE.getValue() + c - (byte) (ParseUtils.isDigit(c) ?
-							'0' :
-							'A' - A_DECIMAL_VALUE.getValue());
+						chunkSize * HEXA_BASE_VALUE.getValue() + c - (byte) (ParseUtils.isDigit(c) ? '0' : 'A' - A_DECIMAL_VALUE.getValue());
 
 					chunkSizeFound = true;
 				}
@@ -93,9 +91,7 @@ public class HttpChunkedParser implements HttpBodyParser {
 
 				if (c == LF.getValue()) {
 
-					chunkSizeState = chunkSizeIsZero() ?
-						ChunkSizeState.CHUNKSIZE_IS_ZERO :
-						ChunkSizeState.END_OK;
+					chunkSizeState = chunkSizeIsZero() ? ChunkSizeState.CHUNKSIZE_IS_ZERO : ChunkSizeState.END_OK;
 
 					parserState = ParserState.READ_CHUNK;
 					chunkState = ChunkState.START;

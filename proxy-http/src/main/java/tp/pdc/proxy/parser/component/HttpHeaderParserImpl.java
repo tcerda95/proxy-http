@@ -122,7 +122,7 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
 
 			case RELEVANT_SPACE:
 				if (ParseUtils.isHeaderContentChar(c)) {
-					saveHeaderContentbyte(c);
+					saveHeaderContentByte(c);
 					state = HttpHeaderState.RELEVANT_CONTENT;
 				} else {
 					handleError();
@@ -140,7 +140,7 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
 					if (!ignoring)
 						output.put(headerAux).put(CR.getValue());
 				} else if (ParseUtils.isHeaderContentChar(c)) {
-					saveHeaderContentbyte(c);
+					saveHeaderContentByte(c);
 				} else {
 					handleError();
 				}
@@ -188,16 +188,16 @@ public class HttpHeaderParserImpl implements HttpHeaderParser {
 
 	private void saveHeaderNameByte (byte b) throws ParserFormatException {
 		if (!headerName.hasRemaining())
-			throw new ParserFormatException("Header name too long",
-				HttpErrorCode.HEADER_FIELD_TOO_LARGE_431);
+			throw new ParserFormatException("Header name too long", HttpErrorCode.HEADER_FIELD_TOO_LARGE_431);
 		headerName.put(b);
 	}
 
-	private void saveHeaderContentbyte (byte b) throws ParserFormatException {
+	private void saveHeaderContentByte (byte b) throws ParserFormatException {
 		if (!headerValue.hasRemaining())
-			throw new ParserFormatException("Header content too long",
-				HttpErrorCode.HEADER_FIELD_TOO_LARGE_431);
-		headerValue.put(b);
+			throw new ParserFormatException("Header content too long", HttpErrorCode.HEADER_FIELD_TOO_LARGE_431);
+		
+		if (headerValue.position() != 0 || !ParseUtils.isWhiteSpace(b)) // initial white spaces skipped
+			headerValue.put(b);
 	}
 
 	/**

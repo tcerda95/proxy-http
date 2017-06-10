@@ -30,8 +30,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 	private static final ProxyLogger PROXY_LOGGER = ProxyLogger.getInstance();
 
 	private HttpServerState state;
-	private boolean errorState;
 	private HttpResponseParser responseParser;
+	private boolean errorState;
 	private boolean responseCodeRecorded;
 
 	public HttpServerProxyHandler (ByteBuffer writeBuffer, ByteBuffer processedBuffer, Method clientMethod) {
@@ -41,8 +41,8 @@ public class HttpServerProxyHandler extends HttpHandler {
 	}
 
 	/**
-	 * Resets the handlers attributes to it's initial values.
-	 * @param key to reset the connected peer and to set an interest to read
+	 * Resets the handlers attributes in order to be stored in a cache.
+	 * @param key corresponding to the server handler
 	 */
 	public void reset (SelectionKey key) {
 		key.interestOps(0);

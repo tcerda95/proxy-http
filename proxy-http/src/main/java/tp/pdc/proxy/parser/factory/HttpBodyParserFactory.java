@@ -98,8 +98,7 @@ public class HttpBodyParserFactory {
 						ParseUtils.parseInt(headersParser.getHeaderValue(Header.CONTENT_LENGTH)));
 			}
 		} catch (NumberFormatException e) {
-			throw new ParserFormatException("Invalid content-length value: illegal number format",
-				HttpErrorCode.BAD_HOST_FORMAT_400);
+			throw new ParserFormatException("Invalid content-length value: illegal number format", HttpErrorCode.BAD_HOST_FORMAT_400);
 		}
 
 		return null;

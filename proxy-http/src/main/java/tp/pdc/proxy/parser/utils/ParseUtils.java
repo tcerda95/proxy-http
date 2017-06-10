@@ -24,8 +24,7 @@ public class ParseUtils {
 		for (int c = 0; c < US_ASCII_LENGTH; c++) {
 			isSeparator[c] = contains(separator, (byte) c);
 			isToken[c] = (31 < c && c < 127 && !isSeparator[c]);
-			isLWS[c] = (c == CR.getValue() || c == LF.getValue() || c == SP.getValue() || c == HT
-				.getValue());
+			isLWS[c] = (c == CR.getValue() || c == LF.getValue() || c == SP.getValue() || c == HT.getValue());
 			isDigit[c] = ('0' <= c && c <= '9');
 			isAlphabetic[c] = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
 			isAlphaNumerical[c] = (isAlphabetic[c] || isDigit[c]);
@@ -54,6 +53,10 @@ public class ParseUtils {
 
 	public static boolean isDigit (byte c) {
 		return c > 0 && isDigit[c];
+	}
+	
+	public static boolean isWhiteSpace(byte c) {
+		return c > 0 && isLWS[c];
 	}
 
 	public static boolean isText (byte c) {
