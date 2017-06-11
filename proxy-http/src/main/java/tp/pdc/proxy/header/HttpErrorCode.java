@@ -10,7 +10,6 @@ import tp.pdc.proxy.properties.ProxyProperties;
 public enum HttpErrorCode {
 	BAD_REQUEST_400("400 Bad Request", "Request syntax errors"),
 	NO_HOST_400("400 Bad Request", "Missing host in headers and URL"),
-	UNRESOLVED_ADDRESS_400("400 Bad Request", "Host address could not be resolved"),
 	BAD_HOST_FORMAT_400("400 Bad Request", "Invaild host format"),
 	BAD_BODY_FORMAT_400("400 Bad Request", "Invalid body format"),
 	LENGTH_REQUIRED_411("411 Length Required", "Missing valid content-length and transfer-encoding: chunked headers"),
@@ -18,7 +17,9 @@ public enum HttpErrorCode {
 	HEADER_FIELD_TOO_LARGE_431("431 Request headers fields too large", "Header field too large"),
 	TOO_MANY_HEADERS_NO_HOST_431("431 Request headers fields too large", "Header field too large and still no host found"),
 	NOT_IMPLEMENTED_501("501 Method not implemented", "Method not implemented"),
-	BAD_GATEWAY_502("502 Bad Gateway", "Failed to connect to server");
+	UNRESOLVED_ADDRESS_502("502 Bad Gateway", "Host address could not be resolved"),
+	BAD_GATEWAY_502("502 Bad Gateway", "Failed to connect to server"), 
+	LOOP_DETECTED_508("508 Loop Detected", "Rejecting connection attempt to self");
 
 	private static final String SEPARATOR = ": ";
 

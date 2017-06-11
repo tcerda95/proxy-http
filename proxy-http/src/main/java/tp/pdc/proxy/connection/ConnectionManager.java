@@ -136,13 +136,13 @@ public class ConnectionManager {
 	 * @return true if connection was successfull, false if not
 	 * @throws IOException
      */
-	private boolean establishConnection (Method method, SocketAddress address,
-		SelectionKey clientKey) throws IOException {
+	private boolean establishConnection (Method method, SocketAddress address, SelectionKey clientKey) throws IOException {
 		boolean connected;
 		HttpClientProxyHandler clientHandler = (HttpClientProxyHandler) clientKey.attachment();
 		SocketChannel serverSocket = SocketChannel.open();
 		Selector selector = clientKey.selector();
 		SelectionKey serverKey;
+		
 
 		serverSocket.configureBlocking(false);
 		connected = serverSocket.connect(address);

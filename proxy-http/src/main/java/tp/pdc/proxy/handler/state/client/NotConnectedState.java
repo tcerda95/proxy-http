@@ -1,5 +1,13 @@
 package tp.pdc.proxy.handler.state.client;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,11 +18,7 @@ import tp.pdc.proxy.header.HttpErrorCode;
 import tp.pdc.proxy.header.Method;
 import tp.pdc.proxy.parser.HostParser;
 import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
+import tp.pdc.proxy.properties.ProxyProperties;
 
 /**
  * Client state in which a client has not yet established a connection to any server.
@@ -26,6 +30,8 @@ public class NotConnectedState implements HttpClientState {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NotConnectedState.class);
 	private static final HostParser HOST_PARSER = new HostParser();
 	private static final ConnectionManager CONNECTION_MANAGER = ConnectionManager.getInstance();
+	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	private static final int PROXY_PORT = PROPERTIES.getProxyPort();
 
 	private static final NotConnectedState INSTANCE = new NotConnectedState();
 
@@ -62,8 +68,7 @@ public class NotConnectedState implements HttpClientState {
 				httpHandler.setErrorState(key, HttpErrorCode.BAD_GATEWAY_502, e.getMessage());
 			}
 		} else if (!processedBuffer.hasRemaining()) {
-			LOGGER
-				.warn("Client's processed buffer full and connection not established with server");
+			LOGGER.warn("Client's processed buffer full and connection not established with server");
 			httpHandler.setErrorState(key, HttpErrorCode.TOO_MANY_HEADERS_NO_HOST_431);
 		} else if (requestParser.hasHeadersFinished()) {
 			LOGGER.warn("Impossible to connect: host not found in request header nor URL");
@@ -71,18 +76,36 @@ public class NotConnectedState implements HttpClientState {
 		}
 	}
 
-	private void tryConnect (HttpClientProxyHandler httpHandler, Method requestMethod,
-		InetSocketAddress address, SelectionKey key) throws IOException {
+	private void tryConnect (HttpClientProxyHandler httpHandler, Method requestMethod, InetSocketAddress address, SelectionKey key) throws IOException {
 
 		LOGGER.debug("Server address: {}", address);
 
 		if (address.isUnresolved()) {
 			LOGGER.warn("Failed to resolve address: {}", address.getHostString());
-			httpHandler
-				.setErrorState(key, HttpErrorCode.UNRESOLVED_ADDRESS_400, address.getHostString());
-		} else {
+			httpHandler.setErrorState(key, HttpErrorCode.UNRESOLVED_ADDRESS_502, address.getHostString());
+		} else if (isConnectingToSelf(address)) {
+			LOGGER.warn("Rejecting connection attempt to self");
+			httpHandler.setErrorState(key, HttpErrorCode.LOOP_DETECTED_508, address.getHostString());
+		}
+		else {
 			httpHandler.setConnectingState(key);
 			CONNECTION_MANAGER.connect(requestMethod, address, key);
 		}
+	}
+	
+	private boolean isConnectingToSelf(InetSocketAddress socketAddress) {
+		InetAddress address = socketAddress.getAddress();
+		
+		if (socketAddress.getPort() != PROXY_PORT)
+			return false;
+		
+		if (address.isAnyLocalAddress() || address.isLoopbackAddress())
+	        return true;
+
+	    try {
+	        return NetworkInterface.getByInetAddress(address) != null;
+	    } catch (SocketException e) {
+	        return false;
+	    }
 	}
 }
