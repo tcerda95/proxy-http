@@ -18,8 +18,8 @@ public class ProxyProperties {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyProperties.class);
 	private static final String RESOURCE_NAME = "proxy.properties";
 	private static final ProxyProperties INSTANCE = new ProxyProperties();
-	private static final Set<Method> ACCEPTED_METHODS =
-		Collections.unmodifiableSet(EnumSet.of(Method.GET, Method.POST, Method.HEAD));
+	private static final Set<Method> ACCEPTED_METHODS = 
+			Collections.unmodifiableSet(EnumSet.of(Method.GET, Method.POST, Method.HEAD, Method.PUT, Method.DELETE));
 
 	private final Charset charset = Charset.forName("ASCII");
 	private final List<byte[]> acceptedCharsets;

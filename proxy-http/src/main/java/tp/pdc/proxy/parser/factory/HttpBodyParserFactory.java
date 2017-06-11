@@ -35,11 +35,15 @@ public class HttpBodyParserFactory {
 		return INSTANCE;
 	}
 
-	public HttpBodyParser getClientHttpBodyParser (HttpRequestParser headersParser)
-		throws ParserFormatException {
-		if (headersParser.hasMethod() && headersParser.getMethod() == Method.POST)
+	public HttpBodyParser getClientHttpBodyParser (HttpRequestParser headersParser) throws ParserFormatException {
+		if (headersParser.hasMethod() && isBodyMethod(headersParser.getMethod()))
 			return buildClientBodyParser(headersParser);
+		
 		return noBodyParser;
+	}
+	
+	private boolean isBodyMethod(Method method) {
+		return method == Method.POST || method == Method.PUT;
 	}
 
 	private HttpBodyParser buildClientBodyParser (HttpHeaderParser headersParser)
@@ -47,8 +51,7 @@ public class HttpBodyParserFactory {
 		HttpBodyParser parser = buildBodyParser(headersParser);
 
 		if (parser == null)
-			throw new ParserFormatException("Missing content-length and tranfser-encoding: chunked headers",
-				HttpErrorCode.LENGTH_REQUIRED_411);
+			throw new ParserFormatException("Missing content-length and tranfser-encoding: chunked headers", HttpErrorCode.LENGTH_REQUIRED_411);
 
 		return parser;
 	}

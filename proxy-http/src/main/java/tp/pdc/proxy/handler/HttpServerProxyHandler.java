@@ -78,8 +78,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			state.handle(this, key);
 
 		} catch (IOException e) {
-			LOGGER.warn("Failed to write response to server");
-			setResponseError(key, e.getMessage());
+			setResponseError(key, "Failed to write response to server", e.getMessage());
 			closeChannel(socketChannel);
 		}
 	}
@@ -124,8 +123,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			}
 
 		} catch (IOException e) {
-			LOGGER.warn("Failed to read response from server: {}", e.getMessage());
-			setResponseError(key, e.getMessage());
+			setResponseError(key, "Failed to read from server", e.getMessage());
 		}
 	}
 
@@ -146,8 +144,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 	 * @param outputBuffer buffer to put processed response
 	 * @param key
      */
-	private void processResponse (ByteBuffer inputBuffer, ByteBuffer outputBuffer,
-		SelectionKey key) {
+	private void processResponse (ByteBuffer inputBuffer, ByteBuffer outputBuffer, SelectionKey key) {
 		try {
 			responseParser.parse(inputBuffer, outputBuffer);
 
@@ -158,7 +155,7 @@ public class HttpServerProxyHandler extends HttpHandler {
 			if (shouldRecordStatusCode())
 				recordStatusCode();
 
-			setResponseError(key, e.getMessage());
+			setResponseError(key, "Failed to parse server response", e.getMessage());
 		}
 	}
 
@@ -183,13 +180,17 @@ public class HttpServerProxyHandler extends HttpHandler {
 	 * @param key server's key
 	 * @param message message to log
      */
-	private void setResponseError (SelectionKey key, String message) {
-		LOGGER.warn("Closing Connection to server: {}", message);
+	private void setResponseError (SelectionKey key, String... messages) {
+		LOGGER.warn("Closing Connection to server due to an error");
+
+		for (String message : messages)
+			LOGGER.warn("Error info: {}", message);
+		
 		errorState = true;
 
 		closeChannel(key.channel());
 
-		getClientHandler().setErrorState(this.getConnectedPeerKey(), message);
+		getClientHandler().setErrorState(this.getConnectedPeerKey(), messages);
 	}
 
 	/**
