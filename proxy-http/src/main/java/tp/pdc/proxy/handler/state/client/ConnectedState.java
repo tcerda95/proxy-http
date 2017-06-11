@@ -35,8 +35,7 @@ public class ConnectedState implements HttpClientState {
 			httpHandler.setRequestProcessedState(key);
 		else {
 			if (processedBuffer.position() != 0) {
-				LOGGER.debug("Registering server for write. Must send {} bytes",
-					processedBuffer.position());
+				LOGGER.debug("Registering server for write. Must send {} bytes", processedBuffer.position());
 				httpHandler.getConnectedPeerKey().interestOps(SelectionKey.OP_WRITE);
 			}
 

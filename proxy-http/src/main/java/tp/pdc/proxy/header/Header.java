@@ -19,7 +19,8 @@ public enum Header {
 	ACCEPT_ENCODING("accept-encoding"),
 	SERVER("server"),
 	REFERER("referer"), 
-	CONTENT_ENCODING("content-encoding");
+	CONTENT_ENCODING("content-encoding"), 
+	EXPECT("expect");
 
 	private String headerName;
 	private byte[] headerBytes;

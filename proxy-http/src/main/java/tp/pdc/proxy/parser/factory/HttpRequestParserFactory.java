@@ -22,7 +22,7 @@ public class HttpRequestParserFactory {
 	private final Set<Header> toRemoveL33t;
 
 	private HttpRequestParserFactory () {
-		toRemove = EnumSet.of(Header.PROXY_CONNECTION);
+		toRemove = EnumSet.of(Header.PROXY_CONNECTION, Header.EXPECT);
 
 		toAdd = new EnumMap<>(Header.class);
 		toAdd.put(Header.CONNECTION, HeaderValue.KEEP_ALIVE.getValue());
