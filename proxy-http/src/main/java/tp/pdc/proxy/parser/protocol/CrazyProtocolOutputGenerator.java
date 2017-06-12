@@ -267,7 +267,7 @@ public class CrazyProtocolOutputGenerator {
 
 		putRemainingBytes(output);
 
-		if (output.remaining() >= 1)
+		if (output.hasRemaining())
 			output.put(c);
 		else
 			remainingBytes.put(c);
@@ -349,11 +349,6 @@ public class CrazyProtocolOutputGenerator {
 		BytesUtils.lengthPut(input, output, length);
 	}
 
-
-	private boolean remainingBytes () {
-		return remainingBytes.position() != 0;
-	}
-
 	private boolean setter (CrazyProtocolHeader header) {
 		return (header == CrazyProtocolHeader.L33TENABLE ||
 			header == CrazyProtocolHeader.L33TDISABLE ||
@@ -364,8 +359,12 @@ public class CrazyProtocolOutputGenerator {
 		remainingBytes.clear();
 	}
 
+	private boolean remainingBytes () {
+		return remainingBytes.position() != 0;
+	}
+	
 	public boolean hasFinished () {
 		//remainingBytes buffer is always in write mode
-		return remainingBytes.position() == 0;
+		return !remainingBytes();
 	}
 }
