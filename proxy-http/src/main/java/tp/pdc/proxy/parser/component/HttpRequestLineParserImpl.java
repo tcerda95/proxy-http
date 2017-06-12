@@ -20,7 +20,8 @@ public class HttpRequestLineParserImpl implements HttpRequestLineParser {
 
 	private static final int METHOD_NAME_SIZE = ProxyProperties.getInstance().getMethodBufferSize();
 	private static final int URI_HOST_SIZE = ProxyProperties.getInstance().getURIHostBufferSize();
-	private static final int REQUEST_LINE_SIZE = 2048;
+	private static final int REQUEST_LINE_SIZE = ProxyProperties.getInstance().getRequestLineBufferSize();
+
 	private final ByteBuffer methodName, URIHostBuf, methodAndURLBuffer;
 	private RequestLineParserState state;
 	private Method method;
