@@ -9,7 +9,7 @@ import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.metric.stub.ClientMetricStub;
 import tp.pdc.proxy.metric.stub.ServerMetricStub;
-import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
+import tp.pdc.proxy.parser.interfaces.PopisParser;
 import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.io.UnsupportedEncodingException;
@@ -17,11 +17,11 @@ import java.nio.ByteBuffer;
 
 import static org.junit.Assert.*;
 
-public class CrazyProtocolParserSimpleHeadersTest {
+public class PopisParserSimpleHeadersTest {
 
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 
-	private CrazyProtocolParser parser;
+	private PopisParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 
@@ -33,7 +33,7 @@ public class CrazyProtocolParserSimpleHeadersTest {
 		clientMetric = new ClientMetricStub();
 		serverMetric = new ServerMetricStub();
 		outputBuffer = ByteBuffer.allocate(4000);
-		parser = new CrazyProtocolParserImpl(clientMetric, serverMetric);
+		parser = new PopisParserImpl(clientMetric, serverMetric);
 	}
 
 	@Test

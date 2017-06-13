@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 /**
  * Enum containing every header accepted by the protocol
  */
-public enum CrazyProtocolHeader {
+public enum PopisHeader {
 	PROXY_BUF_SIZE("proxy_buf_size"),
 	SET_PROXY_BUF_SIZE("set_proxy_buf_size"),
 	L33TENABLE("l33t_enable"),
@@ -29,13 +29,13 @@ public enum CrazyProtocolHeader {
 	private final String headerName;
 	private final byte[] headerBytes;
 
-	private CrazyProtocolHeader (String header) {
+	private PopisHeader (String header) {
 		headerName = header;
 		headerBytes = header.getBytes(ProxyProperties.getInstance().getCharset());
 	}
 
-	public static CrazyProtocolHeader getHeaderByBytes (ByteBuffer bytes, int length) {
-		for (CrazyProtocolHeader header : values())
+	public static PopisHeader getHeaderByBytes (ByteBuffer bytes, int length) {
+		for (PopisHeader header : values())
 			if (BytesUtils.equalsBytes(header.headerBytes, bytes, length))
 				return header;
 		return null;
@@ -43,7 +43,7 @@ public enum CrazyProtocolHeader {
 
 	public static int maxHeaderLen () {
 		int maxLength = 0;
-		for (CrazyProtocolHeader h : CrazyProtocolHeader.values()) {
+		for (PopisHeader h : PopisHeader.values()) {
 			int currentLength = h.toString().length();
 
 			if (currentLength > maxLength)

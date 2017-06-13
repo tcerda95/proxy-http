@@ -7,7 +7,7 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.flag.L33tFlag;
 import tp.pdc.proxy.metric.stub.ClientMetricStub;
 import tp.pdc.proxy.metric.stub.ServerMetricStub;
-import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
+import tp.pdc.proxy.parser.interfaces.PopisParser;
 import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.io.UnsupportedEncodingException;
@@ -16,11 +16,11 @@ import java.nio.ByteBuffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class CrazyProtocolParserBufferOverflowTest {
+public class PopisParserBufferOverflowTest {
 
 	private static ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 
-	private CrazyProtocolParser parser;
+	private PopisParser parser;
 	private ByteBuffer inputBuffer;
 	private ByteBuffer outputBuffer;
 	private L33tFlag flag = L33tFlag.getInstance();
@@ -28,7 +28,7 @@ public class CrazyProtocolParserBufferOverflowTest {
 	@Before
 	public void setUp () throws Exception {
 		flag.unset();
-		parser = new CrazyProtocolParserImpl(new ClientMetricStub(), new ServerMetricStub());
+		parser = new PopisParserImpl(new ClientMetricStub(), new ServerMetricStub());
 		outputBuffer = ByteBuffer.allocate(30);
 	}
 

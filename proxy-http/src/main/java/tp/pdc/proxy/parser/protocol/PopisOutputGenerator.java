@@ -4,7 +4,7 @@ import tp.pdc.proxy.bytes.ByteBufferFactory;
 import tp.pdc.proxy.bytes.BytesUtils;
 import tp.pdc.proxy.flag.L33tFlag;
 import tp.pdc.proxy.header.Method;
-import tp.pdc.proxy.header.protocol.CrazyProtocolHeader;
+import tp.pdc.proxy.header.protocol.PopisHeader;
 import tp.pdc.proxy.metric.interfaces.ClientMetric;
 import tp.pdc.proxy.metric.interfaces.ServerMetric;
 import tp.pdc.proxy.parser.utils.ParseUtils;
@@ -17,29 +17,28 @@ import java.util.Set;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 
-public class CrazyProtocolOutputGenerator {
+public class PopisOutputGenerator {
 	private static final Charset charset = ProxyProperties.getInstance().getCharset();
 	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
 	private static final ProxyProperties PROXY_PROPERTIES = ProxyProperties.getInstance();
 	private static final L33tFlag L33TFLAG = L33tFlag.getInstance();
 
-	private static final int PROTOCOL_PARSER_BUFFER_SIZE =
-		PROXY_PROPERTIES.getProtocolParserBufferSize();
+	private static final int PROTOCOL_PARSER_BUFFER_SIZE = PROXY_PROPERTIES.getProtocolParserBufferSize();
 	private static final String PONG = "PONG";
 	private final ClientMetric clientMetrics;
 	private final ServerMetric serverMetrics;
 	//bytes that couldn't be put in the output buffer because it was full
 	private ByteBuffer remainingBytes;
 
-	public CrazyProtocolOutputGenerator (ClientMetric clientMetrics, ServerMetric serverMetrics) {
+	public PopisOutputGenerator (ClientMetric clientMetrics, ServerMetric serverMetrics) {
 		this.clientMetrics = clientMetrics;
 		this.serverMetrics = serverMetrics;
 		remainingBytes = ByteBuffer.allocate(PROTOCOL_PARSER_BUFFER_SIZE);
 	}
 
-	public void generateOutput (CrazyProtocolHeader header, ByteBuffer output) {
+	public void generateOutput (PopisHeader header, ByteBuffer output) {
 
-		if (header != CrazyProtocolHeader.PING)
+		if (header != PopisHeader.PING)
 			putField(header.getBytes(), output);
 
 		switch (header) {
@@ -123,7 +122,7 @@ public class CrazyProtocolOutputGenerator {
 				break;
 		}
 
-		if (header != CrazyProtocolHeader.METRICS)
+		if (header != PopisHeader.METRICS)
 			putCRLF(output);
 	}
 
@@ -138,11 +137,11 @@ public class CrazyProtocolOutputGenerator {
 	}
 
 
-	public void generateOutput (int number, ByteBuffer output, CrazyProtocolHeader currentHeader) {
+	public void generateOutput (int number, ByteBuffer output, PopisHeader currentHeader) {
 
 		putField(number, output);
 
-		if (currentHeader == CrazyProtocolHeader.SET_PROXY_BUF_SIZE)
+		if (currentHeader == PopisHeader.SET_PROXY_BUF_SIZE)
 			BUFFER_FACTORY.setProxyBufferSize(number);
 		else {
 			int statusCodeCount = serverMetrics.getResponseCodeCount(number);
@@ -160,8 +159,7 @@ public class CrazyProtocolOutputGenerator {
 		putCRLF(output);
 	}
 
-	public void generateErrorOutput (ByteBuffer input, CrazyProtocolError errorCode,
-		ByteBuffer output) {
+	public void generateErrorOutput (ByteBuffer input, PopisError errorCode, ByteBuffer output) {
 
 		put(LS.getValue(), output);
 
@@ -235,7 +233,7 @@ public class CrazyProtocolOutputGenerator {
 	}
 
 	private void putEnd (ByteBuffer output) {
-		generateOutput(CrazyProtocolHeader.END, output);
+		generateOutput(PopisHeader.END, output);
 	}
 
 	private void put (byte[] input, ByteBuffer output) {
@@ -305,10 +303,10 @@ public class CrazyProtocolOutputGenerator {
 
 		putCRLF(output);
 
-		for (CrazyProtocolHeader header : CrazyProtocolHeader.values()) {
+		for (PopisHeader header : PopisHeader.values()) {
 
-			if (header != CrazyProtocolHeader.END && header != CrazyProtocolHeader.METRICS
-				&& header != CrazyProtocolHeader.PING && !setter(header))
+			if (header != PopisHeader.END && header != PopisHeader.METRICS
+				&& header != PopisHeader.PING && !setter(header))
 				generateOutput(header, output);
 
 			switch (header) {
@@ -331,7 +329,7 @@ public class CrazyProtocolOutputGenerator {
 					putArgCount(s.size(), output);
 
 					for (Integer statusCode : s)
-						generateOutput(statusCode, output, CrazyProtocolHeader.STATUS_CODE_COUNT);
+						generateOutput(statusCode, output, PopisHeader.STATUS_CODE_COUNT);
 
 					break;
 
@@ -349,10 +347,10 @@ public class CrazyProtocolOutputGenerator {
 		BytesUtils.lengthPut(input, output, length);
 	}
 
-	private boolean setter (CrazyProtocolHeader header) {
-		return (header == CrazyProtocolHeader.L33TENABLE ||
-			header == CrazyProtocolHeader.L33TDISABLE ||
-			header == CrazyProtocolHeader.SET_PROXY_BUF_SIZE);
+	private boolean setter (PopisHeader header) {
+		return (header == PopisHeader.L33TENABLE ||
+			header == PopisHeader.L33TDISABLE ||
+			header == PopisHeader.SET_PROXY_BUF_SIZE);
 	}
 
 	public void reset () {

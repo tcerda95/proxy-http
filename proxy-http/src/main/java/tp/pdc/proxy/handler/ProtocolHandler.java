@@ -6,8 +6,8 @@ import tp.pdc.proxy.exceptions.ParserFormatException;
 import tp.pdc.proxy.handler.interfaces.Handler;
 import tp.pdc.proxy.metric.ClientMetricImpl;
 import tp.pdc.proxy.metric.ServerMetricImpl;
-import tp.pdc.proxy.parser.interfaces.CrazyProtocolParser;
-import tp.pdc.proxy.parser.protocol.CrazyProtocolParserImpl;
+import tp.pdc.proxy.parser.interfaces.PopisParser;
+import tp.pdc.proxy.parser.protocol.PopisParserImpl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -20,7 +20,7 @@ public class ProtocolHandler implements Handler {
 
 	private final ByteBuffer readBuffer;
 	private final ByteBuffer writeBuffer;
-	private final CrazyProtocolParser parser;
+	private final PopisParser parser;
 	private boolean clientClosedRead;
 
 	/**
@@ -31,7 +31,7 @@ public class ProtocolHandler implements Handler {
 	public ProtocolHandler (int bufferSize) {
 		readBuffer = ByteBuffer.allocate(bufferSize);
 		writeBuffer = ByteBuffer.allocate(bufferSize);
-		parser = new CrazyProtocolParserImpl(ClientMetricImpl.getInstance(),
+		parser = new PopisParserImpl(ClientMetricImpl.getInstance(),
 			ServerMetricImpl.getInstance());
 	}
 

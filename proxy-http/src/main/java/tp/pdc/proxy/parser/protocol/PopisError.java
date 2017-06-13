@@ -2,7 +2,7 @@ package tp.pdc.proxy.parser.protocol;
 
 import tp.pdc.proxy.properties.ProxyProperties;
 
-public enum CrazyProtocolError {
+public enum PopisError {
 
 	NO_MATCH("[NO_MATCH]"),
 	//if one of the following codes are generated the request is considered invalid
@@ -12,7 +12,7 @@ public enum CrazyProtocolError {
 	private String output;
 	private byte[] outputBytes;
 
-	CrazyProtocolError (String output) {
+	PopisError (String output) {
 		this.output = output;
 		outputBytes = output.getBytes(ProxyProperties.getInstance().getCharset());
 	}
