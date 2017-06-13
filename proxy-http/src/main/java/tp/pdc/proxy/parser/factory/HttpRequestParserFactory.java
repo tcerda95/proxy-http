@@ -11,6 +11,9 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * In charge of creating the {@link HttpRequestParser}s
+ */
 public class HttpRequestParserFactory {
 	private static final HttpRequestParserFactory INSTANCE = new HttpRequestParserFactory();
 	private static final L33tFlag L33T_FLAG = L33tFlag.getInstance();

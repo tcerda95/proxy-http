@@ -5,10 +5,18 @@ import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.net.InetSocketAddress;
 
+/**
+ * Given host and port bytes returns the host name and its port as an {@link InetSocketAddress}
+ */
 public class HostParser {
 	public static final int DEFAULT_PORT = 80;
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
 
+	/**
+	 * Given host and port bytes returns the host name and its port as an {@link InetSocketAddress}
+	 * @param hostBytes bytes of the host
+	 * @return an {@link InetSocketAddress} with the host and its port
+     */
 	public InetSocketAddress parseAddress (byte[] hostBytes) {
 		int colonIndex;
 		int port;

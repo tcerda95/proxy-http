@@ -7,6 +7,9 @@ import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Given a header extracts the charset parameter and saves it
+ */
 public class CharsetParser {
 
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
@@ -18,6 +21,11 @@ public class CharsetParser {
 	private final ByteBuffer valueBuffer = ByteBuffer.allocate(MAX_PARAM_VALUE);
 	private final ByteBuffer nameBuffer = ByteBuffer.allocate(MAX_PARAM_NAME);
 
+	/**
+	 * Given a header extracts the charset parameter (only for content Type header)
+	 * @param contentTypeHeader bytes of the header
+	 * @return byte array with the charset value
+     */
 	public byte[] extractCharset (final byte[] contentTypeHeader) {
 
 		for (int i = 0; i < contentTypeHeader.length; ) {

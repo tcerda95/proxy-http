@@ -7,6 +7,9 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Implementation of the client metrics
+ */
 public class ClientMetricImpl extends HostMetricImpl implements ClientMetric {
 
 	private static final ClientMetricImpl INSTANCE = new ClientMetricImpl();

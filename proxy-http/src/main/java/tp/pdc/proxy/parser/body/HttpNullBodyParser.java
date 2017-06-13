@@ -6,7 +6,8 @@ import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 import java.nio.ByteBuffer;
 
 /**
- * Body parser in case there is no body
+ * Body parser in case it is not known what type of body will be found. Avoids
+ * working with null.
  */
 public class HttpNullBodyParser implements HttpBodyParser {
 

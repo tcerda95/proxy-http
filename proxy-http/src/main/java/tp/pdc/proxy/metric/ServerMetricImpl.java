@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Implementation of the servers metrics.
+ */
 public class ServerMetricImpl extends HostMetricImpl implements ServerMetric {
 
 	private static final ServerMetricImpl INSTANCE = new ServerMetricImpl();

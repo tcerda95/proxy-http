@@ -13,6 +13,9 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+/**
+ * Provides the handle methods and is in charge for the flip and compact of the buffers.
+ */
 public abstract class HttpHandler implements Handler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpHandler.class);
 	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();
@@ -68,6 +71,10 @@ public abstract class HttpHandler implements Handler {
 		this.connectedPeerKey = connectedPeerKey;
 	}
 
+	/**
+	 * Handles read for an specific key
+	 * @param key
+     */
 	public void handleRead (SelectionKey key) {
 		processRead(key);
 
@@ -75,12 +82,21 @@ public abstract class HttpHandler implements Handler {
 			processReadBuffer(key);
 	}
 
+	/**
+	 * Handles write for an specific key
+	 * @param key
+     */
 	public void handleWrite (SelectionKey key) {
 		writeBuffer.flip();
 		processWrite(writeBuffer, key);
 		writeBuffer.compact();
 	}
 
+	/**
+	 * Handles process for an specific key
+	 * @param key
+	 * @param buffer
+     */
 	public void handleProcess (SelectionKey key, ByteBuffer buffer) {
 		if (key.isValid() && readBuffer.position() != 0) {
 			buffer.compact();
@@ -89,12 +105,21 @@ public abstract class HttpHandler implements Handler {
 		}
 	}
 
+	/**
+	 * Process the read buffer for a key
+	 * @param key
+     */
 	private void processReadBuffer (SelectionKey key) {
 		readBuffer.flip();
 		process(readBuffer, key);
 		readBuffer.compact();
 	}
 
+	/**
+	 * Gets an {@link InetSocketAddress} from a {@link SelectionKey}
+	 * @param key
+	 * @return the address for the key
+     */
 	protected InetSocketAddress addressFromKey (SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		try {
@@ -106,6 +131,10 @@ public abstract class HttpHandler implements Handler {
 		}
 	}
 
+	/**
+	 * Closes the socket channel
+	 * @param socketChannel
+     */
 	protected void closeChannel (SelectableChannel socketChannel) {
 		try {
 			socketChannel.close();

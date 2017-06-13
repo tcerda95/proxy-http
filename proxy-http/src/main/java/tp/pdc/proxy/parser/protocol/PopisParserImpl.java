@@ -16,6 +16,9 @@ import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 import static tp.pdc.proxy.parser.utils.DecimalConstants.DECIMAL_BASE_VALUE;
 
 
+/**
+ * Parses the client's request for the protocol
+ */
 public class PopisParserImpl implements PopisParser {
 
 	private static final int MAX_ARG_COUNT = 18;

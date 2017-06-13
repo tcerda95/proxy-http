@@ -17,6 +17,9 @@ import java.util.Set;
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
 
+/**
+ * Generates the protocol's output (response)
+ */
 public class PopisOutputGenerator {
 	private static final Charset charset = ProxyProperties.getInstance().getCharset();
 	private static final ByteBufferFactory BUFFER_FACTORY = ByteBufferFactory.getInstance();

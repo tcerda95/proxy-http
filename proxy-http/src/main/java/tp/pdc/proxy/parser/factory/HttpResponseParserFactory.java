@@ -8,6 +8,9 @@ import tp.pdc.proxy.parser.main.HttpResponseParserImpl;
 
 import java.util.*;
 
+/**
+ * In charge of the creation of the {@link HttpResponseParser}
+ */
 public class HttpResponseParserFactory {
 	private static final HttpResponseParserFactory INSTANCE = new HttpResponseParserFactory();
 

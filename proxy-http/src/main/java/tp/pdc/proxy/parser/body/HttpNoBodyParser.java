@@ -5,6 +5,9 @@ import tp.pdc.proxy.parser.interfaces.HttpBodyParser;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Body Parser used in case there is no body, returns always true
+ */
 public class HttpNoBodyParser implements HttpBodyParser {
 
 	private static final HttpNoBodyParser INSTANCE = new HttpNoBodyParser();

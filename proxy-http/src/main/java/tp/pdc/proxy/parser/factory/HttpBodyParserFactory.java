@@ -18,6 +18,9 @@ import tp.pdc.proxy.properties.ProxyProperties;
 
 import java.util.List;
 
+/**
+ * In charge of the creation of the {@link HttpBodyParser}
+ */
 public class HttpBodyParserFactory {
 
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();

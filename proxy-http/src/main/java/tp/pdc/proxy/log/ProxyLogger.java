@@ -13,6 +13,9 @@ import tp.pdc.proxy.parser.interfaces.HttpRequestParser;
 import tp.pdc.proxy.parser.interfaces.HttpResponseParser;
 import tp.pdc.proxy.properties.ProxyProperties;
 
+/**
+ * In charge of logging what is happing along the proxy
+ */
 public class ProxyLogger {
 	private static final String SEPARATOR = ", ";
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();

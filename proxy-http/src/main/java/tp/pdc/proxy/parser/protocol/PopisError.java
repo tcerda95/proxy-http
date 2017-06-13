@@ -2,6 +2,9 @@ package tp.pdc.proxy.parser.protocol;
 
 import tp.pdc.proxy.properties.ProxyProperties;
 
+/**
+ * Protocol's errors enum
+ */
 public enum PopisError {
 
 	NO_MATCH("[NO_MATCH]"),
