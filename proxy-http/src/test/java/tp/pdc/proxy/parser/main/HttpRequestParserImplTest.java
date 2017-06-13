@@ -228,10 +228,11 @@ public class HttpRequestParserImplTest {
 
 	@Test(expected = ParserFormatException.class)
 	public void URIHostTooLongTest () throws UnsupportedEncodingException, ParserFormatException {
-		String longHost =
-			"http://www.google.com.www.google.com.www.google.com.www.google.com.www.google.com"
-				+ "www.google.com.www.google.com.www.google.com.www.google.com.www.google.com.www.google.com";
+        String host = "http://www.google.com";
+        String longHost = host;
 
+        for (int i = 0; i < 2000; i++)
+            longHost += host;
 
 		String request = "GET " + longHost + " HTTP/1.1\r\n" + "Host: localhost:8080\r\n" + "\r\n";
 
