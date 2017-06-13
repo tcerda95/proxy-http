@@ -4,13 +4,12 @@ import java.nio.ByteBuffer;
 
 import static tp.pdc.proxy.parser.utils.AsciiConstants.*;
 
-public class ParseUtils {
+public final class ParseUtils {
 	private static final int US_ASCII_LENGTH = 128;
 	private static final byte[] separator =
 		{'(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}',
 			SP.getValue(), HT.getValue()};
-	private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit, isHexadecimal,
-		isAlphaNumerical;
+	private static boolean[] isToken, isAlphabetic, isSeparator, isLWS, isDigit, isHexadecimal, isAlphaNumerical;
 
 	static {
 		isToken = new boolean[US_ASCII_LENGTH];

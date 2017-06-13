@@ -4,9 +4,12 @@ import java.io.IOException;
 
 import tp.pdc.proxy.properties.ProxyProperties;
 
-public class EntryPoint {
+public final class EntryPoint {
 
 	private static final ProxyProperties PROPERTIES = ProxyProperties.getInstance();
+	
+	private EntryPoint() {
+	}
 	
 	public static void main(String[] args) throws IOException {
 		new PDCServer(PROPERTIES.getProxyPort(), PROPERTIES.getProtocolPort()).run();
