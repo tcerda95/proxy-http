@@ -122,8 +122,8 @@ public class HttpVersionParserImpl implements HttpVersionParser {
 						readMajorVersion = true;
 						majorVersion *= 10;
 						majorVersion += (b - (byte) '0');
-						outputBuffer.put(b);
 					}
+					outputBuffer.put(b);
 				} else if (b == (byte) '.' && majorVersion != 0) {
 					state = HttpVersionState.MINOR_VERSION;
 					outputBuffer.put(b);
@@ -138,8 +138,8 @@ public class HttpVersionParserImpl implements HttpVersionParser {
 						readMinorVersion = true;
 						minorVersion *= 10;
 						minorVersion += (b - (byte) '0');
-						outputBuffer.put(b);
 					}
+					outputBuffer.put(b);
 				} else if (b == endByte) {
 					state = HttpVersionState.READ_OK;
 					outputBuffer.put(b);
