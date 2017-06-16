@@ -17,7 +17,7 @@ En el directorio **proxy-http/target/logs** se generarán los archivos de logs.
 Para configurar puertos y tamaño de buffers, se puede abrir el archivo **proxy-http/target/proxy-http-1.0.java** con un editor de textos como vim y modificar el archivo de configuración **proxy.properties**. Se describen a continuación las diferentes configuraciones:
 
 * **proxy.port:** puerto de la aplicación proxy
-* **proxy.bufferSize:** tamaño default de buffers de transeferencia del proxy
+* **proxy.bufferSize:** tamaño default de buffers de transferencia del proxy
  
 * **protocol.port:** puerto de la aplicación del protocolo
 * **protocol.bufferSize:** tamaño de buffers de transferencia del protocolo
